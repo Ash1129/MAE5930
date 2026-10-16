@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="{{ url_for('period_detail', period_id=period.period_id) }}">&larr; Period {{ period.period_id }}</a></p>
+<div class="card">
+<h1>{{ r.transformer_id }} <span class="muted">{{ r.name }}</span> <span class="tag {{ 'bad' if r.status == 'review_needed' else 'ok' }}">{{ r.status.replace('_',' ') }}</span></h1>
+<div class="grid">
+<div>
+<h3>Checklist (playbook {{ playbook.version }})</h3>
+<table>{% for item, flagged in checklist %}<tr><td>{% if flagged %}<span class="tag bad">check</span>{% else %}<span class="tag ok">ok</span>{% endif %}</td><td class="small">{{ item }}</td></tr>{% endfor %}</table>
+<p class="small"><b>Why flagged:</b> rule {{ r.decision.rule }} ({{ r.decision.condition }}): {{ r.decision.reason }}</p>
+</div>
+<div>
+<h3>Results</h3>
+<dl class="kv">
+<dt>Rated maximum</dt><dd>{{ r.rated_max|num(1) }} {{ r.unit }} (asset record)</dd>
+<dt>Stability</dt><dd>{{ r.stability.replace('_',' ') }} ({{ r.chart.n_baseline }} baseline days, minimum {{ r.chart.min_history_points }})</dd>
+<dt>Chart limits</dt><dd>{% if r.chart.center is not none %}CL {{ r.chart.center|num(1) }}, UCL {{ r.chart.ucl|num(1) }}, LCL {{ r.chart.lcl|num(1) }} (from history, not the rating){% else %}not computed{% endif %}</dd>
+<dt>Period peak</dt><dd>{{ r.capacity.period_peak|num(1) }} {{ r.unit }} = {{ r.capacity.period_peak_ratio|pct }} of rating</dd>
+<dt>Cpk vs rating</dt><dd>{% if r.capacity.cpk is not none %}{{ r.capacity.cpk|num }} (95% interval {{ r.capacity.cpk_ci_low|num }} to {{ r.capacity.cpk_ci_high|num }}, n={{ r.capacity.n }}){% else %}not calculated: {{ r.capacity.note }}{% endif %}</dd>
+<dt>Projected peak</dt><dd>{% if r.capacity.projected_peak is not none %}{{ r.capacity.projected_peak|num(1) }} {{ r.unit }} = {{ r.capacity.forecast_ratio|pct }} of rating (margin {{ r.capacity.forecast_margin|num(1) }}){% else %}not projected: {{ r.projection.assumptions.reason_not_projected }}{% endif %}</dd>
+</dl>
+</div>
+</div>
+{% if r.chart.signals %}<h3>Chart signals</h3><table><tr><th>Rule</th><th>Date</th><th>Value</th><th>In period</th></tr>{% for s in r.chart.signals %}<tr><td>{{ s.rule }}</td><td>{{ s.date }}</td><td>{{ s.value|num(1) }}</td><td>{{ 'yes' if s.in_period else 'no (history)' }}</td></tr>{% endfor %}</table>{% endif %}
+<h3>Control chart (shaded = this period; black line = rated maximum)</h3>
+<div style="overflow:auto">{{ svg|safe }}</div>
+<details><summary>Forecast assumptions</summary><pre>{{ r.projection.assumptions|tojson(indent=1) }}</pre></details>
+<details><summary>Source readings in the period (last {{ period_readings|length }} of {{ r.period_readings|length }})</summary>
+<table><tr><th>Timestamp</th><th>Load</th><th>Unit</th></tr>{% for x in period_readings %}<tr><td>{{ x.timestamp }}</td><td>{{ x.load|num(2) }}</td><td>{{ x.unit }}</td></tr>{% endfor %}</table></details>
+<details><summary>Source feeds used for this period</summary><pre>{{ period.sources|tojson(indent=1) }}</pre></details>
+{% if r.notes %}<p class="small"><b>Asset note:</b> {{ r.notes }}</p>{% endif %}
+</div>
+
+<div class="card">
+<h2>Disposition</h2>
+{% if r.disposition %}<p>Current: <span class="tag {{ {'approve':'ok','request_changes':'warn','reject':'bad'}[r.disposition.decision] }}">{{ decisions[r.disposition.decision] }}</span> by {{ r.disposition.reviewer }} at {{ r.disposition.recorded_at }}{% if r.disposition.notes %}: {{ r.disposition.notes }}{% endif %}</p>{% endif %}
+{% if period.status == 'final' %}<p class="muted">The report for this period is final. Rerun the period to review again.</p>
+{% else %}
+<form method="post" action="{{ url_for('record_disposition', period_id=period.period_id, tid=r.transformer_id) }}">
+<input type="hidden" name="review_started_at" value="{{ review_started_at }}">
+<label for="reviewer">Reviewer name</label><input type="text" id="reviewer" name="reviewer" value="{{ reviewer_name }}" style="max-width:320px" required>
+<label for="notes">Notes (required for Request changes and Reject)</label><textarea id="notes" name="notes" maxlength="{{ playbook.review.max_text_length }}"></textarea>
+<p>
+<button class="btn primary" name="decision" value="approve">Approve conclusion</button>
+<button class="btn warn" name="decision" value="request_changes">Request changes</button>
+<button class="btn danger" name="decision" value="reject">Reject</button>
+</p>
+<p class="small muted">Approve = the flagged conclusion is correct and should appear in the report as reviewed. Request changes = inputs or calculation need correction before the report can be finalized. Reject = the conclusion is wrong; your note is recorded in the report. Nothing here changes equipment or operating settings.</p>
+</form>
+{% endif %}
+{% if r.disposition_history|length > 1 %}<details><summary>History ({{ r.disposition_history|length }})</summary><table>{% for d in r.disposition_history %}<tr><td>{{ d.recorded_at }}</td><td>{{ d.decision }}</td><td>{{ d.reviewer }}</td><td class="small">{{ d.notes }}</td><td class="small muted">{{ 'current inputs' if d.input_hash == r.input_hash else 'earlier inputs (stale)' }}</td></tr>{% endfor %}</table></details>{% endif %}
+</div>
+{% endblock %}

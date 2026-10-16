@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card"><h1>Setup</h1>
+<form method="post"><label for="reviewer_name">Named grid-planning reviewer (receives the review queue, finalizes reports)</label>
+<input type="text" id="reviewer_name" name="reviewer_name" value="{{ reviewer_name }}" style="max-width:360px"><p><button class="btn primary">Save</button></p></form>
+</div>
+<div class="grid">
+<div class="card"><h2>Feeds</h2><p class="small">Drop the four files into <code>{{ feeds_dir }}</code>. The synthetic set can be regenerated with <code>scripts/make_synthetic_data.py</code>.</p>
+<table>{% for name, f in feeds.items() %}<tr><td>{{ name }}</td><td><code>{{ f.file }}</code></td><td>{% if f.present %}<span class="tag ok">present</span> <span class="small muted">{{ f.bytes }} bytes, {{ f.modified }}</span>{% else %}<span class="tag bad">missing</span>{% endif %}</td></tr>{% endfor %}</table>
+<h3>Expected columns</h3>
+<ul class="small">
+<li>readings.csv: transformer_id, timestamp (ISO 8601), load, unit</li>
+<li>assets.csv: transformer_id, name, lat, lon, rated_max, unit, customers, area_id, effective_from, effective_to, notes</li>
+<li>boundaries.geojson: FeatureCollection with metadata.valid_from / valid_to / approved_version; features with properties area_id, name, kind</li>
+<li>heat_pump_forecast.csv: forecast_version, area_id, horizon_label, households, hp_share_base, hp_share_forecast, kw_per_heat_pump, valid_from, valid_to, notes</li>
+</ul></div>
+<div class="card"><h2>Scheduler</h2>
+{% if sched.available %}<p><span class="tag ok">Airflow reachable</span> at {{ sched.url }} | DAG {{ sched.dag_id }} | {% if sched.is_paused %}paused{% else %}active{% endif %} | next run {{ sched.next_run or '-' }}</p>{% else %}<p><span class="tag bad">Airflow not reachable</span> {{ sched.error }}</p>{% endif %}
+<p class="small">Schedule: {{ playbook.schedule.description }} (cron <code>{{ playbook.schedule.cron }}</code>, {{ playbook.timezone }}). Change it in <code>rules/playbook.json</code> and the DAG file together.</p>
+<h2>Failure alerts</h2>
+<p class="small">Failures always appear on the Alerts page. E-mail delivery is enabled by setting environment variables before starting the app (never typed here):</p>
+<table>{% for k, v in env.items() %}<tr><td><code>{{ k }}</code></td><td>{% if v == 'set' %}<span class="tag ok">set</span>{% else %}<span class="tag warn">not set</span>{% endif %}</td></tr>{% endfor %}</table>
+<h2>Playbook thresholds (rules/playbook.json, version {{ playbook.version }})</h2>
+<dl class="kv small">
+<dt>Chart</dt><dd>min history {{ playbook.chart.min_history_points }} days; rules {{ playbook.chart.run_rules|join(', ') }}</dd>
+<dt>Capability</dt><dd>review if Cpk &lt; {{ playbook.capability.cpk_review_below }} or lower 95% bound &lt; {{ playbook.capability.cpk_ci_low_review_below }}; min {{ playbook.capability.min_points }} points</dd>
+<dt>Forecast</dt><dd>version {{ playbook.forecast.version }}; allocation {{ playbook.forecast.allocation_method }}; review if projected peak &ge; {{ (playbook.forecast.near_rating_ratio * 100)|int }}% of rating</dd>
+<dt>Retries</dt><dd>{{ playbook.retries.max_attempts }} attempts, then fail and alert</dd>
+<dt>Storage</dt><dd>database {{ db }}; reports {{ reports }}</dd>
+</dl>
+<p class="small muted">Cost: Airflow and this app are free open-source software running on this computer. No cloud service or AI model is used. Nothing is sent outside this machine unless e-mail alerts are configured.</p>
+</div></div>
+{% endblock %}

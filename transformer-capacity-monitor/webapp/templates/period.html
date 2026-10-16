@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+<h1>Period ending {{ period.period_id }} <span class="tag {{ 'ok' if period.status == 'final' else 'warn' }}">{{ period.status }}</span></h1>
+<p class="small muted">{{ period.period.start }} to {{ period.period.end }}, chart history from {{ period.period.history_start }}. Generated {{ period.generated_at }} by run {{ period.run_id }}. Reruns: {{ period.rerun_count }}.</p>
+<p>Transformers {{ period.summary.transformers }} | within limits {{ period.summary.within_limits }} | review needed {{ period.summary.review_needed }} | stable {{ period.summary.stable }} | chart signal {{ period.summary.signal }} | insufficient history {{ period.summary.insufficient_history }}</p>
+{% if period.warnings %}<details><summary>{{ period.warnings|length }} warning(s) carried into the report</summary><ul>{% for w in period.warnings %}<li class="small">{{ w }}</li>{% endfor %}</ul></details>{% endif %}
+</div>
+
+<div class="card">
+<h2>Exceptions to review ({{ exceptions|length }})</h2>
+<p class="small muted">Review one case at a time. Each needs a recorded disposition before the report can be finalized.</p>
+<table><tr><th>Transformer</th><th>Area</th><th>Why flagged</th><th>Stability</th><th>Cpk (95% CI)</th><th>Period peak / rating</th><th>Forecast peak / rating</th><th>Disposition</th><th></th></tr>
+{% for r in exceptions %}<tr>
+<td><b>{{ r.transformer_id }}</b><br><span class="small muted">{{ r.name }}</span></td>
+<td class="small">{{ r.area_name }}</td>
+<td class="small">Rule {{ r.decision.rule }}: {{ r.decision.reason }}</td>
+<td><span class="tag {{ {'stable':'ok','signal':'bad','insufficient_history':'warn'}[r.stability] }}">{{ r.stability.replace('_',' ') }}</span></td>
+<td>{% if r.capacity.cpk is not none %}{{ r.capacity.cpk|num }} ({{ r.capacity.cpk_ci_low|num }} to {{ r.capacity.cpk_ci_high|num }}){% else %}<span class="muted">not calculated</span>{% endif %}</td>
+<td>{{ r.capacity.period_peak_ratio|pct }}</td><td>{{ r.capacity.forecast_ratio|pct }}</td>
+<td>{% if r.disposition %}<span class="tag {{ {'approve':'ok','request_changes':'warn','reject':'bad'}[r.disposition.decision] }}">{{ decisions[r.disposition.decision] }}</span><br><span class="small muted">{{ r.disposition.reviewer }}, {{ r.disposition.recorded_at }}</span>{% else %}<span class="tag warn">needed</span>{% endif %}</td>
+<td><a class="btn" href="{{ url_for('transformer_detail', period_id=period.period_id, tid=r.transformer_id) }}">Review</a></td>
+</tr>{% else %}<tr><td colspan="9" class="muted">No exceptions this period.</td></tr>{% endfor %}</table>
+</div>
+
+<div class="card">
+<h2>Finalize the report</h2>
+{% if period.status == 'final' %}
+<p><span class="tag ok">Final</span> finalized by {{ period.finalized_by }} at {{ period.finalized_at }}.</p>
+{% else %}
+{% if blockers %}<p><span class="tag warn">Not ready</span></p><ul>{% for b in blockers %}<li class="small">{{ b }}</li>{% endfor %}</ul>{% else %}<p><span class="tag ok">All exceptions have dispositions.</span> Finalizing marks the report as approved output for the grid-planning team.</p>{% endif %}
+<form method="post" action="{{ url_for('finalize', period_id=period.period_id) }}">
+  <label for="reviewer">Finalizing reviewer</label><input type="text" id="reviewer" name="reviewer" value="{{ reviewer_name }}" style="max-width:320px" required>
+  <p><button class="btn primary" type="submit" {% if blockers %}disabled title="Record every disposition first"{% endif %}>Approve and finalize report</button> <span class="small muted">The server re-checks the dispositions; the button state is only a hint.</span></p>
+</form>
+{% endif %}
+<p>Report files: <a href="{{ url_for('report_file', period_id=period.period_id, filename='report.html') }}" target="_blank">HTML</a> | <a href="{{ url_for('report_file', period_id=period.period_id, filename='report.md') }}">Markdown</a> | <a href="{{ url_for('report_file', period_id=period.period_id, filename='report.json') }}">JSON</a> <span class="small muted">(saved in data/reports/{{ period.period_id }}/)</span></p>
+</div>
+
+<div class="card">
+<h2>Within limits ({{ within|length }})</h2>
+<table><tr><th>Transformer</th><th>Area</th><th>Rated max</th><th>Period peak</th><th>Cpk (95% CI)</th><th>Projected peak</th><th></th></tr>
+{% for r in within %}<tr><td><b>{{ r.transformer_id }}</b> <span class="small muted">{{ r.name }}</span></td><td class="small">{{ r.area_name }}</td><td>{{ r.rated_max|num(0) }} {{ r.unit }}</td><td>{{ r.capacity.period_peak|num(1) }} ({{ r.capacity.period_peak_ratio|pct }})</td><td>{{ r.capacity.cpk|num }} ({{ r.capacity.cpk_ci_low|num }} to {{ r.capacity.cpk_ci_high|num }})</td><td>{{ r.capacity.projected_peak|num(1) }} ({{ r.capacity.forecast_ratio|pct }})</td><td><a href="{{ url_for('transformer_detail', period_id=period.period_id, tid=r.transformer_id) }}">details</a></td></tr>{% endfor %}</table>
+</div>
+
+<div class="card"><h2>Run history for this period</h2>
+<table><tr><th>Started</th><th>By</th><th>Status</th><th>Error</th></tr>{% for r in runs %}<tr><td><a href="{{ url_for('run_detail', run_id=r.run_id) }}">{{ r.started_at }}</a></td><td>{{ r.triggered_by }}</td><td><span class="tag {{ 'ok' if r.status == 'success' else ('bad' if r.status == 'failed' else 'info') }}">{{ r.status }}</span></td><td class="small">{{ r.error or '' }}</td></tr>{% endfor %}</table></div>
+{% endblock %}

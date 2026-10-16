@@ -1,0 +1,13 @@
+transformer_id,name,lat,lon,rated_max,unit,customers,area_id,effective_from,effective_to,notes
+T-ITH-001,Stewart Ave pad,42.445,-76.49,167,kVA,70,ITH-C,2024-01-01,,SYNTHETIC record
+T-ITH-002,Coddington Rd pole,42.41,-76.47,100,kVA,40,ITH-T,2024-01-01,,SYNTHETIC record
+T-CAY-003,Hanshaw Rd pad,42.471,-76.483,100,kVA,45,CAY-V,2024-01-01,,SYNTHETIC record
+T-DRY-004,Freeville Rd pole,42.5,-76.33,75,kVA,30,DRY,2024-01-01,,SYNTHETIC record
+T-LAN-005,Triphammer Rd pad,42.55,-76.5,167,kVA,75,LAN,2024-01-01,,SYNTHETIC record
+T-CAR-006,Slaterville Rd pole,42.36,-76.36,100,kVA,60,CAR,2024-01-01,,SYNTHETIC record
+T-ULY-007,Jacksonville Rd pole (new),42.52,-76.64,75,kVA,25,ULY,2024-01-01,,SYNTHETIC record
+T-NEW-008,Millard Hill Rd pole,42.395,-76.565,50,kVA,20,NEW,2024-01-01,,SYNTHETIC record
+T-GRO-009,Peruville Rd pad,42.57,-76.38,100,kVA,50,GRO,2024-01-01,,SYNTHETIC record
+T-DAN-010,Comfort Rd pole,42.33,-76.47,50,kVA,22,DAN,2024-01-01,,SYNTHETIC record
+T-ENF-011,Mecklenburg Rd pole,42.44,-76.66,75,kVA,28,ENF,2024-01-01,,SYNTHETIC record
+T-TRU-012,Main St pad,42.541,-76.661,100,kVA,48,TRU-V,2024-01-01,,SYNTHETIC record

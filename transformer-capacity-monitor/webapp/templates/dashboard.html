@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <h2>Run a monitoring period now</h2>
+    <p class="small muted">A run covers {{ playbook.period_days }} days ending on the date you pick and uses {{ playbook.history_days }} days of history for the control charts. Rerunning a period replaces its draft results.</p>
+    <form method="post" action="{{ url_for('start_run') }}">
+      <label for="period_end">Period end date</label>
+      <input type="date" id="period_end" name="period_end" value="{{ default_end }}" required>
+      <p><button class="btn primary" type="submit">Run now</button></p>
+    </form>
+    <h3>Feeds in {{ playbook.get('_feeds_dir', 'data/feeds') }}</h3>
+    <table>{% for name, f in feeds.items() %}<tr><td>{{ name }}</td><td>{{ f.file }}</td><td>{% if f.present %}<span class="tag ok">present</span> <span class="muted small">{{ f.modified }}</span>{% else %}<span class="tag bad">missing</span>{% endif %}</td></tr>{% endfor %}</table>
+  </div>
+  <div class="card">
+    <h2>Scheduler (Apache Airflow)</h2>
+    {% if sched.available %}
+      <dl class="kv">
+        <dt>State</dt><dd>{% if sched.is_paused %}<span class="tag warn">paused</span>{% else %}<span class="tag ok">active</span>{% endif %}</dd>
+        <dt>Schedule</dt><dd>{{ playbook.schedule.description }}</dd>
+        <dt>Next run</dt><dd>{{ sched.next_run or '-' }}</dd>
+        <dt>Last run</dt><dd>{% if sched.last_run %}{{ sched.last_run.run_after }} <span class="tag {{ 'ok' if sched.last_run.state == 'success' else ('bad' if sched.last_run.state == 'failed' else 'info') }}">{{ sched.last_run.state }}</span>{% else %}none yet{% endif %}</dd>
+        <dt>Failed runs</dt><dd>{% if sched.failed_runs %}<span class="tag bad">{{ sched.failed_runs|length }} of last {{ sched.runs|length }}</span>{% else %}none in last {{ sched.runs|length }}{% endif %}</dd>
+      </dl>
+      <p>
+        {% if sched.is_paused %}<form method="post" action="{{ url_for('scheduler_action', action='resume') }}" style="display:inline"><button class="btn primary">Resume scheduled runs</button></form>
+        {% else %}<form method="post" action="{{ url_for('scheduler_action', action='pause') }}" style="display:inline"><button class="btn warn">Pause scheduled runs</button></form>{% endif %}
+        <form method="post" action="{{ url_for('scheduler_action', action='trigger') }}" style="display:inline"><input type="hidden" name="period_end" value="{{ default_end }}"><button class="btn">Trigger a scheduled-style run now</button></form>
+        <a class="btn" href="{{ sched.ui_url }}" target="_blank">Open Airflow</a>
+      </p>
+    {% else %}
+      <p><span class="tag bad">not reachable</span> {{ sched.error }}</p>
+      <p class="small muted">Start it with <code>scripts/start_airflow.sh</code> (or the Start Capacity Monitor launcher). Manual runs from this page still work without it.</p>
+    {% endif %}
+  </div>
+</div>
+{% if alerts %}
+<div class="card"><h2>Unacknowledged alerts</h2>
+<table><tr><th>When</th><th>Level</th><th>Run</th><th>Message</th><th>Delivery</th><th></th></tr>
+{% for a in alerts %}<tr><td>{{ a.created_at }}</td><td><span class="tag {{ 'bad' if a.level == 'error' else 'warn' }}">{{ a.level }}</span></td><td class="small">{% if a.run_id %}<a href="{{ url_for('run_detail', run_id=a.run_id) }}">{{ a.run_id }}</a>{% endif %}</td><td class="small">{{ a.message[:300] }}</td><td class="small muted">{{ a.delivered }}</td><td><form method="post" action="{{ url_for('ack_alert', alert_id=a.id) }}"><button class="btn">Acknowledge</button></form></td></tr>{% endfor %}
+</table></div>
+{% endif %}
+<div class="grid">
+<div class="card"><h2>Periods</h2>
+<table><tr><th>Period end</th><th>Report</th><th>Transformers</th><th>Review needed</th><th>Reruns</th><th></th></tr>
+{% for p in periods %}<tr><td><a href="{{ url_for('period_detail', period_id=p.period_id) }}">{{ p.period_id }}</a></td><td>{% if p.status == 'final' %}<span class="tag ok">final</span>{% else %}<span class="tag warn">draft</span>{% endif %}</td><td>{{ p.summary.transformers }}</td><td>{{ p.summary.review_needed }}</td><td>{{ p.rerun_count }}</td><td><a href="{{ url_for('report_file', period_id=p.period_id, filename='report.html') }}" target="_blank">report</a></td></tr>
+{% else %}<tr><td colspan="6" class="muted">No periods yet. Run one above.</td></tr>{% endfor %}</table></div>
+<div class="card"><h2>Recent runs</h2>
+<table><tr><th>Started</th><th>Period</th><th>By</th><th>Status</th><th>Step</th></tr>
+{% for r in runs %}<tr><td><a href="{{ url_for('run_detail', run_id=r.run_id) }}">{{ r.started_at }}</a></td><td>{{ r.period_id }}</td><td>{{ r.triggered_by }}</td><td><span class="tag {{ 'ok' if r.status == 'success' else ('bad' if r.status == 'failed' else 'info') }}">{{ r.status }}</span></td><td class="small">{{ r.current_step }}{% if r.error %} <span class="muted">{{ r.error[:80] }}</span>{% endif %}</td></tr>
+{% else %}<tr><td colspan="5" class="muted">No runs yet.</td></tr>{% endfor %}</table></div>
+</div>
+{% endblock %}

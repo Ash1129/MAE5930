@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Transformer Capacity Monitor{% endblock %}</title>
+{% block head %}{% endblock %}
+<style>
+  :root{--ink:#1d2430;--muted:#5d6675;--line:#dfe3e8;--bg:#f6f7f9;--card:#fff;--ok:#1b7f4b;--okbg:#def7e7;--warn:#9a5b00;--warnbg:#fff1d6;--bad:#b3261e;--badbg:#fde3e1;--info:#1f5fa8;--infobg:#e3eefb}
+  *{box-sizing:border-box} body{margin:0;font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+  header{background:#fff;border-bottom:1px solid var(--line);padding:10px 20px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  header .brand{font-weight:700;font-size:16px;margin-right:auto} header a{color:var(--info);text-decoration:none} header a:hover{text-decoration:underline}
+  main{max-width:1180px;margin:18px auto;padding:0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+  h1{font-size:22px;margin:0 0 10px} h2{font-size:17px;margin:0 0 10px} h3{font-size:15px;margin:14px 0 6px}
+  table{border-collapse:collapse;width:100%} th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px} th{color:var(--muted);font-weight:600}
+  .tag{display:inline-block;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:600;white-space:nowrap}
+  .ok{background:var(--okbg);color:var(--ok)} .warn{background:var(--warnbg);color:var(--warn)} .bad{background:var(--badbg);color:var(--bad)} .info{background:var(--infobg);color:var(--info)} .muted{color:var(--muted)}
+  .btn{display:inline-block;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:600;cursor:pointer;text-decoration:none;font-size:14px}
+  .btn.primary{background:var(--info);border-color:var(--info);color:#fff} .btn.danger{background:var(--bad);border-color:var(--bad);color:#fff} .btn.warn{background:var(--warn);border-color:var(--warn);color:#fff} .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=date],textarea{padding:7px 9px;border:1px solid var(--line);border-radius:8px;font:inherit;width:100%} textarea{min-height:90px}
+  label{display:block;font-size:13px;color:var(--muted);margin:8px 0 4px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  .flash{padding:10px 14px;border-radius:8px;margin-bottom:12px} .flash.error{background:var(--badbg);color:var(--bad)} .flash.info{background:var(--infobg);color:var(--info)}
+  .kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:14px} .kv dt{color:var(--muted)} .kv dd{margin:0}
+  .steps li{padding:4px 0;border-bottom:1px dashed var(--line);display:flex;gap:10px;align-items:baseline} .steps{list-style:none;padding:0;margin:0}
+  .steps .n{width:28px;color:var(--muted);text-align:right} .steps .d{color:var(--muted);font-size:12px;margin-left:auto;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  details summary{cursor:pointer;color:var(--info)} pre{background:#f1f3f6;padding:10px;border-radius:8px;overflow:auto;font-size:12px}
+  .small{font-size:13px} .right{text-align:right}
+  .synthetic{background:#fff6cc;border:1px dashed #d4a800;padding:6px 10px;border-radius:8px;font-size:13px;margin-bottom:12px}
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">Transformer Capacity Monitor <span class="muted small">Tompkins County</span></span>
+  <a href="{{ url_for('dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('alerts') }}">Alerts{% if unacked_alerts %} <span class="tag bad">{{ unacked_alerts }}</span>{% endif %}</a>
+  <a href="{{ url_for('metrics') }}">Review metrics</a>
+  <a href="{{ url_for('setup') }}">Setup</a>
+  <span class="muted small">Reviewer: {{ reviewer_name or 'not set' }}</span>
+</header>
+<main>
+{% with messages = get_flashed_messages(with_categories=true) %}{% for cat, m in messages %}<div class="flash {{ cat }}">{{ m }}</div>{% endfor %}{% endwith %}
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

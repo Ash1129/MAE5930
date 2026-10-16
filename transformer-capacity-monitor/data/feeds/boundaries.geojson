@@ -1,0 +1,431 @@
+{
+ "type": "FeatureCollection",
+ "metadata": {
+  "approved_version": "SYNTHETIC-2026-10",
+  "valid_from": "2026-01-01",
+  "valid_to": "2026-12-31",
+  "source": "SYNTHETIC simplified rectangles around approximate town centers; replace with approved county GIS boundaries"
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "area_id": "ITH-C",
+    "name": "City of Ithaca",
+    "kind": "city"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -76.532,
+       42.416000000000004
+      ],
+      [
+       -76.462,
+       42.416000000000004
+      ],
+      [
+       -76.462,
+       42.466
+      ],
+      [
+       -76.532,
+       42.466
+      ],
+      [
+       -76.532,
+       42.416000000000004
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "area_id": "ITH-T",
+    "name": "Town of Ithaca",
+    "kind": "town"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -76.61,
+       42.35
+      ],
+      [
+       -76.42999999999999,
+       42.35
+      ],
+      [
+       -76.42999999999999,
+       42.49
+      ],
+      [
+       -76.61,
+       42.49
+      ],
+      [
+       -76.61,
+       42.35
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "area_id": "CAY-V",
+    "name": "Village of Cayuga Heights",
+    "kind": "village"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -76.505,
+       42.455
+      ],
+      [
+       -76.465,
+       42.455
+      ],
+      [
+       -76.465,
+       42.485
+      ],
+      [
+       -76.505,
+       42.485
+      ],
+      [
+       -76.505,
+       42.455
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "area_id": "DRY",
+    "name": "Town of Dryden",
+    "kind": "town"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -76.42,
+       42.39
+      ],
+      [
+       -76.17999999999999,
+       42.39
+      ],
+      [
+       -76.17999999999999,
+       42.59
+      ],
+      [
+       -76.42,
+       42.59
+      ],
+      [
+       -76.42,
+       42.39
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "area_id": "LAN",
+    "name": "Town of Lansing",
+    "kind": "town"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -76.61,
+       42.480000000000004
+      ],
+      [
+       -76.42999999999999,
+       42.480000000000004
+      ],
+      [
+       -76.42999999999999,
+       42.64
+      ],
+      [
+       -76.61,
+       42.64
+      ],
+      [
+       -76.61,
+       42.480000000000004
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "area_id": "CAR",
+    "name": "Town of Caroline",
+    "kind": "town"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -76.42999999999999,
+       42.260000000000005
+      ],
+      [
+       -76.23,
+       42.260000000000005
+      ],
+      [
+       -76.23,
+       42.42
+      ],
+      [
+       -76.42999999999999,
+       42.42
+      ],
+      [
+       -76.42999999999999,
+       42.260000000000005
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "area_id": "DAN",
+    "name": "Town of Danby",
+    "kind": "town"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -76.57000000000001,
+       42.26
+      ],
+      [
+       -76.39,
+       42.26
+      ],
+      [
+       -76.39,
+       42.4
+      ],
+      [
+       -76.57000000000001,
+       42.4
+      ],
+      [
+       -76.57000000000001,
+       42.26
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "area_id": "ENF",
+    "name": "Town of Enfield",
+    "kind": "town"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -76.72,
+       42.37
+      ],
+      [
+       -76.56,
+       42.37
+      ],
+      [
+       -76.56,
+       42.51
+      ],
+      [
+       -76.72,
+       42.51
+      ],
+      [
+       -76.72,
+       42.37
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "area_id": "GRO",
+    "name": "Town of Groton",
+    "kind": "town"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -76.46000000000001,
+       42.5
+      ],
+      [
+       -76.28,
+       42.5
+      ],
+      [
+       -76.28,
+       42.66
+      ],
+      [
+       -76.46000000000001,
+       42.66
+      ],
+      [
+       -76.46000000000001,
+       42.5
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "area_id": "NEW",
+    "name": "Town of Newfield",
+    "kind": "town"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -76.69999999999999,
+       42.260000000000005
+      ],
+      [
+       -76.5,
+       42.260000000000005
+      ],
+      [
+       -76.5,
+       42.42
+      ],
+      [
+       -76.69999999999999,
+       42.42
+      ],
+      [
+       -76.69999999999999,
+       42.260000000000005
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "area_id": "ULY",
+    "name": "Town of Ulysses",
+    "kind": "town"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -76.74,
+       42.46
+      ],
+      [
+       -76.58,
+       42.46
+      ],
+      [
+       -76.58,
+       42.6
+      ],
+      [
+       -76.74,
+       42.6
+      ],
+      [
+       -76.74,
+       42.46
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "area_id": "TRU-V",
+    "name": "Village of Trumansburg",
+    "kind": "village"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -76.675,
+       42.528
+      ],
+      [
+       -76.645,
+       42.528
+      ],
+      [
+       -76.645,
+       42.552
+      ],
+      [
+       -76.675,
+       42.552
+      ],
+      [
+       -76.675,
+       42.528
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}

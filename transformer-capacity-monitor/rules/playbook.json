@@ -1,0 +1,48 @@
+{
+  "version": "default-2026-10-16",
+  "_note": "Reversible defaults chosen by the builder. Replace with the approved grid-planning playbook values and record who approved them.",
+  "timezone": "America/New_York",
+  "schedule": {
+    "cron": "0 6 * * 1,3,5",
+    "description": "Monday, Wednesday and Friday at 06:00 America/New_York. Each run covers the 7 days ending the previous day."
+  },
+  "period_days": 7,
+  "history_days": 60,
+  "chart": {
+    "method": "Individuals and moving-range (I-MR) chart on one value per day: the daily peak load",
+    "min_history_points": 20,
+    "E2": 2.66,
+    "D4": 3.267,
+    "d2": 1.128,
+    "run_rules": [
+      "beyond_3_sigma",
+      "two_of_three_beyond_2_sigma",
+      "eight_in_a_row_one_side",
+      "moving_range_beyond_ucl"
+    ],
+    "limits_note": "Control limits come from the transformer's own historical daily peaks, never from the rated maximum."
+  },
+  "capability": {
+    "method": "One-sided Cpk (Cpu) against the rated maximum, sigma from the average moving range (MRbar/d2); 95% interval by Bissell's approximation",
+    "confidence_level": 0.95,
+    "min_points": 20,
+    "cpk_review_below": 1.33,
+    "cpk_ci_low_review_below": 1.33,
+    "uncertainty_note": "Uncertain = the estimate is at or above the threshold but the lower 95% bound is below it."
+  },
+  "forecast": {
+    "version": "TC-HP-2026-v1",
+    "allocation_method": "declared_primary_area",
+    "allocation_note": "When a transformer's location falls in more than one boundary area, use the primary area declared on the asset record and flag the assumption for the reviewer.",
+    "near_rating_ratio": 0.9
+  },
+  "review": {
+    "reviewer_name": "",
+    "max_text_length": 2000,
+    "known_wrong_seed_every_n_periods": 3
+  },
+  "retries": {
+    "max_attempts": 3,
+    "delay_seconds": 2
+  }
+}

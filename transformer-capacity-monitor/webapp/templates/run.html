@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block head %}{% if refresh %}<meta http-equiv="refresh" content="2">{% endif %}{% endblock %}
+{% block content %}
+<div class="card">
+<h1>Run {{ run_id }}</h1>
+{% if not run %}<p><span class="tag info">starting</span> The run is being created...</p>
+{% else %}
+<dl class="kv">
+  <dt>Period</dt><dd><a href="{{ url_for('period_detail', period_id=run.period_id) }}">{{ run.period_id }}</a></dd>
+  <dt>Triggered by</dt><dd>{{ run.triggered_by }}</dd>
+  <dt>Status</dt><dd><span class="tag {{ 'ok' if run.status == 'success' else ('bad' if run.status == 'failed' else 'info') }}">{{ run.status }}</span> {% if run.finished_at %}<span class="muted small">finished {{ run.finished_at }}</span>{% endif %}</dd>
+  {% if run.error %}<dt>Error</dt><dd class="bad" style="background:none">{{ run.error }}</dd>{% endif %}
+</dl>
+{% if run.problems %}<h3>Problems to investigate</h3><ul>{% for p in run.problems %}<li class="small">{{ p }}</li>{% endfor %}</ul>{% endif %}
+<h3>Progress</h3>
+<ol class="steps">
+{% for s in run.steps %}<li><span class="n">{{ s.step }}</span><span>{{ s.name }}</span>
+<span class="tag {{ {'success':'ok','failed':'bad','running':'info','waiting':'warn','skipped':'muted','pending':'muted'}[s.status] }}">{{ s.status }}</span>
+{% if s.detail %}<span class="d" title="{{ s.detail }}">{{ s.detail }}</span>{% endif %}</li>{% endfor %}
+</ol>
+{% if run.status == 'success' %}<p><a class="btn primary" href="{{ url_for('period_detail', period_id=run.period_id) }}">Open period {{ run.period_id }} to review exceptions</a></p>{% endif %}
+{% endif %}
+</div>
+{% endblock %}

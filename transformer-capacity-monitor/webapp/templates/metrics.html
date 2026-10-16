@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card"><h1>Review metrics</h1>
+<p class="small muted">Overrides near zero, or reviews that take seconds, mean the review has become a rubber stamp. Seeded known-wrong cases measure whether reviewers catch errors.</p>
+<dl class="kv">
+<dt>Dispositions recorded</dt><dd>{{ m.dispositions }} ({{ m.real_dispositions }} on real cases)</dd>
+<dt>Override rate</dt><dd>{% if m.override_rate is not none %}{{ (m.override_rate * 100)|round(0)|int }}% of real cases were Request changes or Reject{% else %}-{% endif %}</dd>
+<dt>Time per review</dt><dd>{% if m.median_seconds is not none %}median {{ m.median_seconds|round(0)|int }} s, mean {{ m.mean_seconds|round(0)|int }} s; {{ m.fast_reviews_under_20s }} review(s) under 20 s{% else %}-{% endif %}</dd>
+<dt>Known-wrong calibration cases</dt><dd>{{ m.calibration_caught }} caught of {{ m.calibration_cases }} seen</dd>
+</dl></div>
+{% endblock %}

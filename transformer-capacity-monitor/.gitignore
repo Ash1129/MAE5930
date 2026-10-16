@@ -1,0 +1,9 @@
+.venv/
+airflow_home/
+logs/
+data/capacity_monitor.sqlite3*
+data/work/
+data/reports/
+__pycache__/
+.pytest_cache/
+.DS_Store
