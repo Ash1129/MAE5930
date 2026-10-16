@@ -18,7 +18,7 @@ if str(ROOT) not in sys.path:
 
 from flask import Flask, abort, flash, redirect, render_template, request, send_from_directory, url_for  # noqa: E402
 
-from capacity_monitor import airflow_client, config, heat  # noqa: E402
+from capacity_monitor import ai_explain, airflow_client, config, explain, heat  # noqa: E402
 from capacity_monitor.charts import imr_svg  # noqa: E402
 from capacity_monitor.guards import check_text  # noqa: E402
 from capacity_monitor.report import write_report  # noqa: E402
@@ -51,6 +51,22 @@ def _num(v, nd=2):
         return f"{float(v):,.{nd}f}"
     except (TypeError, ValueError):
         return str(v)
+
+
+@app.template_filter("explain")
+def _explain(alert):
+    out = explain.explain_alert(alert.get("message", ""), alert.get("step"))
+    out["ai"] = store.get_ai_explanation(ai_explain._key(alert.get("message", ""), alert.get("step"))) if ai_explain.enabled(store) else None
+    out["ai_error"] = store.get_ai_error(ai_explain._key(alert.get("message", ""), alert.get("step"))) if ai_explain.enabled(store) and not out["ai"] else None
+    out["ai_on"] = ai_explain.enabled(store) and ai_explain.cli_path() is not None
+    return out
+
+
+@app.template_filter("explain_problem")
+def _explain_problem(text):
+    if text.startswith("warning:"):
+        return {"note": explain.explain_note(text[len("warning:"):].strip()) or text[len("warning:"):].strip()}
+    return explain.explain_problem(text)
 
 
 @app.template_filter("pct")
@@ -377,13 +393,36 @@ def setup():
             flash("Saved.", "info")
         return redirect(url_for("setup"))
     env = {k: ("set" if os.environ.get(k) else "not set") for k in ("CAPMON_ALERT_TO", "CAPMON_SMTP_HOST", "CAPMON_SMTP_USER", "CAPMON_SMTP_PASSWORD")}
-    return render_template("setup.html", feeds=feed_status(), feeds_dir=str(config.FEEDS_DIR), playbook=config.load_playbook(), sched=airflow_client.status(), env=env, db=str(config.DB_PATH), reports=str(config.REPORTS_DIR))
+    return render_template("setup.html", feeds=feed_status(), feeds_dir=str(config.FEEDS_DIR), playbook=config.load_playbook(), sched=airflow_client.status(), env=env, db=str(config.DB_PATH), reports=str(config.REPORTS_DIR), ai=ai_explain.status(store))
 
 
 @app.post("/alerts/<int:alert_id>/ack")
 def ack_alert(alert_id):
     store.acknowledge_alert(alert_id, reviewer_name() or "reviewer")
     return redirect(request.referrer or url_for("dashboard"))
+
+
+@app.post("/alerts/<int:alert_id>/explain")
+def ai_explain_alert(alert_id):
+    alert = next((a for a in store.list_alerts(limit=500) if a["id"] == alert_id), None)
+    if not alert:
+        abort(404)
+    if not ai_explain.enabled(store):
+        flash("AI explanations are off. Turn them on in Setup.", "error")
+    elif not ai_explain.cli_path():
+        flash("The claude command-line tool was not found on this computer.", "error")
+    else:
+        rec = ai_explain.explain_alert_record(store, alert, force=True)
+        flash("Claude's explanation is ready." if rec else "Claude could not produce a usable explanation; the rule-based text stays. See Setup for details.", "info" if rec else "error")
+    return redirect(request.referrer or url_for("alerts"))
+
+
+@app.post("/setup/ai")
+def setup_ai():
+    on = request.form.get("ai_explanations") == "on"
+    store.set_setting(ai_explain.SETTING_KEY, "on" if on else "off")
+    flash("AI explanations turned " + ("on." if on else "off."), "info")
+    return redirect(url_for("setup"))
 
 
 @app.route("/alerts")

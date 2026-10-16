@@ -16,17 +16,20 @@ tasks:
   - id: H-01
     title: Fill in every blank in SPEC.md
     points: "15 - Tool Design: scope matches a prompt (5), clear user and use case (5), minimal inputs (5)"
-    status: in_progress
+    status: done
     owner: "team"
     started_at: "2026-10-16 18:20"
     owns: ["SPEC.md"]
+    notes: >
+      The prompt names heat pumps, EVs and data centers as load growth. The app models heat-pump growth
+      only, so EV and data-center load is a scope gap a judge may notice.
     definition_of_done: >
       grep -c "FILL IN" SPEC.md prints 0 and grep -c "TO CONFIRM" SPEC.md prints 0, and every
       teammate can say the method sentence in SPEC section 4 without reading it.
     result: >
-      Sections 2 to 9 are filled from the app as built. "grep -c FILL IN" prints 0. Three items are
-      still marked TO CONFIRM because only the team knows them: team name, track, and the Devpost
-      prompt number and title. Devpost blocks automated reads.
+      Both greps print 0. Section 1 was filled by the team on GitHub (6673ef2) - team SplitSync,
+      on-campus track, Energy Systems prompt "Smart Grid Transformer Surges". Sections 2 to 9 are filled
+      from the app as built. The method-sentence check is for the team to do out loud.
 
   - id: H-02
     title: Two or three test datasets plus a codebook

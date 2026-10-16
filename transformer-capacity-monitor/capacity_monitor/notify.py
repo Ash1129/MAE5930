@@ -36,4 +36,11 @@ def send_alert(store: Store, level: str, message: str, run_id=None, period_id=No
             delivered = f"email to {to}"
         except Exception as exc:  # alert delivery failure must not hide the run failure
             delivered = f"email failed: {exc!r}; recorded in app"
-    return store.add_alert(level, message, run_id=run_id, period_id=period_id, step=step, delivered=delivered)
+    alert_id = store.add_alert(level, message, run_id=run_id, period_id=period_id, step=step, delivered=delivered)
+    try:
+        from .ai_explain import explain_in_background
+
+        explain_in_background(store.path, message, step)
+    except Exception:  # noqa: BLE001  (optional feature; never block an alert)
+        pass
+    return alert_id

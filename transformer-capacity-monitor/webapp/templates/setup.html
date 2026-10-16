@@ -4,6 +4,12 @@
 <form method="post"><label for="reviewer_name">Named grid-planning reviewer (receives the review queue, finalizes reports)</label>
 <input type="text" id="reviewer_name" name="reviewer_name" value="{{ reviewer_name }}" style="max-width:360px"><p><button class="btn primary">Save</button></p></form>
 </div>
+<div class="card"><h2>AI explanations of alerts (optional)</h2>
+<p class="small">When on, each new alert is also rewritten in plain English by Claude through the <code>claude</code> command-line tool on this computer, using your own Claude subscription. The rule-based explanation always stays as the fallback. Claude only rewrites the alert text; it never changes any result, threshold or setting, and the alert text is passed to it as data so wording inside a data file cannot steer it. Each distinct alert is explained once and cached.</p>
+<p>Status: {% if ai.available %}<span class="tag ok">claude found</span> <span class="small muted">{{ ai.cli }}</span>{% else %}<span class="tag bad">claude not found</span> <span class="small muted">install Claude Code and sign in, then restart the app</span>{% endif %} &nbsp; Explanations cached: {{ ai.cached }}</p>
+<form method="post" action="{{ url_for('setup_ai') }}"><label><input type="checkbox" name="ai_explanations" value="on" {% if ai.enabled %}checked{% endif %}> Turn on AI explanations</label> <button class="btn primary" type="submit">Save</button></form>
+<p class="small muted">Cost: calls count against the Claude subscription signed in on this computer (about one short call per new alert). If the app is moved to a server, that server needs its own signed-in Claude Code, or this stays off.</p>
+</div>
 <div class="grid">
 <div class="card"><h2>Feeds</h2><p class="small">Drop the four files into <code>{{ feeds_dir }}</code>. The synthetic set can be regenerated with <code>scripts/make_synthetic_data.py</code>.</p>
 <table>{% for name, f in feeds.items() %}<tr><td>{{ name }}</td><td><code>{{ f.file }}</code></td><td>{% if f.present %}<span class="tag ok">present</span> <span class="small muted">{{ f.bytes }} bytes, {{ f.modified }}</span>{% else %}<span class="tag bad">missing</span>{% endif %}</td></tr>{% endfor %}</table>

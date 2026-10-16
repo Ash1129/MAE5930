@@ -56,6 +56,10 @@ counts. Report files are overwritten in `data/reports/<period>/` with per-run co
 
 `scripts/make_synthetic_data.py --count N` writes the 12 labeled cases plus N-12 generated transformers, each with a `customer_class` (residential, commercial, institutional, mixed) that sets its hourly load shape; downtown Ithaca is mostly commercial so it stays loaded at night. The generator verifies each intended-pass series with the real chart, capability and assumption functions and redraws until it matches its label. `data/feeds/readings.csv` is gitignored (42 MB at 500 transformers); regenerate with the script.
 
+## Alert explanations
+
+`explain.py` maps known failure patterns to plain-language title/meaning/action (templates, no AI) and groups non-blocking warnings as notes. `ai_explain.py` optionally asks the Claude CLI (`claude -p`, the owner's subscription) to rewrite an alert; it runs in an empty temp folder so no project context loads, passes the alert as data between markers, requires a JSON answer, length-limits, PII-redacts and guard-checks the answer, caches it in `ai_explanations`, and is triggered in the background by `send_alert` when the Setup toggle (`settings.ai_explanations`) is on. `CAPMON_CLAUDE_CLI` overrides the binary path (tests use a fake); `CAPMON_CLAUDE_TIMEOUT` sets the call timeout.
+
 ## Guardrails
 
 Text fields in feeds and in review forms pass `guards.check_text` (length limit, blocked terms, instruction-like

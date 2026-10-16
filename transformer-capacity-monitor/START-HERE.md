@@ -24,8 +24,9 @@ equipment or operating settings.
 - **Reopen:** http://127.0.0.1:5055 while the tool is running; otherwise double-click the Start launcher again.
 - **Stop:** double-click `Stop Capacity Monitor.command` (or `./scripts/stop.sh`).
 - **Pause scheduled runs:** the **Pause scheduled runs** button on the dashboard (Resume to continue).
-- **A run failed:** the dashboard and the Alerts page show the run, the step and the reason (for
-  example a missing feed or a boundary file for the wrong period). Fix the feed in `data/feeds/` and
+- **A run failed:** the dashboard and the Alerts page explain in plain words what happened and what to do
+  (for example a missing feed or a boundary file for the wrong period). With AI explanations turned on in
+  Setup, Claude also rewrites each alert. Fix the feed in `data/feeds/` and
   press **Run now** for the same period end date; the rerun replaces that period's draft.
 - **Something looks stuck:** `./scripts/status.sh` shows what is running; `./scripts/stop.sh` then the
   Start launcher restarts everything. Logs are in `logs/`.
