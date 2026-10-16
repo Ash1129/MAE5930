@@ -43,9 +43,9 @@ def test_heat_endpoints_and_page(sandbox):
         if run and run["status"] != "running":
             break
         time.sleep(0.1)
-    assert client.get("/periods/2026-10-15/heatmap").status_code == 200
-    page = client.get("/periods/2026-10-15/heatmap").data
-    assert b"Seasonal model" in page and b"Town of Dryden" in page
+    assert client.get("/periods/2026-10-15/heatmap").status_code == 302  # folded into the Map page
+    page = client.get("/periods/2026-10-15/map").data
+    assert b"Seasonal model" in page and b"Town of Dryden" in page and b"Districts" in page
     j = client.get("/api/heat/recorded?date=2026-10-15").get_json()
     assert j["modeled"] is False and j["transformers"] == 12
     j = client.get("/api/heat/seasonal?month=12").get_json()

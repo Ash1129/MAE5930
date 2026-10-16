@@ -3,10 +3,17 @@
 {% block head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
 <style>
-  .maprow{display:grid;grid-template-columns:1fr 340px;gap:16px}
-  @media (max-width:900px){.maprow{grid-template-columns:1fr}}
-  #map{height:640px;border:1px solid var(--line);border-radius:10px;background:#e9eef2}
+  .layout{display:grid;grid-template-columns:210px 1fr 330px;gap:14px}
+  @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+  #map{height:640px;border:1px solid var(--line);border-radius:10px;background:#111}
+  .districts button{display:block;width:100%;text-align:left;margin:0 0 6px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font:inherit}
+  .districts button.active{background:var(--info);color:#fff;border-color:var(--info)}
+  .districts .k{font-size:11px;color:var(--muted);display:block}
+  .districts button.active .k{color:#dbe8ff}
+  .districts .n{float:right;font-size:11px;color:var(--bad);font-weight:600}
+  .districts button.active .n{color:#ffd6d6}
   .legend span{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:middle;border:2px solid #fff;box-shadow:0 0 0 1px #888}
   .list a{display:block;padding:7px 8px;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}
   .list a:hover{background:var(--bg)}
@@ -15,6 +22,21 @@
   .leaflet-popup-content table{width:100%;border-collapse:collapse} .leaflet-popup-content td{padding:2px 4px;border-bottom:1px solid #eee;vertical-align:top}
   .leaflet-popup-content td:first-child{color:#666;white-space:nowrap}
   .popbtn{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:8px;background:#1f5fa8;color:#fff!important;font-weight:600;text-decoration:none}
+  .heatctl{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:var(--bg)}
+  .ctl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:8px}
+  .ctl label{margin:0;font-size:13px}
+  .sliders{display:grid;gap:6px}
+  .srow{display:grid;grid-template-columns:52px minmax(160px,1fr) auto auto;gap:10px;align-items:center}
+  .srow[hidden]{display:none}
+  .srow input[type=range]{width:100%}
+  .sname{font-size:13px;color:var(--muted)}
+  .sval{font:600 14px system-ui,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .clock{font:600 18px system-ui,sans-serif;font-variant-numeric:tabular-nums}
+  .modeled{background:var(--warnbg);color:var(--warn);padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600}
+  .recorded{background:var(--okbg);color:var(--ok);padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600}
+  .hot a{display:block;padding:6px 8px;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}
+  .hot .bar{height:6px;border-radius:3px;background:linear-gradient(90deg,#1b7f4b,#f4b400,#d7263d);margin-top:3px}
+  .scale{height:10px;border-radius:5px;background:linear-gradient(90deg,#1a237e,#1b7f4b,#f4b400,#ff6d00,#d7263d);margin:6px 0 2px}
 </style>
 {% endblock %}
 {% block content %}
@@ -34,54 +56,91 @@
     </div>
   </div>
 </div>
+
 <div class="card">
 <h1>Map, period ending {{ period.period_id }} <span class="tag {{ 'ok' if period.status == 'final' else 'warn' }}">{{ period.status }}</span></h1>
-<p class="small">Green = within limits. Red = needs a person's review. Click a dot for its numbers and a button to the full review. To run a new period, pause the schedule or see alerts, open the <a href="{{ url_for('dashboard') }}">Dashboard</a>. For load by hour and season, open the <a href="{{ url_for('period_heatmap', period_id=period.period_id) }}">Heatmap</a>.</p>
-<p class="small muted legend">
-  <span style="background:#1b7f4b"></span>Within limits &nbsp;&nbsp;
-  <span style="background:#d7263d"></span>Review needed &nbsp;&nbsp;
-  Click a dot for its numbers and a link to the full review (chart, source readings, disposition).
-  &nbsp; Period:
-  <select id="period-select" onchange="location.href='/periods/'+this.value+'/map'">{% for p in periods %}<option value="{{ p }}" {% if p == period.period_id %}selected{% endif %}>{{ p }}</option>{% endfor %}</select>
+<p class="small legend">
+  <span style="background:#1b7f4b"></span>Within limits &nbsp;&nbsp; <span style="background:#d7263d"></span>Review needed &nbsp;&nbsp;
+  Click a dot for its numbers and a button to the full review. Pick a district on the left to zoom in and see load by hour and season.
+  &nbsp; Period: <select id="period-select" onchange="location.href='/periods/'+this.value+'/map'">{% for p in periods %}<option value="{{ p }}" {% if p == period.period_id %}selected{% endif %}>{{ p }}</option>{% endfor %}</select>
+  &nbsp; <a href="{{ url_for('dashboard') }}">Dashboard</a> for the scheduler, alerts and run history.
 </p>
-<div class="maprow">
-  <div id="map"></div>
+<div class="layout">
   <div>
-    <h3 style="margin-top:0">Review needed ({{ points|selectattr('status','equalto','review_needed')|list|length }})</h3>
-    <div class="list">
-    {% for p in points if p.status == 'review_needed' %}<a href="#" onclick="focusPoint('{{ p.id }}');return false;"><span class="dot" style="background:#d7263d"></span><b>{{ p.id }}</b> <span class="muted small">{{ p.area }}</span><br><span class="small">{{ p.reason }}</span>{% if p.disposition %}<br><span class="small muted">{{ p.disposition }}</span>{% endif %}</a>{% endfor %}
+    <h3 style="margin:0 0 8px">Districts</h3>
+    <div class="districts" id="districts">
+      <button data-id="" class="active">Whole county<span class="k">all {{ points|length }} transformers</span></button>
+      {% for d in districts|sort(attribute='name') %}{% set n = points|selectattr('area','equalto',d.id)|selectattr('status','equalto','review_needed')|list|length %}<button data-id="{{ d.id }}" data-bbox="{{ d.bbox|tojson|forceescape }}">{{ d.name }}{% if n %}<span class="n">{{ n }} red</span>{% endif %}<span class="k">{{ d.kind }}, {{ points|selectattr('area','equalto',d.id)|list|length }} transformers</span></button>{% endfor %}
     </div>
-    <h3>Within limits ({{ points|selectattr('status','equalto','within_limits')|list|length }})</h3>
-    <div class="list">
-    {% for p in points if p.status == 'within_limits' %}<a href="#" onclick="focusPoint('{{ p.id }}');return false;"><span class="dot" style="background:#1b7f4b"></span><b>{{ p.id }}</b> <span class="muted small">{{ p.area }}</span></a>{% endfor %}
+  </div>
+  <div>
+    <div class="heatctl" id="heatctl" hidden>
+      <div class="ctl">
+        <b id="district-title"></b>
+        <label><input type="radio" name="mode" value="recorded" id="mode-recorded" checked> Recorded</label>
+        <label><input type="radio" name="mode" value="seasonal" id="mode-seasonal"> Seasonal model</label>
+        <label><input type="radio" name="metric" value="util" id="metric-util" checked> Utilization (% of rating)</label>
+        <label><input type="radio" name="metric" value="load" id="metric-load"> Load (kVA)</label>
+        <label><input type="checkbox" id="show-heat" checked> Heat layer</label>
+      </div>
+      <div class="sliders">
+        <div class="srow" id="recorded-ctl"><span class="sname">Date</span><input type="range" id="date-slider" min="0" max="{{ (dates|length) - 1 }}" value="{{ dates.index(heat_default_date) if heat_default_date in dates else (dates|length) - 1 }}"><span class="sval" id="date-label"></span></div>
+        <div class="srow" id="seasonal-ctl" hidden><span class="sname">Month</span><input type="range" id="month-slider" min="1" max="12" value="1"><span class="sval" id="month-label"></span></div>
+        <div class="srow"><span class="sname">Hour</span><input type="range" id="hour" min="0" max="23" value="18"><span class="sval" id="hour-label"></span><button class="btn primary" id="play">Play</button></div>
+      </div>
+      <div class="ctl" style="margin:8px 0 0"><span class="clock" id="clock"></span> <span id="mode-badge" class="recorded">RECORDED</span> <span class="small muted" id="status"></span></div>
+    </div>
+    <div id="map"></div>
+    <div id="scalebox" hidden><div class="scale"></div><div class="small muted" id="scale-label"></div></div>
+  </div>
+  <div>
+    <div id="hotbox" hidden>
+      <h3 style="margin:0 0 4px">Hotspots now <span class="small muted" id="hot-scope"></span></h3>
+      <p class="small muted" style="margin:0 0 6px">Highest at the selected hour. Click one to open its review page.</p>
+      <div class="hot" id="hotspots"></div>
+      <h3>Class mix in district</h3>
+      <div class="small" id="classmix"></div>
+    </div>
+    <h3 style="margin-top:0">Review needed (<span id="red-count">{{ points|selectattr('status','equalto','review_needed')|list|length }}</span>) <span class="small muted" id="list-scope"></span></h3>
+    <div class="list" id="redlist">
+    {% for p in points if p.status == 'review_needed' %}<a href="#" data-area="{{ p.area }}" onclick="focusPoint('{{ p.id }}');return false;"><span class="dot" style="background:#d7263d"></span><b>{{ p.id }}</b> <span class="muted small">{{ p.area_name }}</span><br><span class="small">{{ p.reason }}</span>{% if p.disposition %}<br><span class="small muted">{{ p.disposition }}</span>{% endif %}</a>{% endfor %}
+    </div>
+    <h3>Within limits (<span id="green-count">{{ points|selectattr('status','equalto','within_limits')|list|length }}</span>)</h3>
+    <div class="list" id="greenlist">
+    {% for p in points if p.status == 'within_limits' %}<a href="#" data-area="{{ p.area }}" onclick="focusPoint('{{ p.id }}');return false;"><span class="dot" style="background:#1b7f4b"></span><b>{{ p.id }}</b> <span class="muted small">{{ p.area_name }}</span></a>{% endfor %}
     </div>
   </div>
 </div>
-<p class="small muted">Satellite imagery (Esri) and street tiles (OpenStreetMap) load over the internet; the dots and boundaries are drawn from this tool's own data. Boundaries shown are the current boundary feed{% if boundaries and boundaries.metadata %} ({{ boundaries.metadata.approved_version }}){% endif %}.</p>
+<p class="small muted">Satellite imagery (Esri) and street tiles load over the internet; dots, boundaries and load values come from this tool's own data. The seasonal view is a model (playbook <code>seasonal_model</code>) and is labeled MODELED. Nothing here changes equipment or settings.</p>
 </div>
 <script>
 const POINTS = {{ points|tojson }};
 const BOUNDARIES = {{ boundaries|tojson }};
+const DATES = {{ dates|tojson }};
+const FACTORS = {{ (seasonal.monthly_factors or {})|tojson }};
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DISTRICT_NAMES = {{ districts|map(attribute='name')|list|tojson }};
+const DISTRICT_IDS = {{ districts|map(attribute='id')|list|tojson }};
+const $ = id => document.getElementById(id);
+
 const map = L.map('map').setView([42.44, -76.5], 10);
 const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom: 18, attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community'});
 const labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {maxZoom: 18, attribution: 'Labels &copy; Esri'});
 const streets = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18, attribution: '&copy; OpenStreetMap contributors'});
 const satelliteGroup = L.layerGroup([satellite, labels]).addTo(map);
 L.control.layers({'Satellite': satelliteGroup, 'Streets': streets}, null, {position: 'topright', collapsed: false}).addTo(map);
-if (BOUNDARIES) {
-  L.geoJSON(BOUNDARIES, {style: {color: '#ffffff', weight: 1.5, fillOpacity: 0.03, dashArray: '5 4', opacity: 0.85},
-    onEachFeature: (f, l) => l.bindTooltip((f.properties && f.properties.name) || '', {sticky: true})}).addTo(map);
-}
+if (BOUNDARIES) L.geoJSON(BOUNDARIES, {style: {color: '#ffffff', weight: 1.5, fillOpacity: 0.03, dashArray: '5 4', opacity: 0.85}, onEachFeature: (f, l) => l.bindTooltip((f.properties && f.properties.name) || '', {sticky: true})}).addTo(map);
+
 const fmt = (v, d=2) => (v === null || v === undefined) ? '-' : Number(v).toLocaleString(undefined, {maximumFractionDigits: d, minimumFractionDigits: d});
 const pct = v => (v === null || v === undefined) ? '-' : Math.round(v * 100) + '%';
 const markers = {};
+const dotLayer = L.layerGroup().addTo(map);
 POINTS.forEach(p => {
   const red = p.status === 'review_needed';
-  const m = L.circleMarker([p.lat, p.lon], {radius: red ? 11 : 8, color: '#fff', weight: 2, fillColor: red ? '#d7263d' : '#1b7f4b', fillOpacity: 0.95}).addTo(map);
+  const m = L.circleMarker([p.lat, p.lon], {radius: red ? 11 : 8, color: '#fff', weight: 2, fillColor: red ? '#d7263d' : '#1b7f4b', fillOpacity: 0.95});
   const rows = [
-    ['Area', p.area], ['Status', red ? 'Review needed' : 'Within limits'], ['Why', red ? ('Rule ' + p.rule + ': ' + p.reason) : 'All checks passed'],
-    ['Stability', p.stability.replace('_', ' ')],
-    ['Rated max', fmt(p.rating, 1) + ' ' + p.unit],
+    ['Area', p.area_name], ['Class', p.cls], ['Status', red ? 'Review needed' : 'Within limits'], ['Why', red ? ('Rule ' + p.rule + ': ' + p.reason) : 'All checks passed'],
+    ['Stability', p.stability.replace('_', ' ')], ['Rated max', fmt(p.rating, 1) + ' ' + p.unit],
     ['Period peak', fmt(p.period_peak, 1) + ' ' + p.unit + ' (' + pct(p.period_peak_ratio) + ' of rating)'],
     ['Cpk vs rating', p.cpk === null ? 'not calculated' : fmt(p.cpk) + ' (' + fmt(p.cpk_ci_low) + ' to ' + fmt(p.cpk_ci_high) + ')'],
     ['Projected peak', p.projected_peak === null ? 'not projected' : fmt(p.projected_peak, 1) + ' ' + p.unit + ' (' + pct(p.forecast_ratio) + ' of rating)'],
@@ -89,14 +148,112 @@ POINTS.forEach(p => {
   if (p.signals.length) rows.push(['Chart signals', p.signals.join('<br>')]);
   if (p.assumption_flags && p.assumption_flags.length) rows.push(['Assumptions', p.assumption_flags.join('<br>')]);
   rows.push(['Disposition', p.disposition || 'none recorded']);
-  const html = '<b>' + p.id + '</b> ' + p.name + '<table>' + rows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') + '</table>' +
-    '<a class="popbtn" href="' + p.url + '">Open full review</a>';
-  m.bindPopup(html, {maxWidth: 360});
+  m.bindPopup('<b>' + p.id + '</b> ' + p.name + '<table>' + rows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') + '</table><a class="popbtn" href="' + p.url + '">Open full review</a>', {maxWidth: 360});
   m.bindTooltip(p.id + (red ? ' (review)' : ''));
-  markers[p.id] = m;
+  markers[p.id] = m; p.marker = m; dotLayer.addLayer(m);
 });
-function focusPoint(id) { const m = markers[id]; if (!m) return; map.setView(m.getLatLng(), Math.max(map.getZoom(), 12)); m.openPopup(); }
-if (POINTS.length) { map.fitBounds(L.latLngBounds(POINTS.map(p => [p.lat, p.lon])).pad(0.15)); }
-setTimeout(() => map.invalidateSize(), 200);
+const countyBounds = POINTS.length ? L.latLngBounds(POINTS.map(p => [p.lat, p.lon])).pad(0.08) : null;
+if (countyBounds) map.fitBounds(countyBounds);
+function refit() { map.invalidateSize(); if (!district && countyBounds) map.fitBounds(countyBounds); }
+setTimeout(refit, 250); setTimeout(refit, 1000); window.addEventListener('load', refit);
+function focusPoint(id) { const m = markers[id]; if (!m) return; map.setView(m.getLatLng(), Math.max(map.getZoom(), 13)); m.openPopup(); }
+
+// ---- district zoom + heat view ----------------------------------------------------------
+const heatLayer = L.heatLayer([], {radius: 22, blur: 18, maxZoom: 14, max: 1.0, gradient: {0.15: '#1a237e', 0.35: '#1b7f4b', 0.6: '#f4b400', 0.8: '#ff6d00', 1.0: '#d7263d'}});
+let loads = {}, modeled = false, playing = null, district = '';
+const mode = () => $('mode-seasonal').checked ? 'seasonal' : 'recorded';
+const metric = () => $('metric-load').checked ? 'load' : 'util';
+const inDistrict = p => !district || p.area === district;
+
+function filterLists() {
+  document.querySelectorAll('#redlist a, #greenlist a').forEach(a => { a.hidden = !!district && a.dataset.area !== district; });
+  $('red-count').textContent = POINTS.filter(p => p.status === 'review_needed' && inDistrict(p)).length;
+  $('green-count').textContent = POINTS.filter(p => p.status === 'within_limits' && inDistrict(p)).length;
+  $('list-scope').textContent = district ? 'in this district' : '';
+}
+async function fetchLoads() {
+  if (!district) return;
+  $('status').textContent = 'loading...';
+  const url = mode() === 'seasonal' ? '/api/heat/seasonal?month=' + $('month-slider').value : '/api/heat/recorded?date=' + DATES[+$('date-slider').value];
+  const r = await fetch(url); const j = await r.json();
+  loads = j.loads || {}; modeled = !!j.modeled;
+  $('mode-badge').textContent = modeled ? 'MODELED (seasonal factor x' + j.factor + ')' : 'RECORDED';
+  $('mode-badge').className = modeled ? 'modeled' : 'recorded';
+  $('status').textContent = Object.keys(loads).length + ' transformers with data';
+  render();
+}
+function valueAt(p, h) { const a = loads[p.id]; if (!a) return null; const v = a[h]; if (v === null || v === undefined) return null; return metric() === 'util' ? v / p.rating : v; }
+function updateLabels() {
+  const h = +$('hour').value;
+  $('hour-label').textContent = String(h).padStart(2, '0') + ':00' + (h >= 17 && h <= 21 ? ' (evening peak hours)' : (h <= 5 ? ' (overnight)' : ''));
+  const m = +$('month-slider').value;
+  $('month-label').textContent = MONTHS[m - 1] + '  x' + (FACTORS[String(m)] !== undefined ? FACTORS[String(m)] : 1.0) + ' of recorded level';
+  const d = DATES[+$('date-slider').value] || '-';
+  $('date-label').textContent = d + '  (' + (+$('date-slider').value + 1) + ' of ' + DATES.length + ' recorded days)';
+}
+function render() {
+  if (!district) return;
+  updateLabels();
+  const h = +$('hour').value;
+  const inView = POINTS.filter(inDistrict);
+  const maxLoad = Math.max(1, ...inView.map(p => (loads[p.id] && loads[p.id][h]) || 0));
+  const pts = [], rows = [], cls = {};
+  inView.forEach(p => {
+    const v = valueAt(p, h); if (v === null) return;
+    pts.push([p.lat, p.lon, metric() === 'util' ? Math.min(v / 1.0, 1.2) : v / maxLoad]);
+    rows.push([p, v]); cls[p.cls] = (cls[p.cls] || 0) + 1;
+  });
+  heatLayer.setLatLngs(pts);
+  const label = mode() === 'seasonal' ? MONTHS[$('month-slider').value - 1] + ' (typical day)' : DATES[+$('date-slider').value];
+  $('clock').textContent = label + '  ' + String(h).padStart(2, '0') + ':00';
+  rows.sort((a, b) => b[1] - a[1]);
+  $('hot-scope').textContent = '(' + (DISTRICT_NAMES[DISTRICT_IDS.indexOf(district)] || district) + ')';
+  $('hotspots').innerHTML = rows.slice(0, 8).map(([p, v]) => {
+    const text = metric() === 'util' ? Math.round(v * 100) + '% of rating' : v.toFixed(1) + ' ' + p.unit;
+    const w = metric() === 'util' ? Math.min(100, v * 100) : Math.min(100, 100 * v / maxLoad);
+    return `<a href="${p.url}"><b>${p.id}</b> <span class="muted small">${p.name}, ${p.cls}</span><br><span class="small">${text}</span><div class="bar" style="width:${w}%"></div></a>`;
+  }).join('') || '<span class="muted">no data at this hour</span>';
+  $('classmix').textContent = Object.entries(cls).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(' | ') || '-';
+  $('scale-label').textContent = metric() === 'util' ? '0% of rating (blue) to 100% and above (red)' : '0 kVA (blue) to ' + maxLoad.toFixed(0) + ' kVA (red) at this hour';
+}
+function step() {
+  const hr = $('hour'); let h = +hr.value + 1;
+  if (h > 23) {
+    h = 0;
+    if (mode() === 'seasonal') { const ms = $('month-slider'); ms.value = (+ms.value % 12) + 1; hr.value = 0; fetchLoads(); return; }
+    const ds = $('date-slider'); if (+ds.value < DATES.length - 1) { ds.value = +ds.value + 1; hr.value = 0; fetchLoads(); return; }
+  }
+  hr.value = h; render();
+}
+function stopPlay() { if (playing) { clearInterval(playing); playing = null; $('play').textContent = 'Play'; } }
+$('play').onclick = () => { if (playing) stopPlay(); else { playing = setInterval(step, 700); $('play').textContent = 'Pause'; } };
+$('hour').oninput = render;
+let fetchTimer = null;
+function liveFetch() { updateLabels(); clearTimeout(fetchTimer); fetchTimer = setTimeout(fetchLoads, 120); }
+$('date-slider').oninput = liveFetch; $('month-slider').oninput = liveFetch;
+document.querySelectorAll('input[name=mode]').forEach(el => el.onchange = () => { $('recorded-ctl').hidden = mode() === 'seasonal'; $('seasonal-ctl').hidden = mode() !== 'seasonal'; fetchLoads(); });
+document.querySelectorAll('input[name=metric]').forEach(el => el.onchange = render);
+$('show-heat').onchange = e => e.target.checked ? heatLayer.addTo(map) : map.removeLayer(heatLayer);
+
+function selectDistrict(btn) {
+  document.querySelectorAll('#districts button').forEach(x => x.classList.remove('active')); btn.classList.add('active');
+  district = btn.dataset.id || '';
+  const show = !!district;
+  $('heatctl').hidden = !show; $('hotbox').hidden = !show; $('scalebox').hidden = !show;
+  if (show) {
+    map.fitBounds(JSON.parse(btn.dataset.bbox), {padding: [20, 20]});
+    $('district-title').textContent = btn.firstChild.textContent;
+    if ($('show-heat').checked && !map.hasLayer(heatLayer)) heatLayer.addTo(map);
+    POINTS.forEach(p => p.marker.setStyle({fillOpacity: p.area === district ? 0.95 : 0.25, opacity: p.area === district ? 1 : 0.3}));
+    fetchLoads();
+  } else {
+    stopPlay();
+    if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+    POINTS.forEach(p => p.marker.setStyle({fillOpacity: 0.95, opacity: 1}));
+    if (countyBounds) map.fitBounds(countyBounds);
+  }
+  filterLists();
+}
+document.querySelectorAll('#districts button').forEach(b => b.onclick = () => selectDistrict(b));
 </script>
 {% endblock %}

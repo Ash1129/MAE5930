@@ -251,7 +251,8 @@ def period_map(period_id):
                 "lon": r["lon"],
                 "status": r["status"],
                 "stability": r["stability"],
-                "area": r.get("area_name", ""),
+                "area": r.get("area_id", ""),
+                "area_name": r.get("area_name", ""),
                 "rating": r["rated_max"],
                 "unit": r["unit"],
                 "period_peak": c["period_peak"],
@@ -268,6 +269,7 @@ def period_map(period_id):
                 "disposition": (f"{DECISIONS[d['decision']]} by {d['reviewer']}") if d else None,
                 "url": url_for("transformer_detail", period_id=period_id, tid=r["transformer_id"]),
                 "is_calibration": r["is_calibration"],
+                "cls": r.get("customer_class", "unknown"),
             }
         )
     boundaries = None
@@ -278,8 +280,10 @@ def period_map(period_id):
         except ValueError:
             boundaries = None
     periods = [p["period_id"] for p in store.list_periods(limit=20)]
-    return render_template("map.html", period=period, points=points, boundaries=boundaries, periods=periods,
-                           feeds=feed_status(), default_end=(date.today() - timedelta(days=1)).isoformat(), playbook=config.load_playbook())
+    pb = config.load_playbook()
+    return render_template("map.html", period=period, points=points, boundaries=boundaries, periods=periods, districts=_districts(boundaries),
+                           feeds=feed_status(), default_end=(date.today() - timedelta(days=1)).isoformat(), playbook=pb,
+                           dates=heat.dates(), seasonal=pb.get("seasonal_model", {}), heat_default_date=period["period"]["end"])
 
 
 # ---- heatmap ------------------------------------------------------------------------------
@@ -295,41 +299,29 @@ def _heat_points(period_id: str) -> list[dict]:
     return pts
 
 
+def _districts(boundaries) -> list[dict]:
+    out = []
+    for f in (boundaries or {}).get("features", []):
+        props = f.get("properties", {})
+        geom = f.get("geometry", {})
+        coords = geom.get("coordinates", [])
+        polys = [coords] if geom.get("type") == "Polygon" else coords
+        lons = [pt[0] for poly in polys for ring in poly[:1] for pt in ring]
+        lats = [pt[1] for poly in polys for ring in poly[:1] for pt in ring]
+        if lons and lats:
+            out.append({"id": props.get("area_id"), "name": props.get("name"), "kind": props.get("kind"), "bbox": [[min(lats), min(lons)], [max(lats), max(lons)]]})
+    return out
+
+
 @app.route("/heatmap")
 def heatmap_latest():
-    periods = store.list_periods(limit=1)
-    if not periods:
-        flash("Run a period first; the heatmap uses the latest period's transformer list.", "info")
-        return redirect(url_for("dashboard"))
-    return redirect(url_for("period_heatmap", period_id=periods[0]["period_id"]))
+    return redirect(url_for("map_latest"))
 
 
 @app.route("/periods/<period_id>/heatmap")
 def period_heatmap(period_id):
-    import json
-
-    period = store.get_period(period_id)
-    if not period:
-        abort(404)
-    boundaries = None
-    bpath = config.FEEDS_DIR / config.FEED_FILES["boundaries"]
-    if bpath.exists():
-        try:
-            boundaries = json.loads(bpath.read_text(encoding="utf-8"))
-        except ValueError:
-            boundaries = None
-    districts = []
-    for f in (boundaries or {}).get("features", []):
-        props = f.get("properties", {})
-        coords = f.get("geometry", {}).get("coordinates", [])
-        polys = [coords] if f["geometry"]["type"] == "Polygon" else coords
-        lons = [pt[0] for poly in polys for ring in poly[:1] for pt in ring]
-        lats = [pt[1] for poly in polys for ring in poly[:1] for pt in ring]
-        if lons and lats:
-            districts.append({"id": props.get("area_id"), "name": props.get("name"), "kind": props.get("kind"), "bbox": [[min(lats), min(lons)], [max(lats), max(lons)]]})
-    pb = config.load_playbook()
-    return render_template("heatmap.html", period=period, points=_heat_points(period_id), districts=districts, boundaries=boundaries,
-                           dates=heat.dates(), seasonal=pb.get("seasonal_model", {}), default_date=period["period"]["end"])
+    """The heat view now lives on the Map page (pick a district)."""
+    return redirect(url_for("period_map", period_id=period_id))
 
 
 @app.route("/api/heat/recorded")

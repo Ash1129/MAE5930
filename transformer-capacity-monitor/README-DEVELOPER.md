@@ -50,7 +50,7 @@ counts. Report files are overwritten in `data/reports/<period>/` with per-run co
 
 ## Heatmap
 
-`capacity_monitor/heat.py` parses the readings feed once into `{date: {transformer: [24 hourly loads]}}` (cached until the file changes) plus each transformer's average hourly shape and daily-peak level. `/api/heat/recorded?date=` returns one recorded day; `/api/heat/seasonal?month=` returns a MODELED typical day: level x `seasonal_model.monthly_factors[month]` x shape, with `winter_evening_boost` on 17:00-21:00 in Dec-Feb. The page (`webapp/templates/heatmap.html`, Leaflet.heat) offers district buttons from the boundary feed, recorded or seasonal mode, an hour slider with playback, utilization or absolute load, and a hotspot list. Seasonal factors are placeholders in `rules/playbook.json` until the utility supplies monthly peak ratios from a full year of readings.
+`capacity_monitor/heat.py` parses the readings feed once into `{date: {transformer: [24 hourly loads]}}` (cached until the file changes) plus each transformer's average hourly shape and daily-peak level. `/api/heat/recorded?date=` returns one recorded day; `/api/heat/seasonal?month=` returns a MODELED typical day: level x `seasonal_model.monthly_factors[month]` x shape, with `winter_evening_boost` on 17:00-21:00 in Dec-Feb. The heat view lives on the Map page (`webapp/templates/map.html`, Leaflet.heat): district buttons from the boundary feed; choosing a district zooms in and reveals recorded or seasonal mode, date/month/hour sliders with playback, utilization or absolute load, and a hotspot list. `/heatmap` routes redirect to the map. Seasonal factors are placeholders in `rules/playbook.json` until the utility supplies monthly peak ratios from a full year of readings.
 
 ## Synthetic data
 

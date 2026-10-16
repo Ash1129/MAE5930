@@ -59,8 +59,8 @@ T-NEW-008 sits where four synthetic boundary rectangles overlap: ITH-T, DAN, ENF
 limits. Its forecast assumptions record `allocation_flagged: true`, the four located areas, and that its
 declared primary area NEW was used. No warning is raised, because the declared area contains the location.
 
-**See it in the app.** Run `./scripts/start_app.sh`, open http://127.0.0.1:5055/dashboard, pick period end
-2026-10-15 and press **Run now**. This runs on whatever is in `data/feeds/`. To get exactly the 12
+**See it in the app.** Run `./scripts/start_app.sh` and open http://127.0.0.1:5055, which is the Map.
+Pick period end 2026-10-15 and press **Run now** on the Map. This runs on whatever is in `data/feeds/`. To get exactly the 12
 transformers above, first run `.venv/bin/python scripts/make_synthetic_data.py --end 2026-10-15`.
 1. On the **Map**, the five transformers above show as red dots.
 2. Open T-DRY-004 with **Review**. The I-MR chart marks 2026-10-13 in red, and the checklist sits beside it.
