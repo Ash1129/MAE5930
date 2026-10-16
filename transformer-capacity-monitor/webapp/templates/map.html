@@ -291,10 +291,10 @@
       <button class="btn btn-primary" id="first-run" style="margin-top:8px">Run the first period</button>
     </div>
     {% else %}
-    <div class="head" id="side-head"><span class="t">Review needed</span><span class="n" id="red-count">0</span><span class="scope" id="side-scope" hidden></span></div>
+    <div class="head" id="side-head"><span class="t" id="side-title">Review needed</span><span class="n" id="red-count">0</span><span class="scope" id="side-scope" hidden></span></div>
     <div class="scroll">
       <div id="hot" hidden>
-        <div class="hh"><span class="micro">Hotspots now</span><span style="font-size:11px;color:var(--ink-60)" id="hot-clock"></span><span class="badge-modeled" id="hot-modeled" style="font-size:9px;padding:1px 6px" hidden>Modeled</span></div>
+        <div class="hh"><span class="micro">Highest at</span><span style="font-size:11px;color:var(--ink-60)" id="hot-clock"></span><span class="badge-modeled" id="hot-modeled" style="font-size:9px;padding:1px 6px" hidden>Modeled</span></div>
         <div class="rows" id="hot-rows"></div>
       </div>
       <div id="review-rows"></div>
@@ -434,11 +434,12 @@ function labels() {
 }
 function renderHeat() {
   labels();
-  if (!S.district) { heat.setLatLngs([]); renderHotspots([]); return; }
+  if (!S.district) { heat._latlngs = []; if (map.hasLayer(heat)) heat.setLatLngs([]); renderHotspots([]); return; }
   const inView = POINTS.filter(p => p.area === S.district);
   const vals = inView.map(p => [p, loadAt(p, S.hour)]).filter(x => x[1] !== null);
   const maxLoad = Math.max(1, ...vals.map(x => x[1]));
-  heat.setLatLngs(vals.map(([p, v]) => [p.lat, p.lon, S.metric === 'util' ? Math.min(v / p.rating, 1.2) : v / maxLoad]));
+  const pts = vals.map(([p, v]) => [p.lat, p.lon, S.metric === 'util' ? Math.min(v / p.rating, 1.2) : v / maxLoad]);
+  if (map.hasLayer(heat)) heat.setLatLngs(pts); else heat._latlngs = pts;
   renderHotspots(vals, maxLoad);
 }
 function renderHotspots(vals, maxLoad) {
@@ -467,9 +468,12 @@ function renderSidebar() {
   if (S.firstLaunch) { $('green-total').textContent = '0'; $('red-total').textContent = '0'; return; }
   const redsIn = S.district ? reds.filter(p => p.area === S.district) : reds;
   const sel = DISTRICTS.find(d => d.id === S.district);
-  $('red-count').textContent = redsIn.length;
+  // district selected: the sidebar shows hotspots only; whole county: the review list only
+  $('side-title').textContent = sel ? 'Hotspots now' : 'Review needed';
+  $('red-count').textContent = redsIn.length; $('red-count').hidden = !!sel;
   $('side-scope').hidden = !sel; if (sel) $('side-scope').textContent = 'in ' + sel.fullName;
-  $('review-rows').innerHTML = redsIn.map(p => `<div class="rrow${S.popup && S.popup.id === p.id ? ' on' : ''}" data-id="${esc(p.id)}"><button class="main" data-id="${esc(p.id)}"><span class="l1"><span class="dot"></span><span class="id">${esc(p.id)}</span><span class="nm">${esc(p.name)} · ${esc(shortName(p.area_name) || p.area)}</span></span><span class="why">${esc(p.reason)}</span>${p.disposition ? `<span class="disp">${esc(p.disposition)}</span>` : ''}</button><a class="go" href="${esc(p.url)}" aria-label="Open full review"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>`).join('');
+  $('review-rows').hidden = !!sel;
+  $('review-rows').innerHTML = (sel ? [] : redsIn).map(p => `<div class="rrow${S.popup && S.popup.id === p.id ? ' on' : ''}" data-id="${esc(p.id)}"><button class="main" data-id="${esc(p.id)}"><span class="l1"><span class="dot"></span><span class="id">${esc(p.id)}</span><span class="nm">${esc(p.name)} · ${esc(shortName(p.area_name) || p.area)}</span></span><span class="why">${esc(p.reason)}</span>${p.disposition ? `<span class="disp">${esc(p.disposition)}</span>` : ''}</button><a class="go" href="${esc(p.url)}" aria-label="Open full review"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>`).join('');
   document.querySelectorAll('.rrow .main').forEach(b => b.onclick = () => { const p = POINTS.find(x => x.id === b.dataset.id); map.setView([p.lat, p.lon], Math.max(map.getZoom(), 13)); openPopup(p); S.sheetOpen = false; applySheet(); });
   $('green-total').textContent = POINTS.length - reds.length; $('red-total').textContent = reds.length;
   const undecided = reds.filter(p => !p.disposition).length;
