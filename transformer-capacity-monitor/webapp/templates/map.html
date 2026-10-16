@@ -20,7 +20,7 @@
 {% block content %}
 <div class="card">
 <h1>Map, period ending {{ period.period_id }} <span class="tag {{ 'ok' if period.status == 'final' else 'warn' }}">{{ period.status }}</span></h1>
-<p class="small">Green = within limits. Red = needs a person's review. Click a dot for its numbers and a button to the full review. To run a new period, pause the schedule or see alerts, open the <a href="{{ url_for('dashboard') }}">Dashboard</a>.</p>
+<p class="small">Green = within limits. Red = needs a person's review. Click a dot for its numbers and a button to the full review. To run a new period, pause the schedule or see alerts, open the <a href="{{ url_for('dashboard') }}">Dashboard</a>. For load by hour and season, open the <a href="{{ url_for('period_heatmap', period_id=period.period_id) }}">Heatmap</a>.</p>
 <p class="small muted legend">
   <span style="background:#1b7f4b"></span>Within limits &nbsp;&nbsp;
   <span style="background:#d7263d"></span>Review needed &nbsp;&nbsp;

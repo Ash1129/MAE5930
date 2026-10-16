@@ -198,6 +198,7 @@ def load_assets(period: Period, playbook: dict) -> dict:
                     "effective_from": eff_from.isoformat() if eff_from else None,
                     "effective_to": eff_to.isoformat() if eff_to else None,
                     "notes": (r.get("notes") or "").strip(),
+                    "customer_class": (r.get("customer_class") or "").strip() or "unknown",
                     "in_effect": (eff_from is None or eff_from <= period.end) and (eff_to is None or eff_to >= period.end),
                 }
             )

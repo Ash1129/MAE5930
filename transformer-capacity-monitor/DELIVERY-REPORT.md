@@ -39,6 +39,11 @@ Test suite after the fixes: **24 passed**. Evaluation cases: 6 of 6.
 
 `scripts/make_synthetic_data.py --count 500` keeps the 12 labeled cases and adds 488 generated transformers spread across the twelve areas (ratings 25 to 500 kVA, 86% designed to be within limits, the rest a mix of chart signal, low Cpk, uncertain Cpk, forecast exceedance and insufficient history). On this dataset one full run (steps 1-15, 732,000 hourly readings) takes about 3 seconds; the result was 500 monitored, 403 within limits, 97 review needed (36 chart signals, 7 insufficient history, 13 low Cpk, 20 uncertain Cpk, 21 forecast exceedances). The 42 MB readings file is not committed to git; the Start launcher regenerates it when missing.
 
+## Map and heatmap (added 2026-10-16)
+
+- **Map** (home page): every transformer on satellite imagery, green within limits, red review needed, popup with numbers and a link to the full review; district boundaries; period selector.
+- **Heatmap**: district buttons zoom to each town or village; a Leaflet.heat layer shows load at the selected hour as utilization or absolute kVA; Play animates hour by hour through recorded days. The **Seasonal model** view scales each transformer's recorded hourly shape by playbook monthly factors (winter highest) and is labeled MODELED everywhere; it exists because the synthetic feed covers August to October only. A hotspot list names the highest-loaded transformers in view with links to their review pages. Synthetic assets now carry a customer class with its own hourly shape, so downtown Ithaca (commercial) stays loaded at night. Tests: `tests/test_heat.py` (26 total pass). Verified in the browser: Ithaca district zoom, January model, hotspot list.
+
 ## Launch location
 
 - Double-click `Start Capacity Monitor.command` (or `./scripts/start_airflow.sh` and `./scripts/start_app.sh`).

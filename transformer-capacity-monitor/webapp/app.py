@@ -18,7 +18,7 @@ if str(ROOT) not in sys.path:
 
 from flask import Flask, abort, flash, redirect, render_template, request, send_from_directory, url_for  # noqa: E402
 
-from capacity_monitor import airflow_client, config  # noqa: E402
+from capacity_monitor import airflow_client, config, heat  # noqa: E402
 from capacity_monitor.charts import imr_svg  # noqa: E402
 from capacity_monitor.guards import check_text  # noqa: E402
 from capacity_monitor.report import write_report  # noqa: E402
@@ -279,6 +279,74 @@ def period_map(period_id):
             boundaries = None
     periods = [p["period_id"] for p in store.list_periods(limit=20)]
     return render_template("map.html", period=period, points=points, boundaries=boundaries, periods=periods)
+
+
+# ---- heatmap ------------------------------------------------------------------------------
+
+def _heat_points(period_id: str) -> list[dict]:
+    pts = []
+    for r in store.get_transformer_results(period_id):
+        if r.get("lat") is None or r.get("lon") is None or r.get("is_calibration"):
+            continue
+        pts.append({"id": r["transformer_id"], "name": r["name"], "lat": r["lat"], "lon": r["lon"], "rating": r["rated_max"], "unit": r["unit"],
+                    "area": r["area_id"], "area_name": r.get("area_name", ""), "cls": r.get("customer_class", "unknown"), "status": r["status"],
+                    "url": url_for("transformer_detail", period_id=period_id, tid=r["transformer_id"])})
+    return pts
+
+
+@app.route("/heatmap")
+def heatmap_latest():
+    periods = store.list_periods(limit=1)
+    if not periods:
+        flash("Run a period first; the heatmap uses the latest period's transformer list.", "info")
+        return redirect(url_for("dashboard"))
+    return redirect(url_for("period_heatmap", period_id=periods[0]["period_id"]))
+
+
+@app.route("/periods/<period_id>/heatmap")
+def period_heatmap(period_id):
+    import json
+
+    period = store.get_period(period_id)
+    if not period:
+        abort(404)
+    boundaries = None
+    bpath = config.FEEDS_DIR / config.FEED_FILES["boundaries"]
+    if bpath.exists():
+        try:
+            boundaries = json.loads(bpath.read_text(encoding="utf-8"))
+        except ValueError:
+            boundaries = None
+    districts = []
+    for f in (boundaries or {}).get("features", []):
+        props = f.get("properties", {})
+        coords = f.get("geometry", {}).get("coordinates", [])
+        polys = [coords] if f["geometry"]["type"] == "Polygon" else coords
+        lons = [pt[0] for poly in polys for ring in poly[:1] for pt in ring]
+        lats = [pt[1] for poly in polys for ring in poly[:1] for pt in ring]
+        if lons and lats:
+            districts.append({"id": props.get("area_id"), "name": props.get("name"), "kind": props.get("kind"), "bbox": [[min(lats), min(lons)], [max(lats), max(lons)]]})
+    pb = config.load_playbook()
+    return render_template("heatmap.html", period=period, points=_heat_points(period_id), districts=districts, boundaries=boundaries,
+                           dates=heat.dates(), seasonal=pb.get("seasonal_model", {}), default_date=period["period"]["end"])
+
+
+@app.route("/api/heat/recorded")
+def api_heat_recorded():
+    date_iso = request.args.get("date", "")
+    data = heat.recorded_day(date_iso)
+    return {"date": date_iso, "modeled": False, "loads": data, "transformers": len(data)}
+
+
+@app.route("/api/heat/seasonal")
+def api_heat_seasonal():
+    try:
+        month = int(request.args.get("month", "1"))
+    except ValueError:
+        abort(400)
+    if not 1 <= month <= 12:
+        abort(400)
+    return heat.seasonal_day(month)
 
 
 # ---- scheduler controls -------------------------------------------------------------------

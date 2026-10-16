@@ -48,9 +48,13 @@ counts. Report files are overwritten in `data/reports/<period>/` with per-run co
 - **Forecast units**: heat-pump demand is real power (kW). For assets rated in kVA the added kW is divided by `forecast.power_factor` before it is added to the period peak; kW-rated assets add directly. The factor and note are in every result's forecast assumptions.
 - **Thresholds**: `rules/decision-table.csv` references playbook values as `${section.key}`; `load_decision_table` resolves them, so editing `rules/playbook.json` changes behavior. The DAG reads its cron and time zone from the playbook too.
 
+## Heatmap
+
+`capacity_monitor/heat.py` parses the readings feed once into `{date: {transformer: [24 hourly loads]}}` (cached until the file changes) plus each transformer's average hourly shape and daily-peak level. `/api/heat/recorded?date=` returns one recorded day; `/api/heat/seasonal?month=` returns a MODELED typical day: level x `seasonal_model.monthly_factors[month]` x shape, with `winter_evening_boost` on 17:00-21:00 in Dec-Feb. The page (`webapp/templates/heatmap.html`, Leaflet.heat) offers district buttons from the boundary feed, recorded or seasonal mode, an hour slider with playback, utilization or absolute load, and a hotspot list. Seasonal factors are placeholders in `rules/playbook.json` until the utility supplies monthly peak ratios from a full year of readings.
+
 ## Synthetic data
 
-`scripts/make_synthetic_data.py --count N` writes the 12 labeled cases plus N-12 generated transformers. The generator verifies each intended-pass series with the real chart, capability and assumption functions and redraws until it matches its label. `data/feeds/readings.csv` is gitignored (42 MB at 500 transformers); regenerate with the script.
+`scripts/make_synthetic_data.py --count N` writes the 12 labeled cases plus N-12 generated transformers, each with a `customer_class` (residential, commercial, institutional, mixed) that sets its hourly load shape; downtown Ithaca is mostly commercial so it stays loaded at night. The generator verifies each intended-pass series with the real chart, capability and assumption functions and redraws until it matches its label. `data/feeds/readings.csv` is gitignored (42 MB at 500 transformers); regenerate with the script.
 
 ## Guardrails
 
