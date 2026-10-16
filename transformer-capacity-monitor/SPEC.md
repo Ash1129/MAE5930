@@ -2,14 +2,16 @@
 
 What this tool IS. Where the code and this file disagree, the code is the bug: change this file first,
 then the code. Filled in from the app as built, following the hackathon template in
-`Timmy's stuff/SPEC.md`. Three lines in section 1 still need a team answer that the code cannot give.
+`Timmy's stuff/SPEC.md`. Team, track and challenge prompt confirmed by the team.
 
 ## 1. Team and prompt
-- **Team name:** TO CONFIRM.
-- **Track:** TO CONFIRM, on-campus (24 hours, due Sat Oct 17 1 PM ET) or Virtual DL Challenge (7 days, due Fri Oct 23 3 PM ET).
-- **Prompt we chose:** TO CONFIRM. Copy the prompt number and exact title from the Devpost challenge page.
-  The business task the app was built to is "Log transformer loads and monitor capacity against limits
-  across Tompkins County" (see `BUILD.md`). It is an energy-systems reliability prompt.
+- **Team name:** SplitSync.
+- **Track:** On-campus (24-hour sprint).
+- **Challenge category:** Energy Systems.
+- **Prompt we chose:** Smart Grid Transformer Surges.
+
+  > Due to sudden local adoption of heat pumps, EVs, data centers, etc., local step-down transformers are blowing out. The utility has no predictive tracking. Design a system to log load and monitor/model the ability of the system to meet transformer requirements/limits to support local neighorhoods.
+
 - **Our public repo:** github.com/Ash1129/MAE5930 (the app lives in `transformer-capacity-monitor/`).
 
 ## 2. User and use case (rubric: scope 5, user and use case 5)
@@ -20,8 +22,9 @@ then the code. Filled in from the app as built, following the hackathon template
   changed, its headroom below the nameplate rating is thin or uncertain, or projected heat-pump growth
   would push its peak to 90% of rating or more. The engineer records a disposition on each flagged
   transformer, then signs off the period report.
-- **Why this matches the prompt:** it logs transformer loads and monitors them against their rated limits
-  across the county, with SPC deciding when a change is real and capability deciding how much margin is left.
+- **Why this matches the prompt:** it logs neighborhood transformer loads, uses SPC to flag changes in
+  daily peaks, measures headroom against transformer ratings, and projects additional heat-pump demand
+  so utility planners can identify transformers that may struggle to meet future neighborhood needs.
 
 ## 3. Inputs (rubric: minimal inputs 5)
 Four feeds a utility planning team already holds. The engineer types nothing per run. Full column
