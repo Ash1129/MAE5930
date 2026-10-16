@@ -33,8 +33,8 @@
 <body>
 <header>
   <span class="brand">Transformer Capacity Monitor <span class="muted small">Tompkins County</span></span>
-  <a href="{{ url_for('dashboard') }}">Dashboard</a>
   <a href="{{ url_for('map_latest') }}">Map</a>
+  <a href="{{ url_for('dashboard') }}">Dashboard</a>
   <a href="{{ url_for('alerts') }}">Alerts{% if unacked_alerts %} <span class="tag bad">{{ unacked_alerts }}</span>{% endif %}</a>
   <a href="{{ url_for('metrics') }}">Review metrics</a>
   <a href="{{ url_for('setup') }}">Setup</a>

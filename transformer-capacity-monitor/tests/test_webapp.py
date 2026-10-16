@@ -21,7 +21,7 @@ def _wait_run(webapp, run_id, timeout=60):
 
 def test_full_user_path_and_approval_gate(sandbox):
     client, webapp = _client(sandbox)
-    assert client.get("/").status_code == 200
+    assert client.get("/dashboard").status_code == 200
     resp = client.post("/runs", data={"period_end": "2026-10-15"})
     assert resp.status_code == 302
     run_id = resp.headers["Location"].rsplit("/", 1)[-1]
@@ -80,7 +80,8 @@ def test_missing_input_shows_failed_run(sandbox):
     assert run["status"] == "failed" and run["current_step"] == 5
     page = client.get(f"/runs/{run_id}")
     assert b"failed" in page.data and b"missing" in page.data
-    assert client.get("/").status_code == 200 and b"Unacknowledged alerts" in client.get("/").data
+    assert client.get("/dashboard").status_code == 200 and b"Unacknowledged alerts" in client.get("/dashboard").data
+    assert client.get("/").status_code == 302 and client.get("/", follow_redirects=True).status_code == 200
 
 
 def test_injection_in_notes_is_refused(sandbox):

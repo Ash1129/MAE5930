@@ -60,7 +60,7 @@ def _pct(v):
 
 # ---- dashboard / intake ------------------------------------------------------------------
 
-@app.route("/")
+@app.route("/dashboard")
 def dashboard():
     sched = airflow_client.status()
     runs = store.list_runs(limit=15)
@@ -218,11 +218,13 @@ def report_file(period_id, filename):
 
 # ---- map ---------------------------------------------------------------------------------
 
+@app.route("/")
 @app.route("/map")
 def map_latest():
+    """Home page: the map of the latest period. Falls back to the dashboard until a period exists."""
     periods = store.list_periods(limit=1)
     if not periods:
-        flash("Run a period first; the map shows the latest period's results.", "error")
+        flash("Run a period first; the map shows the latest period's results.", "info")
         return redirect(url_for("dashboard"))
     return redirect(url_for("period_map", period_id=periods[0]["period_id"]))
 
