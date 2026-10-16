@@ -146,7 +146,10 @@ The generator re-draws each series until the real pipeline confirms the intended
 .venv/bin/python scripts/make_synthetic_data.py --end 2026-10-15 --scenario missing-rating
 ```
 
-Each command overwrites `data/feeds/`. To run a scenario without touching `data/feeds/`, use
+Each command overwrites `data/feeds/`. `readings.csv` is git-ignored because the 500-transformer run is
+about 42 MB. `./scripts/setup_env.sh` regenerates it with `--count 500` when it is missing. The seeded
+generator then produces readings that match the committed `assets.csv`, `boundaries.geojson` and
+`heat_pump_forecast.csv`. To run a scenario without touching `data/feeds/`, use
 `scripts/run_demo.py`, which works in a temporary folder (see `demo/README.md`). A fourth scenario,
 `unsafe-text`, plants an instruction-like note to test the input guard.
 

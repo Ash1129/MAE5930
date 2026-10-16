@@ -1,0 +1,145 @@
+# CONTRACT.yaml - the task ledger for the Transformer Capacity Monitor.
+# SPEC.md says what the tool IS. This file says what is being DONE.
+# Adapted from the hackathon template in "Timmy's stuff/CONTRACT.yaml". The eight tasks map to the
+# 100-point rubric (Timmy's stuff/docs/criteria.md). Where this app's layout differs from the template
+# (no app/ folder, statistics in capacity_monitor/pipeline.py), the definition_of_done says so.
+#
+# Rules: one task in_progress per person; check out (status, owner, started_at) before work; check in
+# (status done + one-line result) in the same commit as the work; definition_of_done is a runnable check
+# whose output is quoted in result. Quote any string that contains a colon. No tabs.
+# Check it parses:  python -c "import yaml; yaml.safe_load(open('CONTRACT.yaml'))"
+
+spec: SPEC.md
+updated: "2026-10-16"
+
+tasks:
+  - id: H-01
+    title: Fill in every blank in SPEC.md
+    points: "15 - Tool Design: scope matches a prompt (5), clear user and use case (5), minimal inputs (5)"
+    status: in_progress
+    owner: "team"
+    started_at: "2026-10-16 18:20"
+    owns: ["SPEC.md"]
+    definition_of_done: >
+      grep -c "FILL IN" SPEC.md prints 0 and grep -c "TO CONFIRM" SPEC.md prints 0, and every
+      teammate can say the method sentence in SPEC section 4 without reading it.
+    result: >
+      Sections 2 to 9 are filled from the app as built. "grep -c FILL IN" prints 0. Three items are
+      still marked TO CONFIRM because only the team knows them: team name, track, and the Devpost
+      prompt number and title. Devpost blocks automated reads.
+
+  - id: H-02
+    title: Two or three test datasets plus a codebook
+    points: "10 - Tool Documentation: 2-3 working test datasets (5), codebook and README for the data (5)"
+    status: done
+    owner: "Claude"
+    started_at: "2026-10-16 18:20"
+    owns: ["data/README.md", "scripts/run_demo.py"]
+    definition_of_done: >
+      data/README.md names every feed file and describes every column with units, how the tool uses
+      it, and how it would be collected for real; scripts/run_demo.py runs on each of the three
+      datasets (normal, boundary-mismatch, missing-rating). Deviation from the template, which asks
+      for ls data/*.csv to list 2-3 files - each dataset here is four feed files from a seeded generator.
+    result: >
+      data/README.md written (4 files, every column, units, rules applied, real collection method,
+      planted-case table). run_demo.py printed "12 transformers - 7 within limits, 5 need review"
+      for normal, and "failed, stopped at step 7" with the expected blocking problem for the other two.
+
+  - id: H-03
+    title: Core QC statistics as plain, tested functions
+    points: "25 - Tool Implementation: valid analyses relevant to quality control in R or Python"
+    status: done
+    owner: "App Six Sigma session"
+    started_at: "2026-10-16 18:15"
+    owns: ["capacity_monitor/pipeline.py", "tests/"]
+    definition_of_done: >
+      .venv/bin/python -m pytest tests -q passes, including known-answer tests (I-MR limits, Cpk,
+      hand-computed Bissell interval, forecast with unit conversion) and degenerate cases (constant
+      data, n = 1, empty, non-finite). Deviation - the statistics are in capacity_monitor/pipeline.py,
+      not app/qc.py.
+    result: "pytest tests -q printed '24 passed in 3.75s' on 2026-10-16."
+
+  - id: H-04
+    title: Working tool wired to the H-03 functions
+    points: "25 - Tool Implementation: an effective, working tool (does it run?)"
+    status: in_progress
+    owner: ""
+    started_at: ""
+    owns: ["webapp/", "airflow/", "scripts/", "app/"]
+    notes: >
+      The tool runs locally (Flask review app on port 5055, Airflow scheduler, end-to-end runs recorded
+      in DELIVERY-REPORT.md). Open gap - the template expects one demo copied into app/ with the
+      four-script contract (testme, manifestme, deployme, README.md). The stack is Flask plus Airflow,
+      not one of the listed starters. Decide whether to wrap the Flask app in app/ with those scripts.
+    definition_of_done: >
+      One testme script starts the tool with one command, and a run on the normal dataset shows the
+      same numbers as demo/README.md.
+    result: >
+      Local run works - run_demo.py normal matches demo/README.md. No app/ folder or testme script yet.
+
+  - id: H-05
+    title: Demonstration of the tool on every test dataset
+    points: "10 - Tool Design: a clear demonstration of the tool, using test datasets"
+    status: done
+    owner: "Claude"
+    started_at: "2026-10-16 18:25"
+    owns: ["demo/"]
+    definition_of_done: >
+      demo/README.md walks through each dataset with the exact command, the numbers the tool prints,
+      and a one-line "how to read this"; a teammate who did not write it follows it and gets the same
+      numbers.
+    result: >
+      demo/README.md covers normal, boundary-mismatch and missing-rating with pasted output and hand
+      checks for T-DRY-004, T-DAN-010, T-LAN-005, T-CAR-006 and T-ULY-007. Not yet followed by a teammate.
+
+  - id: H-06
+    title: Deploy to the course Posit Connect server
+    points: "protects the 25 working-tool points - judges must be able to open it"
+    status: todo
+    owner: ""
+    started_at: ""
+    owns: [".github/workflows/", ".github/scripts/", "manifest.json"]
+    notes: >
+      Blocked on the publisher key (handed out at the event; it goes into repo secrets, never a file).
+      Airflow cannot run on Posit Connect, so deploy the Flask review app only, with "Run now" in place
+      of the schedule. There is no Flask workflow in connect-publish - adapt the FastAPI one or use
+      rsconnect-python deploy flask.
+    definition_of_done: >
+      The public URL answers HTTP 200 from a logged-out browser and shows the normal-dataset numbers
+      from demo/README.md.
+    result: ""
+
+  - id: H-07
+    title: README and function documentation
+    points: "10 - Tool Documentation: excellent, easy-to-follow documentation"
+    status: in_progress
+    owner: "Claude"
+    started_at: "2026-10-16 18:30"
+    owns: ["README.md"]
+    definition_of_done: >
+      README.md says what the tool does, for whom, every input and parameter, how each function works,
+      how to run it, the live URL, and links demo/README.md; a teammate follows it from a fresh clone.
+    result: >
+      README.md written with the user, inputs, parameter table, function table, run commands and links.
+      Missing - the live URL (needs H-06) and a teammate's fresh-clone check.
+
+  - id: H-08
+    title: Reproducible public repo, submitted on Devpost
+    points: "5 - Tool Documentation: fully reproducible code, posted publicly to GitHub"
+    status: in_progress
+    owner: ""
+    started_at: ""
+    owns: [".gitignore", "requirements.txt"]
+    notes: >
+      requirements.txt pins the tested versions. scripts/setup_env.sh still installs version ranges
+      ("apache-airflow[standard]>=3.0,<4", "flask>=3,<4"); point it at requirements.txt.
+      Fixed in fdd18e3 - readings.csv is untracked and setup_env.sh generates the 500-transformer feed
+      set when it is missing. A simulated fresh clone regenerated an identical assets.csv and ran
+      period 2026-10-15 to step 15 (403 within limits, 97 review needed).
+    definition_of_done: >
+      git clone of github.com/Ash1129/MAE5930 into an empty folder, then one setup command and
+      pytest tests -q both pass; git grep -i "api_key" finds no real key; the Devpost entry links the repo.
+    result: >
+      requirements.txt added. On 2026-10-16 a copy of the app with no .venv, plus a new Python 3.12 venv
+      holding only requirements.txt, printed "24 passed in 4.71s" for pytest and the same normal-demo
+      result. Not yet tested from an actual git clone. Devpost submission not done.
