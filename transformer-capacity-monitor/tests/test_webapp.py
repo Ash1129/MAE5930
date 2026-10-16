@@ -81,7 +81,9 @@ def test_missing_input_shows_failed_run(sandbox):
     page = client.get(f"/runs/{run_id}")
     assert b"failed" in page.data and b"missing" in page.data
     assert client.get("/dashboard").status_code == 200 and b"Needs attention" in client.get("/dashboard").data
-    assert client.get("/").status_code == 302 and client.get("/", follow_redirects=True).status_code == 200
+    # no period exists after a failed first run: the home page renders the first-launch map
+    home = client.get("/")
+    assert home.status_code == 200 and b"No period has been run yet" in home.data
 
 
 def test_injection_in_notes_is_refused(sandbox):

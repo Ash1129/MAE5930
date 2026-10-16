@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/classical-ece0769b-4784-46e9-8118-18176f9fe202/styles.css">
+  <script src="_ds/classical-ece0769b-4784-46e9-8118-18176f9fe202/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;background:#0f1216}
+    a{color:var(--color-accent-400)} a:hover{color:var(--color-accent-300)}
+  </style>
+</helmet>
+<section id="turn-1" style="padding:48px;display:flex;flex-direction:column;gap:40px;font-family:var(--font-body);color:#e8e6e3;font-variant-numeric:tabular-nums">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:900px">
+    <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,230,227,.55)">Transformer Capacity Monitor · landing page states</div>
+    <h1 style="font-family:var(--font-heading);font-weight:400;font-size:40px;line-height:1.05;margin:0;color:#f3f2f2">Artboards</h1>
+    <div style="font-size:14px;color:rgba(232,230,227,.7);text-wrap:pretty">Each board is the live <a href="Capacity Monitor Landing.dc.html">landing page</a> pinned to one state, with spec callouts beside it. Desktop boards are 1440 × 900; tablet 768 × 1024; phone 390 × 844. Tokens and structure notes live in the <a href="handoff/HANDOFF.md">handoff package</a>.</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start">
+
+    <div id="1a" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:12px"><a href="#1a" style="font-family:var(--font-heading);font-weight:600;font-size:13px;padding:2px 8px;border:1px solid var(--color-accent);border-radius:999px;text-decoration:none;color:var(--color-accent-400)">1a</a><span style="font-family:var(--font-heading);font-weight:600;font-size:22px;color:#f3f2f2">Normal</span><span style="font-size:12px;color:rgba(232,230,227,.55)">1440 × 900 · resting panels, ~400 green / ~100 red</span></div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div style="width:1440px;height:900px;overflow:hidden;border:1px solid rgba(255,255,255,.12);flex:none"><dc-import name="Capacity Monitor Landing" scenario="normal" frame="desktop" hint-size="1440px,900px"></dc-import></div>
+        <div style="width:220px;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.45;color:rgba(232,230,227,.8)">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,230,227,.5)">Callouts</div>
+          <div><b style="color:#f3f2f2">Top bar</b> 52 h · 16 side gutters · radius 16 · brand 21 Cormorant 600</div>
+          <div><b style="color:#f3f2f2">Districts</b> 220 w · 44 h rows · radius 20 · Whole county first, then 12 alphabetically</div>
+          <div><b style="color:#f3f2f2">Review needed</b> 300 w · red count in heading · Finalize disabled with reason</div>
+          <div><b style="color:#f3f2f2">Glass</b> white 62% · blur 24 · saturate 1.5 · border white 35% · shadow 0 10 30 25%</div>
+          <div><b style="color:#f3f2f2">Dots</b> red 11 / green 8 · 2px white ring · 95%</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1b" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:12px"><a href="#1b" style="font-family:var(--font-heading);font-weight:600;font-size:13px;padding:2px 8px;border:1px solid var(--color-accent);border-radius:999px;text-decoration:none;color:var(--color-accent-400)">1b</a><span style="font-family:var(--font-heading);font-weight:600;font-size:22px;color:#f3f2f2">District selected</span><span style="font-size:12px;color:rgba(232,230,227,.55)">City of Ithaca · heat strip · Hotspots now</span></div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div style="width:1440px;height:900px;overflow:hidden;border:1px solid rgba(255,255,255,.12);flex:none"><dc-import name="Capacity Monitor Landing" scenario="district" frame="desktop" hint-size="1440px,900px"></dc-import></div>
+        <div style="width:220px;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.45;color:rgba(232,230,227,.8)">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,230,227,.5)">Callouts</div>
+          <div><b style="color:#f3f2f2">Heat strip</b> spans between panels (left 252 · right 332) · top 80</div>
+          <div><b style="color:#f3f2f2">Segments</b> Recorded / Seasonal model · Utilization / Load · accent ring on the active option</div>
+          <div><b style="color:#f3f2f2">Sliders</b> 48px label col · live label right · Play outlined</div>
+          <div><b style="color:#f3f2f2">Outside district</b> dots 25% · boundaries 30%</div>
+          <div><b style="color:#f3f2f2">Sidebar</b> filters to district, heading says "in …", Hotspots now with bar per transformer</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1c" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:12px"><a href="#1c" style="font-family:var(--font-heading);font-weight:600;font-size:13px;padding:2px 8px;border:1px solid var(--color-accent);border-radius:999px;text-decoration:none;color:var(--color-accent-400)">1c</a><span style="font-family:var(--font-heading);font-weight:600;font-size:22px;color:#f3f2f2">Dot popup</span><span style="font-size:12px;color:rgba(232,230,227,.55)">anchored above the dot</span></div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div style="width:1440px;height:900px;overflow:hidden;border:1px solid rgba(255,255,255,.12);flex:none"><dc-import name="Capacity Monitor Landing" scenario="popup" frame="desktop" hint-size="1440px,900px"></dc-import></div>
+        <div style="width:220px;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.45;color:rgba(232,230,227,.8)">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,230,227,.5)">Callouts</div>
+          <div><b style="color:#f3f2f2">Card</b> 300 w · white 72% · blur 28 · 18px above the dot, centered</div>
+          <div><b style="color:#f3f2f2">Rows</b> label 60% ink · value 90% · every figure carries kVA or "% of rating"</div>
+          <div><b style="color:#f3f2f2">Estimate</b> projected peak carries an ESTIMATE micro-label</div>
+          <div><b style="color:#f3f2f2">Action</b> Open full review → /periods/&lt;id&gt;/transformers/&lt;tid&gt;</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1d" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:12px"><a href="#1d" style="font-family:var(--font-heading);font-weight:600;font-size:13px;padding:2px 8px;border:1px solid var(--color-accent);border-radius:999px;text-decoration:none;color:var(--color-accent-400)">1d</a><span style="font-family:var(--font-heading);font-weight:600;font-size:22px;color:#f3f2f2">Run in progress</span><span style="font-size:12px;color:rgba(232,230,227,.55)">pill shows step n of 15 · map dims 32%</span></div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div style="width:1440px;height:900px;overflow:hidden;border:1px solid rgba(255,255,255,.12);flex:none"><dc-import name="Capacity Monitor Landing" scenario="running" frame="desktop" hint-size="1440px,900px"></dc-import></div>
+        <div style="width:220px;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.45;color:rgba(232,230,227,.8)">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,230,227,.5)">Callouts</div>
+          <div><b style="color:#f3f2f2">Pill</b> spinner (accent) · "Running, step 8 of 15" · 80px progress track</div>
+          <div><b style="color:#f3f2f2">Map</b> overlay rgba(5,8,12,.32), pointer-events none; panels stay usable</div>
+          <div><b style="color:#f3f2f2">Done</b> pill returns to idle and dots refresh</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1e" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:12px"><a href="#1e" style="font-family:var(--font-heading);font-weight:600;font-size:13px;padding:2px 8px;border:1px solid var(--color-accent);border-radius:999px;text-decoration:none;color:var(--color-accent-400)">1e</a><span style="font-family:var(--font-heading);font-weight:600;font-size:22px;color:#f3f2f2">Run failed</span><span style="font-size:12px;color:rgba(232,230,227,.55)">red pill · headline · link to the alert</span></div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div style="width:1440px;height:900px;overflow:hidden;border:1px solid rgba(255,255,255,.12);flex:none"><dc-import name="Capacity Monitor Landing" scenario="failed" frame="desktop" hint-size="1440px,900px"></dc-import></div>
+        <div style="width:220px;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.45;color:rgba(232,230,227,.8)">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,230,227,.5)">Callouts</div>
+          <div><b style="color:#f3f2f2">Pill</b> border #D7263D · fill red 10% · ink #9e1428 · "See alert" opens the bell dropdown</div>
+          <div><b style="color:#f3f2f2">Bell</b> count rises; feed chip for readings.csv reads "missing"</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1f" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:12px"><a href="#1f" style="font-family:var(--font-heading);font-weight:600;font-size:13px;padding:2px 8px;border:1px solid var(--color-accent);border-radius:999px;text-decoration:none;color:var(--color-accent-400)">1f</a><span style="font-family:var(--font-heading);font-weight:600;font-size:22px;color:#f3f2f2">First launch</span><span style="font-size:12px;color:rgba(232,230,227,.55)">boundaries only · no dots</span></div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div style="width:1440px;height:900px;overflow:hidden;border:1px solid rgba(255,255,255,.12);flex:none"><dc-import name="Capacity Monitor Landing" scenario="first-launch" frame="desktop" hint-size="1440px,900px"></dc-import></div>
+        <div style="width:220px;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.45;color:rgba(232,230,227,.8)">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,230,227,.5)">Callouts</div>
+          <div><b style="color:#f3f2f2">Sidebar</b> "No period has been run yet" · one primary action "Run the first period"</div>
+          <div><b style="color:#f3f2f2">Legend</b> counts read 0 · status line "No runs yet"</div>
+          <div><b style="color:#f3f2f2">Note</b> this prototype keeps dots in the data; production shows none until the first period</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1g" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:12px"><a href="#1g" style="font-family:var(--font-heading);font-weight:600;font-size:13px;padding:2px 8px;border:1px solid var(--color-accent);border-radius:999px;text-decoration:none;color:var(--color-accent-400)">1g</a><span style="font-family:var(--font-heading);font-weight:600;font-size:22px;color:#f3f2f2">Run box expanded</span><span style="font-size:12px;color:rgba(232,230,227,.55)">hover / focus state of the pill</span></div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div style="width:1440px;height:900px;overflow:hidden;border:1px solid rgba(255,255,255,.12);flex:none"><dc-import name="Capacity Monitor Landing" scenario="run-open" frame="desktop" hint-size="1440px,900px"></dc-import></div>
+        <div style="width:220px;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.45;color:rgba(232,230,227,.8)">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,230,227,.5)">Callouts</div>
+          <div><b style="color:#f3f2f2">Card</b> 340 w · 40px below the pill · white 72% · radius 20</div>
+          <div><b style="color:#f3f2f2">Fields</b> date defaults to yesterday · Run now outlined primary</div>
+          <div><b style="color:#f3f2f2">Feed chips</b> four, green "present" / red "missing"</div>
+          <div><b style="color:#f3f2f2">Collapse</b> on pointer leave or focus leaving the group</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1h" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:12px"><a href="#1h" style="font-family:var(--font-heading);font-weight:600;font-size:13px;padding:2px 8px;border:1px solid var(--color-accent);border-radius:999px;text-decoration:none;color:var(--color-accent-400)">1h</a><span style="font-family:var(--font-heading);font-weight:600;font-size:22px;color:#f3f2f2">Alerts dropdown</span><span style="font-size:12px;color:rgba(232,230,227,.55)">latest alert · What happened / What to do</span></div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div style="width:1440px;height:900px;overflow:hidden;border:1px solid rgba(255,255,255,.12);flex:none"><dc-import name="Capacity Monitor Landing" scenario="alerts" frame="desktop" hint-size="1440px,900px"></dc-import></div>
+        <div style="width:220px;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.45;color:rgba(232,230,227,.8)">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,230,227,.5)">Callouts</div>
+          <div><b style="color:#f3f2f2">Card</b> 320 w, right-aligned under the bell</div>
+          <div><b style="color:#f3f2f2">Rows</b> uppercase micro-labels 10px .1em in a 96px column; three short lines, never a paragraph</div>
+          <div><b style="color:#f3f2f2">Link</b> "All alerts (n)" → /alerts</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1i" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:12px"><a href="#1i" style="font-family:var(--font-heading);font-weight:600;font-size:13px;padding:2px 8px;border:1px solid var(--color-accent);border-radius:999px;text-decoration:none;color:var(--color-accent-400)">1i</a><span style="font-family:var(--font-heading);font-weight:600;font-size:22px;color:#f3f2f2">Tablet</span><span style="font-size:12px;color:rgba(232,230,227,.55)">768 × 1024</span></div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div style="width:768px;height:1024px;overflow:hidden;border:1px solid rgba(255,255,255,.12);flex:none"><dc-import name="Capacity Monitor Landing" scenario="district" frame="tablet" hint-size="768px,1024px"></dc-import></div>
+        <div style="width:220px;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.45;color:rgba(232,230,227,.8)">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,230,227,.5)">Callouts · under 1000px</div>
+          <div><b style="color:#f3f2f2">Districts</b> become a horizontal chip row at top 76, 36 h pills</div>
+          <div><b style="color:#f3f2f2">Review list</b> becomes a bottom sheet: 140 collapsed, 62% open, drag handle</div>
+          <div><b style="color:#f3f2f2">Heat strip</b> full width under the chips</div>
+          <div><b style="color:#f3f2f2">Run box</b> a "Run" button that opens the card as a sheet</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1j" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:12px"><a href="#1j" style="font-family:var(--font-heading);font-weight:600;font-size:13px;padding:2px 8px;border:1px solid var(--color-accent);border-radius:999px;text-decoration:none;color:var(--color-accent-400)">1j</a><span style="font-family:var(--font-heading);font-weight:600;font-size:22px;color:#f3f2f2">Phone</span><span style="font-size:12px;color:rgba(232,230,227,.55)">390 × 844</span></div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div style="width:390px;height:844px;overflow:hidden;border:1px solid rgba(255,255,255,.12);flex:none"><dc-import name="Capacity Monitor Landing" scenario="normal" frame="phone" hint-size="390px,844px"></dc-import></div>
+        <div style="width:220px;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.45;color:rgba(232,230,227,.8)">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,230,227,.5)">Callouts · under 600px</div>
+          <div><b style="color:#f3f2f2">Top bar</b> brand, Run, bell, Setup icon only; period and reviewer move to Setup</div>
+          <div><b style="color:#f3f2f2">Legend</b> counts only; status line hidden</div>
+          <div><b style="color:#f3f2f2">Hit targets</b> all ≥ 44px rows, 36px chips with 44px total touch area</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

@@ -39,6 +39,10 @@ Test suite after the fixes: **24 passed**. Evaluation cases: 6 of 6.
 
 `scripts/make_synthetic_data.py --count 500` keeps the 12 labeled cases and adds 488 generated transformers spread across the twelve areas (ratings 25 to 500 kVA, 86% designed to be within limits, the rest a mix of chart signal, low Cpk, uncertain Cpk, forecast exceedance and insufficient history). On this dataset one full run (steps 1-15, 732,000 hourly readings) takes about 3 seconds; the result was 500 monitored, 403 within limits, 97 review needed (36 chart signals, 7 insufficient history, 13 low Cpk, 20 uncertain Cpk, 21 forecast exceedances). The 42 MB readings file is not committed to git; the Start launcher regenerates it when missing.
 
+## Landing page rebuilt to the design handoff (2026-10-16)
+
+`webapp/templates/map.html` now reproduces `design_handoff_landing_page/design/Capacity Monitor Landing.dc.html`: full-bleed satellite map, liquid-glass top bar with the collapsible run box (expands on hover/focus, shows progress "Running, step n of 15" and a failure pill with "See alert"), districts panel with red counts, review sidebar with hotspots and the finalize control (disabled with a reason until every red case has a decision; backend 409 unchanged), glass dot popup, legend with scheduler status, zoom and Satellite/Streets controls, tablet chip row and phone bottom sheet. Fonts, colors, radii, blur and copy follow `tokens.css`. Routes, data and the finalize rule are unchanged; two small JSON endpoints were added for run progress. Tests: 30 pass.
+
 ## Plain-language alerts (added 2026-10-16)
 
 - **Rule-based explanations** (`capacity_monitor/explain.py`, no AI): every alert and failed run shows a headline, "What happened" and "What to do" written from fixed templates for the known failure patterns (wrong-period boundary file, missing rating, missing feed, incomplete readings, unit mismatch, forecast version, scheduler task failure), with the technical text under "Technical details" and overlap notes grouped as "nothing to fix". Duplicate scheduler alerts are suppressed.

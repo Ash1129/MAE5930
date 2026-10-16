@@ -238,56 +238,78 @@ def report_file(period_id, filename):
 @app.route("/")
 @app.route("/map")
 def map_latest():
-    """Home page: the map of the latest period. Falls back to the dashboard until a period exists."""
+    """Home page: the map of the latest period, or the first-launch map (boundaries only) before any run."""
     periods = store.list_periods(limit=1)
     if not periods:
-        flash("Run a period first; the map shows the latest period's results.", "info")
-        return redirect(url_for("dashboard"))
+        return _render_map(None)
     return redirect(url_for("period_map", period_id=periods[0]["period_id"]))
 
 
 @app.route("/periods/<period_id>/map")
 def period_map(period_id):
+    if not store.get_period(period_id):
+        abort(404)
+    return _render_map(period_id)
+
+
+def _latest_alert() -> dict | None:
+    alerts = store.list_alerts(limit=1, unacknowledged_only=True)
+    if not alerts:
+        return None
+    a = alerts[0]
+    e = explain.explain_alert(a.get("message", ""), a.get("step"))
+    ai = store.get_ai_explanation(ai_explain._key(a.get("message", ""), a.get("step"))) if ai_explain.enabled(store) else None
+    return {
+        "id": a["id"],
+        "when": a["created_at"],
+        "headline": (ai or e)["title"],
+        "happened": (ai or e)["meaning"],
+        "todo": (ai or e)["action"],
+        "run_id": a.get("run_id"),
+        "period_id": a.get("period_id"),
+    }
+
+
+def _render_map(period_id: str | None):
     import json
 
-    period = store.get_period(period_id)
-    if not period:
-        abort(404)
+    period = store.get_period(period_id) if period_id else None
     points = []
-    for r in store.get_transformer_results(period_id):
-        if r.get("lat") is None or r.get("lon") is None:
-            continue
-        c = r["capacity"]
-        d = r.get("disposition")
-        points.append(
-            {
-                "id": r["transformer_id"],
-                "name": r["name"],
-                "lat": r["lat"],
-                "lon": r["lon"],
-                "status": r["status"],
-                "stability": r["stability"],
-                "area": r.get("area_id", ""),
-                "area_name": r.get("area_name", ""),
-                "rating": r["rated_max"],
-                "unit": r["unit"],
-                "period_peak": c["period_peak"],
-                "period_peak_ratio": c["period_peak_ratio"],
-                "cpk": c["cpk"],
-                "cpk_ci_low": c["cpk_ci_low"],
-                "cpk_ci_high": c["cpk_ci_high"],
-                "projected_peak": c["projected_peak"],
-                "forecast_ratio": c["forecast_ratio"],
-                "reason": r["decision"]["reason"],
-                "rule": r["decision"]["rule"],
-                "signals": [f"{s['rule']} on {s['date']}" for s in r["chart"]["signals"]][:4],
-                "assumption_flags": c.get("assumption_flags", []),
-                "disposition": (f"{DECISIONS[d['decision']]} by {d['reviewer']}") if d else None,
-                "url": url_for("transformer_detail", period_id=period_id, tid=r["transformer_id"]),
-                "is_calibration": r["is_calibration"],
-                "cls": r.get("customer_class", "unknown"),
-            }
-        )
+    if period:
+        for r in store.get_transformer_results(period_id):
+            if r.get("lat") is None or r.get("lon") is None:
+                continue
+            c = r["capacity"]
+            d = r.get("disposition")
+            points.append(
+                {
+                    "id": r["transformer_id"],
+                    "name": r["name"],
+                    "lat": r["lat"],
+                    "lon": r["lon"],
+                    "status": r["status"],
+                    "stability": r["stability"],
+                    "area": r.get("area_id", ""),
+                    "area_name": r.get("area_name", ""),
+                    "rating": r["rated_max"],
+                    "unit": r["unit"],
+                    "period_peak": c["period_peak"],
+                    "period_peak_ratio": c["period_peak_ratio"],
+                    "cpk": c["cpk"],
+                    "cpk_ci_low": c["cpk_ci_low"],
+                    "cpk_ci_high": c["cpk_ci_high"],
+                    "projected_peak": c["projected_peak"],
+                    "forecast_ratio": c["forecast_ratio"],
+                    "reason": r["decision"]["reason"],
+                    "rule": r["decision"]["rule"],
+                    "signals": [f"{s['rule']} on {s['date']}" for s in r["chart"]["signals"]][:4],
+                    "assumption_flags": c.get("assumption_flags", []),
+                    "disposition": (f"{DECISIONS[d['decision']]} by {d['reviewer']}") if d else None,
+                    "url": url_for("transformer_detail", period_id=period_id, tid=r["transformer_id"]),
+                    "is_calibration": r["is_calibration"],
+                    "cls": r.get("customer_class", "unknown"),
+                }
+            )
     boundaries = None
     bpath = config.FEEDS_DIR / config.FEED_FILES["boundaries"]
     if bpath.exists():
@@ -297,22 +319,23 @@ def period_map(period_id):
             boundaries = None
     periods = [p["period_id"] for p in store.list_periods(limit=20)]
     pb = config.load_playbook()
-    return render_template("map.html", period=period, points=points, boundaries=boundaries, periods=periods, districts=_districts(boundaries),
-                           feeds=feed_status(), default_end=(date.today() - timedelta(days=1)).isoformat(), playbook=pb,
-                           dates=heat.dates(), seasonal=pb.get("seasonal_model", {}), heat_default_date=period["period"]["end"])
-
-
-# ---- heatmap ------------------------------------------------------------------------------
-
-def _heat_points(period_id: str) -> list[dict]:
-    pts = []
-    for r in store.get_transformer_results(period_id):
-        if r.get("lat") is None or r.get("lon") is None or r.get("is_calibration"):
-            continue
-        pts.append({"id": r["transformer_id"], "name": r["name"], "lat": r["lat"], "lon": r["lon"], "rating": r["rated_max"], "unit": r["unit"],
-                    "area": r["area_id"], "area_name": r.get("area_name", ""), "cls": r.get("customer_class", "unknown"), "status": r["status"],
-                    "url": url_for("transformer_detail", period_id=period_id, tid=r["transformer_id"])})
-    return pts
+    return render_template(
+        "map.html",
+        period=period,
+        points=points,
+        boundaries=boundaries,
+        periods=periods,
+        districts=_districts(boundaries),
+        feeds=feed_status(),
+        default_end=(date.today() - timedelta(days=1)).isoformat(),
+        playbook=pb,
+        dates=heat.dates() if period else [],
+        seasonal=pb.get("seasonal_model", {}),
+        heat_default_date=period["period"]["end"] if period else None,
+        latest_alert=_latest_alert(),
+        sched=airflow_client.status(),
+        last_run=store.last_run(),
+    )
 
 
 def _districts(boundaries) -> list[dict]:
@@ -438,7 +461,44 @@ def metrics():
 @app.route("/api/status")
 def api_status():
     last = store.last_run()
-    return {"last_run": last and {k: last[k] for k in ("run_id", "period_id", "status", "started_at", "finished_at", "error")}, "scheduler": airflow_client.status(), "feeds": feed_status()}
+    return {
+        "last_run": last and {k: last[k] for k in ("run_id", "period_id", "status", "started_at", "finished_at", "error", "current_step")},
+        "scheduler": airflow_client.status(),
+        "feeds": feed_status(),
+        "latest_alert": _latest_alert(),
+        "unacknowledged_alerts": len(store.list_alerts(unacknowledged_only=True)),
+    }
+
+
+@app.post("/api/runs")
+def api_start_run():
+    """Start a run from the map page's run box; returns the run id to poll."""
+    period_end = (request.get_json(silent=True) or {}).get("period_end") or request.form.get("period_end", "")
+    try:
+        d = date.fromisoformat(str(period_end).strip())
+    except ValueError:
+        return {"error": "Enter a valid period end date (YYYY-MM-DD)."}, 400
+    if d > date.today():
+        return {"error": "The period end cannot be in the future."}, 400
+    run_id = new_run_id(period_for(d), "manual")
+    t = threading.Thread(target=execute_run, args=(d, "manual", Store()), kwargs={"run_id": run_id}, daemon=True)
+    _running[run_id] = t
+    t.start()
+    return {"run_id": run_id, "period_id": d.isoformat()}
+
+
+@app.route("/api/runs/<run_id>")
+def api_run(run_id):
+    run = store.get_run(run_id)
+    if not run:
+        if run_id in _running and _running[run_id].is_alive():
+            return {"run_id": run_id, "status": "running", "current_step": 1}
+        abort(404)
+    out = {k: run[k] for k in ("run_id", "period_id", "status", "current_step", "error")}
+    if run["status"] == "failed":
+        problems = [p for p in run.get("problems", []) if not p.startswith("warning:")]
+        out["headline"] = explain.explain_problem(problems[0] if problems else (run.get("error") or ""))["title"]
+    return out
 
 
 if __name__ == "__main__":

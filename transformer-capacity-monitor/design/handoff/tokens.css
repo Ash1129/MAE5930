@@ -1,0 +1,106 @@
+/* Transformer Capacity Monitor — landing page tokens (framework-agnostic) */
+:root {
+  /* status — fixed, never restyle */
+  --status-ok: #1B7F4B;        /* within limits */
+  --status-review: #D7263D;    /* review needed */
+  --status-modeled: #F4B400;   /* modeled / warning */
+  --status-info: #1F5FA8;      /* info, decision chips */
+
+  /* ink on glass */
+  --ink: #1D2430;
+  --ink-90: rgba(29,36,48,.9);
+  --ink-75: rgba(29,36,48,.75);
+  --ink-60: rgba(29,36,48,.6);
+  --ink-line: rgba(29,36,48,.12);
+
+  /* control accent (Classical) */
+  --accent: #b68235;
+  --accent-text: #7d5411;
+  --accent-tint: rgba(182,130,53,.12);
+  --accent-tint-press: rgba(182,130,53,.22);
+
+  /* liquid glass */
+  --glass-bg: rgba(255,255,255,.62);
+  --glass-bg-hover: rgba(255,255,255,.68);
+  --glass-bg-card: rgba(255,255,255,.72);      /* popups, dropdowns */
+  --glass-blur: blur(24px) saturate(1.5);
+  --glass-blur-card: blur(28px) saturate(1.5);
+  --glass-border: 1px solid rgba(255,255,255,.35);
+  --glass-highlight: inset 0 1px 0 rgba(255,255,255,.65);
+  --glass-shadow: 0 10px 30px rgba(0,0,0,.25);
+  --map-dim: rgba(5,8,12,.32);                 /* run in progress */
+
+  /* radius */
+  --radius-panel: 20px;
+  --radius-bar: 16px;
+  --radius-control: 12px;
+  --radius-row: 12px;
+  --radius-pill: 999px;
+
+  /* type */
+  --font-heading: "Cormorant Garamond", Georgia, serif;   /* titles, weight 600 */
+  --font-body: "Lora", Georgia, serif;                     /* everything else */
+  --text-title: 21px;   /* panel titles, popup id, brand */
+  --text-clock: 22px;   /* heat clock */
+  --text-body: 14px;
+  --text-small: 13px;
+  --text-caption: 12px;
+  --text-micro: 10px;   /* uppercase, letter-spacing .12em */
+  --figures: tabular-nums;
+
+  /* dots */
+  --dot-green: 8px;
+  --dot-red: 11px;
+  --dot-ring: 2px solid #fff;
+  --dot-opacity: .95;
+  --dot-opacity-outside: .25;
+
+  /* layout — desktop 1440×900 reference */
+  --gutter: 16px;
+  --bar-h: 52px;
+  --bar-top: 12px;
+  --panel-top: 80px;            /* bar-top + bar-h + 16 */
+  --panel-districts-w: 220px;
+  --panel-review-w: 300px;
+  --row-h: 44px;
+  --popup-w: 300px;
+  --runbox-w: 340px;
+  --alerts-w: 320px;
+
+  /* breakpoints */
+  --bp-narrow: 1000px;          /* below: chips + bottom sheet */
+  --bp-phone: 600px;            /* below: compact bar, legend counts only */
+  --sheet-collapsed: 140px;
+  --sheet-open: 62%;
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
+  transition: background .2s;
+}
+.glass:hover { background: var(--glass-bg-hover); }
+.glass-card { background: var(--glass-bg-card); backdrop-filter: var(--glass-blur-card); -webkit-backdrop-filter: var(--glass-blur-card); }
+
+.micro { font-size: var(--text-micro); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-60); }
+.title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-title); line-height: 1.1; }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; padding: 3px 9px; border-radius: var(--radius-pill); border: 1px solid currentColor; }
+.chip-ok { color: var(--status-ok); }
+.chip-review { color: var(--status-review); }
+.chip-decision { color: var(--status-info); padding: 2px 8px; }
+.badge-modeled { font-size: var(--text-micro); letter-spacing: .12em; text-transform: uppercase; font-weight: 600; padding: 3px 9px; border-radius: var(--radius-pill); background: var(--status-modeled); color: var(--ink); }
+.badge-recorded { font-size: var(--text-micro); letter-spacing: .12em; text-transform: uppercase; padding: 3px 9px; border-radius: var(--radius-pill); border: 1px solid var(--status-ok); color: var(--status-ok); }
+.estimate { font-size: var(--text-micro); letter-spacing: .08em; text-transform: uppercase; color: #8a6200; }
+
+.btn-outline { font-family: var(--font-heading); font-weight: 600; font-size: 14px; color: var(--accent); border: 1px solid var(--accent); background: transparent; border-radius: 4px; padding: 9px 16px; cursor: pointer; }
+.btn-outline:hover { background: var(--accent-tint); }
+.btn-outline:active { background: var(--accent-tint-press); }
+.btn-outline:disabled { opacity: .45; cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
