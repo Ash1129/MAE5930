@@ -68,7 +68,7 @@ fixed 24-hour residential load shape. The peak always falls at 18:00. Seed 7.
 | `rated_max` | decimal, kVA | nameplate rating, the upper capacity limit | Required and greater than 0, or the run stops at step 7. It is the upper limit in Cpk and the denominator of every "% of rating". It never sets control limits. |
 | `unit` | text, `kVA` or `kW` | unit of `rated_max` | Must match the readings unit. Also selects the forecast conversion: kW is divided by the power factor only for kVA assets. |
 | `customers` | integer, count | service points (meters) fed by this transformer | Multiplies the heat-pump adoption share in step 10. If blank, no projection is made and the case goes to review. |
-| `area_id` | text, e.g. `DRY` | declared primary planning area | Must match a boundary `area_id`. Used when the location falls in zero or several areas, and the reviewer sees a flag. |
+| `area_id` | text, e.g. `DRY` | declared primary planning area | Must match a boundary `area_id`. It always picks the forecast area. If the location falls in several areas, `allocation_flagged` is recorded with the projection. A warning appears only when the location is outside the declared area, or there is no declared area. |
 | `effective_from`, `effective_to` | ISO date, `YYYY-MM-DD`; `effective_to` may be blank | dates the record is valid | A record counts only if it covers the period end date. This handles replaced transformers. |
 | `notes` | text | free-text remark | Screened. Instruction-like text is quarantined and shown as a warning, never acted on. |
 
@@ -95,7 +95,7 @@ GeoJSON FeatureCollection in lon/lat (EPSG:4326).
 **How to collect it for real.** Tompkins County publishes municipal boundaries through its GIS open data
 portal. Export them as GeoJSON in EPSG:4326 and record the approval dates in `metadata`.
 **Synthetic:** 12 rectangles around approximate town and village centres. Newfield deliberately
-overlaps Enfield and Danby so the overlap warning appears.
+overlaps Enfield and Danby, so T-NEW-008 falls in four areas and its allocation is flagged.
 
 ## 5. `feeds/heat_pump_forecast.csv`: demand-growth forecast
 
@@ -131,7 +131,7 @@ The generator re-draws each series until the real pipeline confirms the intended
 | Transformer | Rating, kVA | Customers | Case | Mean, sd | What it demonstrates |
 |---|---|---|---|---|---|
 | T-ITH-001, T-ITH-002, T-CAY-003, T-GRO-009, T-ENF-011, T-TRU-012 | 167, 100, 100, 100, 75, 100 | 70, 40, 45, 50, 28, 48 | within | 0.60, 0.04 | stable, high Cpk, comfortable forecast margin |
-| T-NEW-008 | 50 | 20 | overlap | 0.60, 0.04 | location in more than one boundary area; declared area used and flagged |
+| T-NEW-008 | 50 | 20 | overlap | 0.60, 0.04 | location in four boundary areas; declared area NEW used and `allocation_flagged` recorded |
 | T-DRY-004 | 75 | 30 | signal | 0.60, 0.04, plus a spike of mean + 5.5 sd on 2026-10-13 | chart signal while still below rating; Cpk withheld |
 | T-LAN-005 | 167 | 75 | uncertain | 0.70, 0.0667 | Cpk at or above 1.33 but lower 95% bound below it |
 | T-DAN-010 | 50 | 22 | lowcpk | 0.80, 0.06 | Cpk below 1.33 while peaks stay under the rating |

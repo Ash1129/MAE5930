@@ -55,8 +55,9 @@ nothing matched, so the transformer is within limits. Each "review_needed" row s
 | T-CAR-006 | 9, forecast | Healthy today at 70% of rating with Cpk 3.03. Heat-pump growth adds 68.2 kVA, so the projected peak is 139% of the 100 kVA rating. | 70.48 + 60 × (0.57 − 0.12) × 2.4 / 0.95 = 138.7 kVA |
 | T-ULY-007 | 1, insufficient history | A new transformer with 12 days of readings, short of the 20 baseline days a chart needs. | 12 < 20 |
 
-T-NEW-008 sits where two boundary areas overlap. It is within limits, and the report carries a warning
-that its declared primary area was used for the forecast.
+T-NEW-008 sits where four synthetic boundary rectangles overlap: ITH-T, DAN, ENF and NEW. It is within
+limits. Its forecast assumptions record `allocation_flagged: true`, the four located areas, and that its
+declared primary area NEW was used. No warning is raised, because the declared area contains the location.
 
 **See it in the app.** Run `./scripts/start_app.sh`, open http://127.0.0.1:5055/dashboard, pick period end
 2026-10-15 and press **Run now**. This runs on whatever is in `data/feeds/`. To get exactly the 12
