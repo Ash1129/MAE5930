@@ -25,6 +25,18 @@ from capacity_monitor.report import write_report  # noqa: E402
 from capacity_monitor.run import execute_run, new_run_id  # noqa: E402
 from capacity_monitor.sources import feed_status, period_for  # noqa: E402
 from capacity_monitor.store import Store, now_iso  # noqa: E402
+from webapp.viz import (  # noqa: E402
+    STATUS_LABEL,
+    STATUS_ORDER,
+    STABILITY_LABEL,
+    STABILITY_ORDER,
+    area_chart_svg,
+    filter_summary,
+    forecast_row,
+    pie_svg,
+    summarize_results,
+    usage_strip_svg,
+)
 
 app = Flask(__name__, template_folder=str(Path(__file__).parent / "templates"))
 app.secret_key = os.environ.get("CAPMON_SECRET", "local-review-app-not-for-internet")
@@ -67,7 +79,11 @@ def dashboard():
     periods = store.list_periods(limit=10)
     pb = config.load_playbook()
     default_end = (date.today() - timedelta(days=1)).isoformat()
-    return render_template("dashboard.html", sched=sched, runs=runs, periods=periods, playbook=pb, default_end=default_end, feeds=feed_status(), alerts=store.list_alerts(limit=8, unacknowledged_only=True))
+    chart_card = None
+    if periods:
+        summary = summarize_results(store.get_transformer_results(periods[0]["period_id"]))
+        chart_card = {"period_id": periods[0]["period_id"], "status": summary["status_slices"], "stability": summary["stability_slices"], "areas": len(summary["areas"]), "usage": summary["usage"]}
+    return render_template("dashboard.html", sched=sched, runs=runs, periods=periods, playbook=pb, default_end=default_end, feeds=feed_status(), alerts=store.list_alerts(limit=8, unacknowledged_only=True), chart_card=chart_card)
 
 
 @app.post("/runs")
@@ -252,6 +268,7 @@ def period_map(period_id):
                 "status": r["status"],
                 "stability": r["stability"],
                 "area": r.get("area_name", ""),
+                "area_id": r.get("area_id") or "",
                 "rating": r["rated_max"],
                 "unit": r["unit"],
                 "period_peak": c["period_peak"],
@@ -278,7 +295,89 @@ def period_map(period_id):
         except ValueError:
             boundaries = None
     periods = [p["period_id"] for p in store.list_periods(limit=20)]
-    return render_template("map.html", period=period, points=points, boundaries=boundaries, periods=periods)
+    focus_area = request.args.get("area", "").strip() or None
+    focus_name = next((p["area"] for p in points if p["area_id"] == focus_area), focus_area)
+    return render_template("map.html", period=period, points=points, boundaries=boundaries, periods=periods, focus_area=focus_area, focus_name=focus_name)
+
+
+def _chart_href(period_id: str, status: str | None, stability: str | None) -> str:
+    kw = {}
+    if status:
+        kw["status"] = status
+    if stability:
+        kw["stability"] = stability
+    return url_for("period_charts", period_id=period_id, **kw)
+
+
+def _chart_models(period_id: str, status: str | None, stability: str | None):
+    if status not in STATUS_ORDER:
+        status = None
+    if stability not in STABILITY_ORDER:
+        stability = None
+    full = summarize_results(store.get_transformer_results(period_id))
+    for row in full["transformers"]:
+        row["url"] = url_for("transformer_detail", period_id=period_id, tid=row["id"])
+        row["area_url"] = url_for("area_detail", period_id=period_id, area_id=row["area_id"])
+    for area in full["areas"]:
+        area["url"] = url_for("area_detail", period_id=period_id, area_id=area["area_id"])
+    for sl in full["status_slices"]:
+        sl["href"] = _chart_href(period_id, None if status == sl["key"] else sl["key"], stability)
+    for sl in full["stability_slices"]:
+        sl["href"] = _chart_href(period_id, status, None if stability == sl["key"] else sl["key"])
+    view = filter_summary(full, status, stability)
+    return full, view, status, stability
+
+
+@app.route("/charts")
+def charts_latest():
+    periods = store.list_periods(limit=1)
+    if not periods:
+        flash("Run a period first. The charts use that period's results.", "info")
+        return redirect(url_for("dashboard"))
+    return redirect(url_for("period_charts", period_id=periods[0]["period_id"]))
+
+
+@app.route("/periods/<period_id>/charts")
+def period_charts(period_id):
+    period = store.get_period(period_id)
+    if not period:
+        abort(404)
+    model, view, status, stability = _chart_models(period_id, request.args.get("status"), request.args.get("stability"))
+    near = float(config.load_playbook().get("forecast", {}).get("near_rating_ratio", 0.9))
+    periods = [p["period_id"] for p in store.list_periods(limit=20)]
+    return render_template(
+        "charts.html",
+        period=period,
+        periods=periods,
+        model=model,
+        view=view,
+        active_status=status,
+        active_stability=stability,
+        status_label=STATUS_LABEL.get(status, ""),
+        stability_label=STABILITY_LABEL.get(stability, ""),
+        status_svg=pie_svg(model["status_slices"], status),
+        stability_svg=pie_svg(model["stability_slices"], stability),
+        area_svg=area_chart_svg(view["areas"], near),
+        strip_svg=usage_strip_svg(view["transformers"], near),
+        near_pct=round(near * 100),
+        readings_present=feed_status().get("readings", {}).get("present", False),
+    )
+
+
+@app.route("/periods/<period_id>/areas/<area_id>")
+def area_detail(period_id, area_id):
+    period = store.get_period(period_id)
+    if not period:
+        abort(404)
+    model = summarize_results(store.get_transformer_results(period_id))
+    area = next((a for a in model["areas"] if a["area_id"] == area_id), None)
+    if not area:
+        abort(404)
+    for row in area["transformers"]:
+        row["url"] = url_for("transformer_detail", period_id=period_id, tid=row["id"])
+    version = config.load_playbook().get("forecast", {}).get("version", "")
+    forecast = forecast_row(config.FEEDS_DIR / config.FEED_FILES["forecast"], version, area_id)
+    return render_template("area.html", period=period, area=area, forecast=forecast)
 
 
 # ---- scheduler controls -------------------------------------------------------------------

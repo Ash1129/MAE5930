@@ -4,7 +4,7 @@
 <h1>Period ending {{ period.period_id }} <span class="tag {{ 'ok' if period.status == 'final' else 'warn' }}">{{ period.status }}</span></h1>
 <p class="small muted">{{ period.period.start }} to {{ period.period.end }}, chart history from {{ period.period.history_start }}. Generated {{ period.generated_at }} by run {{ period.run_id }}. Reruns: {{ period.rerun_count }}.</p>
 <p>Transformers {{ period.summary.transformers }} | within limits {{ period.summary.within_limits }} | review needed {{ period.summary.review_needed }} | stable {{ period.summary.stable }} | chart signal {{ period.summary.signal }} | insufficient history {{ period.summary.insufficient_history }}</p>
-<p><a class="btn" href="{{ url_for('period_map', period_id=period.period_id) }}">Open map of this period</a></p>
+<p><a class="btn" href="{{ url_for('period_map', period_id=period.period_id) }}">Open map of this period</a> <a class="btn" href="{{ url_for('period_charts', period_id=period.period_id) }}">Usage and stability charts</a></p>
 {% if period.warnings %}<details><summary>{{ period.warnings|length }} warning(s) carried into the report</summary><ul>{% for w in period.warnings %}<li class="small">{{ w }}</li>{% endfor %}</ul></details>{% endif %}
 </div>
 

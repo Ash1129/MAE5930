@@ -34,6 +34,17 @@
     {% endif %}
   </div>
 </div>
+{% if chart_card %}
+<div class="card">
+  <h2>Usage and stability</h2>
+  <p class="small muted">Pie charts for review outcome and load stability, a box plot of usage, and one column per area. Click an area to open its transformers. Latest period: {{ chart_card.period_id }}{% if chart_card.usage %}, median usage {{ chart_card.usage.median|pct }} of rating{% endif %}.</p>
+  <p>
+    {% for s in chart_card.status %}<span class="tag {{ 'ok' if s.key == 'within_limits' else 'bad' }}">{{ s.label }} {{ s.count }}</span> {% endfor %}
+    {% for s in chart_card.stability %}<span class="tag {{ {'stable':'ok','signal':'bad','insufficient_history':'warn'}.get(s.key, 'info') }}">{{ s.label }} {{ s.count }}</span> {% endfor %}
+  </p>
+  <p><a class="btn primary" href="{{ url_for('period_charts', period_id=chart_card.period_id) }}">Open charts</a> <span class="small muted">{{ chart_card.areas }} areas</span></p>
+</div>
+{% endif %}
 {% if alerts %}
 <div class="card"><h2>Unacknowledged alerts</h2>
 <table><tr><th>When</th><th>Level</th><th>Run</th><th>Message</th><th>Delivery</th><th></th></tr>
