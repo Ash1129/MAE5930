@@ -278,7 +278,8 @@ def period_map(period_id):
         except ValueError:
             boundaries = None
     periods = [p["period_id"] for p in store.list_periods(limit=20)]
-    return render_template("map.html", period=period, points=points, boundaries=boundaries, periods=periods)
+    return render_template("map.html", period=period, points=points, boundaries=boundaries, periods=periods,
+                           feeds=feed_status(), default_end=(date.today() - timedelta(days=1)).isoformat(), playbook=config.load_playbook())
 
 
 # ---- heatmap ------------------------------------------------------------------------------

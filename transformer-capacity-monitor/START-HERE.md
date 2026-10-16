@@ -10,8 +10,8 @@ equipment or operating settings.
 1. **Open the tool.** Double-click `Start Capacity Monitor.command` (or run `./scripts/start_app.sh` and
    `./scripts/start_airflow.sh`). Your browser opens http://127.0.0.1:5055 on the **Map**: every transformer
    as a dot, green for within limits and red for needing review; click a red dot for its numbers and
-   **Open full review**. The **Heatmap** link shows where load sits hour by hour (recorded) or by month (a labeled model). Scheduled runs happen on their own on Monday, Wednesday and Friday at 06:00; the
-   **Dashboard** link lets you pick a period end date and press **Run now**.
+   **Open full review**. The **Heatmap** link shows where load sits hour by hour (recorded) or by month (a labeled model). Scheduled runs happen on their own on Monday, Wednesday and Friday at 06:00; to run one yourself,
+   pick a period end date at the top of the Map and press **Run now**. The **Dashboard** shows the scheduler, alerts and run history.
 2. **Review the exceptions.** Open the period, press **Review** on each flagged transformer, read the
    checklist beside the chart and source readings, then choose **Approve conclusion**, **Request changes**
    or **Reject** (with a note). One case at a time; nothing is batch-approved.

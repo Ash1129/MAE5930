@@ -14,7 +14,13 @@
   .districts button.active .k{color:#dbe8ff}
   .ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
   .ctl label{margin:0;font-size:13px}
-  .ctl input[type=range]{width:220px}
+  .sliders{display:grid;gap:8px;margin-bottom:10px}
+  .srow{display:grid;grid-template-columns:60px minmax(200px,520px) auto auto;gap:12px;align-items:center}
+  .srow input[type=range]{width:100%}
+  .srow[hidden]{display:none}
+  .sname{font-size:13px;color:var(--muted)}
+  .sval{font:600 15px system-ui,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+  @media (max-width:700px){.srow{grid-template-columns:50px 1fr;grid-auto-rows:auto}}
   .clock{font:600 20px system-ui,sans-serif;font-variant-numeric:tabular-nums;min-width:200px}
   .modeled{background:var(--warnbg);color:var(--warn);padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600}
   .recorded{background:var(--okbg);color:var(--ok);padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600}
@@ -31,13 +37,14 @@
 <div class="ctl">
   <label><input type="radio" name="mode" value="recorded" id="mode-recorded" checked> Recorded</label>
   <label><input type="radio" name="mode" value="seasonal" id="mode-seasonal"> Seasonal model</label>
-  <span id="recorded-ctl"><label for="date-select">Date</label> <select id="date-select">{% for d in dates %}<option value="{{ d }}" {% if d == default_date %}selected{% endif %}>{{ d }}</option>{% endfor %}</select></span>
-  <span id="seasonal-ctl" hidden><label for="month-select">Month</label> <select id="month-select">{% for m in range(1, 13) %}<option value="{{ m }}" {% if m == 1 %}selected{% endif %}>{{ ['January','February','March','April','May','June','July','August','September','October','November','December'][m-1] }} (x{{ seasonal.monthly_factors[m|string] if seasonal.monthly_factors else 1.0 }})</option>{% endfor %}</select></span>
-  <label for="hour">Hour</label> <input type="range" id="hour" min="0" max="23" value="18">
-  <button class="btn primary" id="play">Play</button>
   <label><input type="radio" name="metric" value="util" id="metric-util" checked> Utilization (% of rating)</label>
   <label><input type="radio" name="metric" value="load" id="metric-load"> Load (kVA)</label>
   <label><input type="checkbox" id="show-dots"> Show transformer dots</label>
+</div>
+<div class="sliders">
+  <div class="srow" id="recorded-ctl"><span class="sname">Date</span><input type="range" id="date-slider" min="0" max="{{ (dates|length) - 1 }}" value="{{ dates.index(default_date) if default_date in dates else (dates|length) - 1 }}"><span class="sval" id="date-label"></span></div>
+  <div class="srow" id="seasonal-ctl" hidden><span class="sname">Month</span><input type="range" id="month-slider" min="1" max="12" value="1"><span class="sval" id="month-label"></span></div>
+  <div class="srow"><span class="sname">Hour</span><input type="range" id="hour" min="0" max="23" value="18"><span class="sval" id="hour-label"></span><button class="btn primary" id="play">Play</button></div>
 </div>
 <div class="ctl"><span class="clock" id="clock"></span> <span id="mode-badge" class="recorded">RECORDED</span> <span class="small muted" id="status"></span></div>
 <div class="hm">
@@ -61,6 +68,9 @@
 </div>
 <script>
 const POINTS = {{ points|tojson }};
+const DATES = {{ dates|tojson }};
+const FACTORS = {{ (seasonal.monthly_factors or {})|tojson }};
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const BOUNDARIES = {{ boundaries|tojson }};
 const byId = Object.fromEntries(POINTS.map(p => [p.id, p]));
 const map = L.map('map').setView([42.44, -76.5], 11);
@@ -82,7 +92,7 @@ const inDistrict = p => !district || p.area === district;
 
 async function fetchLoads() {
   $('status').textContent = 'loading...';
-  const url = mode() === 'seasonal' ? '/api/heat/seasonal?month=' + $('month-select').value : '/api/heat/recorded?date=' + $('date-select').value;
+  const url = mode() === 'seasonal' ? '/api/heat/seasonal?month=' + $('month-slider').value : '/api/heat/recorded?date=' + DATES[+$('date-slider').value];
   const r = await fetch(url); const j = await r.json();
   loads = j.loads || {}; modeled = !!j.modeled;
   $('mode-badge').textContent = modeled ? 'MODELED (seasonal factor x' + j.factor + ')' : 'RECORDED';
@@ -104,7 +114,8 @@ function render() {
     if (inDistrict(p)) { rows.push([p, v]); cls[p.cls] = (cls[p.cls] || 0) + 1; }
   });
   heatLayer.setLatLngs(pts);
-  const label = mode() === 'seasonal' ? ['January','February','March','April','May','June','July','August','September','October','November','December'][$('month-select').value - 1] + ' (typical day)' : $('date-select').value;
+  updateLabels();
+  const label = mode() === 'seasonal' ? MONTHS[$('month-slider').value - 1] + ' (typical day)' : DATES[+$('date-slider').value];
   $('clock').textContent = label + '  ' + String(h).padStart(2, '0') + ':00';
   rows.sort((a, b) => b[1] - a[1]);
   $('hot-scope').textContent = district ? '(' + district + ')' : '(county)';
@@ -116,18 +127,28 @@ function render() {
   $('classmix').textContent = Object.entries(cls).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(' | ') || '-';
   $('scale-label').textContent = metric() === 'util' ? '0% of rating (blue) to 100% and above (red)' : '0 kVA (blue) to ' + maxLoad.toFixed(0) + ' kVA (red) at this hour';
 }
+function updateLabels() {
+  const h = +$('hour').value;
+  $('hour-label').textContent = String(h).padStart(2, '0') + ':00' + (h >= 17 && h <= 21 ? ' (evening peak hours)' : (h <= 5 ? ' (overnight)' : ''));
+  const m = +$('month-slider').value;
+  $('month-label').textContent = MONTHS[m - 1] + '  x' + (FACTORS[String(m)] !== undefined ? FACTORS[String(m)] : 1.0) + ' of recorded level';
+  const d = DATES[+$('date-slider').value] || '-';
+  $('date-label').textContent = d + '  (' + (+$('date-slider').value + 1) + ' of ' + DATES.length + ' recorded days)';
+}
 function step() {
   const hr = $('hour'); let h = +hr.value + 1;
   if (h > 23) {
     h = 0;
-    if (mode() === 'seasonal') { const ms = $('month-select'); ms.selectedIndex = (ms.selectedIndex + 1) % 12; hr.value = 0; fetchLoads(); return; }
-    const ds = $('date-select'); if (ds.selectedIndex < ds.options.length - 1) { ds.selectedIndex += 1; hr.value = 0; fetchLoads(); return; }
+    if (mode() === 'seasonal') { const ms = $('month-slider'); ms.value = (+ms.value % 12) + 1; hr.value = 0; fetchLoads(); return; }
+    const ds = $('date-slider'); if (+ds.value < DATES.length - 1) { ds.value = +ds.value + 1; hr.value = 0; fetchLoads(); return; }
   }
   hr.value = h; render();
 }
 $('play').onclick = () => { if (playing) { clearInterval(playing); playing = null; $('play').textContent = 'Play'; } else { playing = setInterval(step, 700); $('play').textContent = 'Pause'; } };
 $('hour').oninput = render;
-$('date-select').onchange = fetchLoads; $('month-select').onchange = fetchLoads;
+let fetchTimer = null;
+function liveFetch() { updateLabels(); clearTimeout(fetchTimer); fetchTimer = setTimeout(fetchLoads, 120); }
+$('date-slider').oninput = liveFetch; $('month-slider').oninput = liveFetch;
 document.querySelectorAll('input[name=mode]').forEach(el => el.onchange = () => { $('recorded-ctl').hidden = mode() === 'seasonal'; $('seasonal-ctl').hidden = mode() !== 'seasonal'; fetchLoads(); });
 document.querySelectorAll('input[name=metric]').forEach(el => el.onchange = render);
 $('show-dots').onchange = e => e.target.checked ? dotLayer.addTo(map) : map.removeLayer(dotLayer);

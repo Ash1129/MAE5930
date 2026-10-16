@@ -19,6 +19,22 @@
 {% endblock %}
 {% block content %}
 <div class="card">
+  <div class="grid">
+    <div>
+      <h2>Run a monitoring period now</h2>
+      <p class="small muted">A run covers {{ playbook.period_days }} days ending on the date you pick and uses {{ playbook.history_days }} days of history for the control charts. Rerunning a period replaces its draft results.</p>
+      <form method="post" action="{{ url_for('start_run') }}" style="display:flex;gap:10px;align-items:end;flex-wrap:wrap">
+        <div><label for="period_end">Period end date</label><input type="date" id="period_end" name="period_end" value="{{ default_end }}" required style="max-width:220px"></div>
+        <button class="btn primary" type="submit">Run now</button>
+      </form>
+    </div>
+    <div>
+      <h3 style="margin-top:0">Feeds in data/feeds</h3>
+      <table>{% for name, f in feeds.items() %}<tr><td>{{ name }}</td><td>{{ f.file }}</td><td>{% if f.present %}<span class="tag ok">present</span> <span class="muted small">{{ f.modified }}</span>{% else %}<span class="tag bad">missing</span>{% endif %}</td></tr>{% endfor %}</table>
+    </div>
+  </div>
+</div>
+<div class="card">
 <h1>Map, period ending {{ period.period_id }} <span class="tag {{ 'ok' if period.status == 'final' else 'warn' }}">{{ period.status }}</span></h1>
 <p class="small">Green = within limits. Red = needs a person's review. Click a dot for its numbers and a button to the full review. To run a new period, pause the schedule or see alerts, open the <a href="{{ url_for('dashboard') }}">Dashboard</a>. For load by hour and season, open the <a href="{{ url_for('period_heatmap', period_id=period.period_id) }}">Heatmap</a>.</p>
 <p class="small muted legend">

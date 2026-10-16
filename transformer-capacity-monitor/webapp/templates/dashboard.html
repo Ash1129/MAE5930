@@ -2,15 +2,9 @@
 {% block content %}
 <div class="grid">
   <div class="card">
-    <h2>Run a monitoring period now</h2>
-    <p class="small muted">A run covers {{ playbook.period_days }} days ending on the date you pick and uses {{ playbook.history_days }} days of history for the control charts. Rerunning a period replaces its draft results.</p>
-    <form method="post" action="{{ url_for('start_run') }}">
-      <label for="period_end">Period end date</label>
-      <input type="date" id="period_end" name="period_end" value="{{ default_end }}" required>
-      <p><button class="btn primary" type="submit">Run now</button></p>
-    </form>
-    <h3>Feeds in {{ playbook.get('_feeds_dir', 'data/feeds') }}</h3>
-    <table>{% for name, f in feeds.items() %}<tr><td>{{ name }}</td><td>{{ f.file }}</td><td>{% if f.present %}<span class="tag ok">present</span> <span class="muted small">{{ f.modified }}</span>{% else %}<span class="tag bad">missing</span>{% endif %}</td></tr>{% endfor %}</table>
+    <h2>Run a period</h2>
+    <p class="small">Starting a run and checking the feed files now live on the <a href="{{ url_for('map_latest') }}">Map</a> page.</p>
+    <p><a class="btn primary" href="{{ url_for('map_latest') }}">Go to the Map</a></p>
   </div>
   <div class="card">
     <h2>Scheduler (Apache Airflow)</h2>
