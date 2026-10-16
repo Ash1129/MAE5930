@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Map, period ending {{ period.period_id }}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  .maprow{display:grid;grid-template-columns:1fr 340px;gap:16px}
+  @media (max-width:900px){.maprow{grid-template-columns:1fr}}
+  #map{height:640px;border:1px solid var(--line);border-radius:10px;background:#e9eef2}
+  .legend span{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:middle;border:2px solid #fff;box-shadow:0 0 0 1px #888}
+  .list a{display:block;padding:7px 8px;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}
+  .list a:hover{background:var(--bg)}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
+  .leaflet-popup-content{font:13px/1.4 system-ui,sans-serif;min-width:240px}
+  .leaflet-popup-content table{width:100%;border-collapse:collapse} .leaflet-popup-content td{padding:2px 4px;border-bottom:1px solid #eee;vertical-align:top}
+  .leaflet-popup-content td:first-child{color:#666;white-space:nowrap}
+  .popbtn{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:8px;background:#1f5fa8;color:#fff!important;font-weight:600;text-decoration:none}
+</style>
+{% endblock %}
+{% block content %}
+<div class="card">
+<h1>Map, period ending {{ period.period_id }} <span class="tag {{ 'ok' if period.status == 'final' else 'warn' }}">{{ period.status }}</span></h1>
+<p class="small muted legend">
+  <span style="background:#1b7f4b"></span>Within limits &nbsp;&nbsp;
+  <span style="background:#d7263d"></span>Review needed &nbsp;&nbsp;
+  Click a dot for its numbers and a link to the full review (chart, source readings, disposition).
+  &nbsp; Period:
+  <select id="period-select" onchange="location.href='/periods/'+this.value+'/map'">{% for p in periods %}<option value="{{ p }}" {% if p == period.period_id %}selected{% endif %}>{{ p }}</option>{% endfor %}</select>
+</p>
+<div class="maprow">
+  <div id="map"></div>
+  <div>
+    <h3 style="margin-top:0">Review needed ({{ points|selectattr('status','equalto','review_needed')|list|length }})</h3>
+    <div class="list">
+    {% for p in points if p.status == 'review_needed' %}<a href="#" onclick="focusPoint('{{ p.id }}');return false;"><span class="dot" style="background:#d7263d"></span><b>{{ p.id }}</b> <span class="muted small">{{ p.area }}</span><br><span class="small">{{ p.reason }}</span>{% if p.disposition %}<br><span class="small muted">{{ p.disposition }}</span>{% endif %}</a>{% endfor %}
+    </div>
+    <h3>Within limits ({{ points|selectattr('status','equalto','within_limits')|list|length }})</h3>
+    <div class="list">
+    {% for p in points if p.status == 'within_limits' %}<a href="#" onclick="focusPoint('{{ p.id }}');return false;"><span class="dot" style="background:#1b7f4b"></span><b>{{ p.id }}</b> <span class="muted small">{{ p.area }}</span></a>{% endfor %}
+    </div>
+  </div>
+</div>
+<p class="small muted">Base map tiles come from OpenStreetMap over the internet; the dots and boundaries are drawn from this tool's own data. Boundaries shown are the current boundary feed{% if boundaries and boundaries.metadata %} ({{ boundaries.metadata.approved_version }}){% endif %}.</p>
+</div>
+<script>
+const POINTS = {{ points|tojson }};
+const BOUNDARIES = {{ boundaries|tojson }};
+const map = L.map('map').setView([42.44, -76.5], 10);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18, attribution: '&copy; OpenStreetMap contributors'}).addTo(map);
+if (BOUNDARIES) {
+  L.geoJSON(BOUNDARIES, {style: {color: '#5d6675', weight: 1, fillOpacity: 0.04, dashArray: '4 3'},
+    onEachFeature: (f, l) => l.bindTooltip((f.properties && f.properties.name) || '', {sticky: true})}).addTo(map);
+}
+const fmt = (v, d=2) => (v === null || v === undefined) ? '-' : Number(v).toLocaleString(undefined, {maximumFractionDigits: d, minimumFractionDigits: d});
+const pct = v => (v === null || v === undefined) ? '-' : Math.round(v * 100) + '%';
+const markers = {};
+POINTS.forEach(p => {
+  const red = p.status === 'review_needed';
+  const m = L.circleMarker([p.lat, p.lon], {radius: red ? 11 : 8, color: '#fff', weight: 2, fillColor: red ? '#d7263d' : '#1b7f4b', fillOpacity: 0.95}).addTo(map);
+  const rows = [
+    ['Area', p.area], ['Status', red ? 'Review needed' : 'Within limits'], ['Why', red ? ('Rule ' + p.rule + ': ' + p.reason) : 'All checks passed'],
+    ['Stability', p.stability.replace('_', ' ')],
+    ['Rated max', fmt(p.rating, 1) + ' ' + p.unit],
+    ['Period peak', fmt(p.period_peak, 1) + ' ' + p.unit + ' (' + pct(p.period_peak_ratio) + ' of rating)'],
+    ['Cpk vs rating', p.cpk === null ? 'not calculated' : fmt(p.cpk) + ' (' + fmt(p.cpk_ci_low) + ' to ' + fmt(p.cpk_ci_high) + ')'],
+    ['Projected peak', p.projected_peak === null ? 'not projected' : fmt(p.projected_peak, 1) + ' ' + p.unit + ' (' + pct(p.forecast_ratio) + ' of rating)'],
+  ];
+  if (p.signals.length) rows.push(['Chart signals', p.signals.join('<br>')]);
+  rows.push(['Disposition', p.disposition || 'none recorded']);
+  const html = '<b>' + p.id + '</b> ' + p.name + '<table>' + rows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') + '</table>' +
+    '<a class="popbtn" href="' + p.url + '">Open full review</a>';
+  m.bindPopup(html, {maxWidth: 360});
+  m.bindTooltip(p.id + (red ? ' (review)' : ''));
+  markers[p.id] = m;
+});
+function focusPoint(id) { const m = markers[id]; if (!m) return; map.setView(m.getLatLng(), Math.max(map.getZoom(), 12)); m.openPopup(); }
+if (POINTS.length) { map.fitBounds(L.latLngBounds(POINTS.map(p => [p.lat, p.lon])).pad(0.15)); }
+setTimeout(() => map.invalidateSize(), 200);
+</script>
+{% endblock %}

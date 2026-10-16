@@ -216,6 +216,67 @@ def report_file(period_id, filename):
     return send_from_directory(d, filename, as_attachment=filename != "report.html")
 
 
+# ---- map ---------------------------------------------------------------------------------
+
+@app.route("/map")
+def map_latest():
+    periods = store.list_periods(limit=1)
+    if not periods:
+        flash("Run a period first; the map shows the latest period's results.", "error")
+        return redirect(url_for("dashboard"))
+    return redirect(url_for("period_map", period_id=periods[0]["period_id"]))
+
+
+@app.route("/periods/<period_id>/map")
+def period_map(period_id):
+    import json
+
+    period = store.get_period(period_id)
+    if not period:
+        abort(404)
+    points = []
+    for r in store.get_transformer_results(period_id):
+        if r.get("lat") is None or r.get("lon") is None:
+            continue
+        c = r["capacity"]
+        d = r.get("disposition")
+        points.append(
+            {
+                "id": r["transformer_id"],
+                "name": r["name"],
+                "lat": r["lat"],
+                "lon": r["lon"],
+                "status": r["status"],
+                "stability": r["stability"],
+                "area": r.get("area_name", ""),
+                "rating": r["rated_max"],
+                "unit": r["unit"],
+                "period_peak": c["period_peak"],
+                "period_peak_ratio": c["period_peak_ratio"],
+                "cpk": c["cpk"],
+                "cpk_ci_low": c["cpk_ci_low"],
+                "cpk_ci_high": c["cpk_ci_high"],
+                "projected_peak": c["projected_peak"],
+                "forecast_ratio": c["forecast_ratio"],
+                "reason": r["decision"]["reason"],
+                "rule": r["decision"]["rule"],
+                "signals": [f"{s['rule']} on {s['date']}" for s in r["chart"]["signals"]][:4],
+                "disposition": (f"{DECISIONS[d['decision']]} by {d['reviewer']}") if d else None,
+                "url": url_for("transformer_detail", period_id=period_id, tid=r["transformer_id"]),
+                "is_calibration": r["is_calibration"],
+            }
+        )
+    boundaries = None
+    bpath = config.FEEDS_DIR / config.FEED_FILES["boundaries"]
+    if bpath.exists():
+        try:
+            boundaries = json.loads(bpath.read_text(encoding="utf-8"))
+        except ValueError:
+            boundaries = None
+    periods = [p["period_id"] for p in store.list_periods(limit=20)]
+    return render_template("map.html", period=period, points=points, boundaries=boundaries, periods=periods)
+
+
 # ---- scheduler controls -------------------------------------------------------------------
 
 @app.post("/scheduler/<action>")
