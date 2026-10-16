@@ -145,6 +145,7 @@ def transformer_detail(period_id, tid):
         (f"Cpk at or above {pb['capability']['cpk_review_below']} and lower bound above {pb['capability']['cpk_ci_low_review_below']}", r["capacity"]["cpk"] is not None and (r["capacity"]["cpk"] < pb["capability"]["cpk_review_below"] or r["capacity"]["cpk_ci_low"] < pb["capability"]["cpk_ci_low_review_below"])),
         (f"Forecast peak below {int(pb['forecast']['near_rating_ratio'] * 100)}% of rating; allocation assumption acceptable", r["capacity"]["forecast_ratio"] is not None and r["capacity"]["forecast_ratio"] >= pb["forecast"]["near_rating_ratio"]),
         ("Period readings below the rated maximum", r["capacity"]["period_peak_ratio"] is not None and r["capacity"]["period_peak_ratio"] >= 1.0),
+        ("Capability assumptions met (independent, roughly normal daily peaks)", bool(r["capacity"].get("assumption_flags"))),
         ("Numbers shown agree with the chart and source readings", False),
     ]
     return render_template("transformer.html", period=period, r=r, svg=svg, checklist=checklist, decisions=DECISIONS, review_started_at=now_iso(), playbook=pb, period_readings=r["period_readings"][-48:])
@@ -263,6 +264,7 @@ def period_map(period_id):
                 "reason": r["decision"]["reason"],
                 "rule": r["decision"]["rule"],
                 "signals": [f"{s['rule']} on {s['date']}" for s in r["chart"]["signals"]][:4],
+                "assumption_flags": c.get("assumption_flags", []),
                 "disposition": (f"{DECISIONS[d['decision']]} by {d['reviewer']}") if d else None,
                 "url": url_for("transformer_detail", period_id=period_id, tid=r["transformer_id"]),
                 "is_calibration": r["is_calibration"],

@@ -13,6 +13,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -148,12 +149,15 @@ def load_readings(period: Period, playbook: dict) -> dict:
             d = ts.date()
             if d < lo or d > hi:
                 continue
+            load = float(r["load"])
+            if not math.isfinite(load):
+                raise ValueError(f"load is not a finite number: {r['load']!r}")
             rows.append(
                 {
                     "transformer_id": r["transformer_id"].strip(),
                     "timestamp": ts.isoformat(),
                     "date": d.isoformat(),
-                    "load": float(r["load"]),
+                    "load": load,
                     "unit": (r.get("unit") or "").strip(),
                 }
             )
@@ -187,7 +191,7 @@ def load_assets(period: Period, playbook: dict) -> dict:
                     "name": (r.get("name") or "").strip(),
                     "lat": float(r["lat"]) if r.get("lat") else None,
                     "lon": float(r["lon"]) if r.get("lon") else None,
-                    "rated_max": float(rating) if rating else None,
+                    "rated_max": (float(rating) if rating and math.isfinite(float(rating)) else None),
                     "unit": (r.get("unit") or "").strip(),
                     "customers": int(float(r["customers"])) if r.get("customers") else None,
                     "area_id": (r.get("area_id") or "").strip(),

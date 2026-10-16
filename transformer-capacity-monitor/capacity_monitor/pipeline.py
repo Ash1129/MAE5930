@@ -178,11 +178,13 @@ def check_completeness(joined: dict, playbook: dict) -> dict:
             blocking.append(f"{tid}: no readings for {len(missing_days)} of {len(period_dates)} period days (first missing {missing_days[0]})")
         if not t["area_id"]:
             warnings.append(f"{tid}: could not be placed in any boundary area; forecast cannot be applied")
-        elif t["allocation_flag"]:
+        elif t["declared_area"] and t["located_areas"] and t["declared_area"] not in t["located_areas"]:
             warnings.append(
-                f"{tid}: location falls in {len(t['located_areas'])} area(s) {t['located_areas']}; "
+                f"{tid}: declared area {t['declared_area']} but its location falls in {t['located_areas']}; "
                 f"using {t['allocation']} = {t['area_id']}"
             )
+        elif not t["declared_area"] and len(t["located_areas"]) != 1:
+            warnings.append(f"{tid}: no declared area and location falls in {len(t['located_areas'])} area(s); using {t['allocation']} = {t['area_id']}")
         if t["forecast"] is None:
             warnings.append(f"{tid}: no heat-pump forecast row for area {t['area_id'] or '(none)'}")
         for prob in check_text(t.get("notes"), f"{tid} notes", max_len=500):
@@ -205,7 +207,7 @@ def imr_chart(daily_peaks: dict, period: Period, playbook: dict) -> dict:
     They are not the rated maximum.
     """
     cp = playbook["chart"]
-    pts = sorted(daily_peaks.items())
+    pts = sorted((d, float(v)) for d, v in daily_peaks.items() if v is not None and math.isfinite(float(v)))
     dates = [d for d, _ in pts]
     vals = [v for _, v in pts]
     baseline_idx = [i for i, d in enumerate(dates) if d < period.start.isoformat()]
@@ -226,6 +228,9 @@ def imr_chart(daily_peaks: dict, period: Period, playbook: dict) -> dict:
     mrs = [abs(base[i] - base[i - 1]) for i in range(1, len(base))]
     mr_bar = sum(mrs) / len(mrs)
     center = sum(base) / len(base)
+    if mr_bar <= 0:
+        out.update({"status": "zero_variation", "center": center, "ucl": center, "lcl": center, "sigma": 0.0, "mr_bar": 0.0, "mr_ucl": 0.0})
+        return out
     sigma = mr_bar / float(cp["d2"])
     ucl = center + float(cp["E2"]) * mr_bar
     lcl = center - float(cp["E2"]) * mr_bar
@@ -280,7 +285,7 @@ def check_stability(joined: dict, playbook: dict) -> dict:
 # ---- Step 9: is the load pattern stable? ------------------------------------------------
 
 def decide_stability(chart: dict) -> str:
-    """Returns 'stable', 'signal' or 'insufficient_history'."""
+    """Returns 'stable', 'signal', 'insufficient_history' or 'zero_variation'."""
     return chart["status"]
 
 
@@ -295,12 +300,31 @@ def project_demand(t: dict, period: Period, playbook: dict) -> dict:
         reason = "no forecast for area" if f is None else ("no period readings" if period_peak is None else "customer count missing on asset record")
         return {"period_peak": period_peak, "projected_peak": None, "added_load": None, "assumptions": {"reason_not_projected": reason}}
     added_share = max(0.0, f["hp_share_forecast"] - f["hp_share_base"])
-    added_load = t["customers"] * added_share * f["kw_per_heat_pump"]
+    added_kw = t["customers"] * added_share * f["kw_per_heat_pump"]
+    # Unit model: forecast demand is real power (kW); readings and ratings are apparent power (kVA)
+    # unless the asset unit says kW. Convert with the playbook power factor and record it.
+    unit = (t.get("unit") or "").strip().lower()
+    pf = float(playbook.get("forecast", {}).get("power_factor", 1.0))
+    if unit in ("kva", "mva"):
+        added_load = added_kw / pf
+        unit_note = f"kW converted to {t['unit']} using power factor {pf}"
+    elif unit in ("kw", "mw"):
+        added_load = added_kw
+        unit_note = "forecast kW added directly to kW readings"
+    else:
+        added_load = added_kw / pf
+        unit_note = f"unit {t.get('unit')!r} not recognized; treated as apparent power with power factor {pf}"
+    if unit in ("mva", "mw"):
+        added_load = added_load / 1000.0
+        unit_note += "; kW scaled to MW/MVA"
     return {
         "period_peak": period_peak,
         "projected_peak": period_peak + added_load,
         "added_load": added_load,
         "assumptions": {
+            "added_kw": added_kw,
+            "power_factor": pf,
+            "unit_note": unit_note,
             "forecast_version": f["forecast_version"],
             "horizon": f["horizon_label"],
             "area_id": t["area_id"],
@@ -312,17 +336,65 @@ def project_demand(t: dict, period: Period, playbook: dict) -> dict:
             "hp_share_base": f["hp_share_base"],
             "hp_share_forecast": f["hp_share_forecast"],
             "kw_per_heat_pump": f["kw_per_heat_pump"],
-            "formula": "projected_peak = period_peak + customers x (hp_share_forecast - hp_share_base) x kw_per_heat_pump",
+            "formula": "projected_peak = period_peak + customers x (hp_share_forecast - hp_share_base) x kw_per_heat_pump / power_factor",
         },
     }
 
 
 # ---- Step 11: measure capacity headroom -------------------------------------------------
 
-def capacity_headroom(chart: dict, rating: float, projection: dict, playbook: dict) -> dict:
-    """One-sided Cpk (Cpu) against the rated maximum with a 95% interval; forecast margin against rating."""
+def _normality_jarque_bera(vals: list) -> dict:
+    """Jarque-Bera test for normality (stdlib). p-value is exact for the chi-square(2) reference."""
+    n = len(vals)
+    mean = sum(vals) / n
+    m2 = sum((v - mean) ** 2 for v in vals) / n
+    if m2 <= 0:
+        return {"statistic": None, "p_value": None, "skewness": 0.0, "excess_kurtosis": 0.0}
+    m3 = sum((v - mean) ** 3 for v in vals) / n
+    m4 = sum((v - mean) ** 4 for v in vals) / n
+    skew = m3 / m2 ** 1.5
+    kurt = m4 / m2 ** 2 - 3.0
+    jb = n / 6.0 * (skew ** 2 + kurt ** 2 / 4.0)
+    return {"statistic": jb, "p_value": math.exp(-jb / 2.0), "skewness": skew, "excess_kurtosis": kurt}
+
+
+def _lag1_autocorrelation(vals: list) -> float | None:
+    n = len(vals)
+    if n < 3:
+        return None
+    mean = sum(vals) / n
+    denom = sum((v - mean) ** 2 for v in vals)
+    if denom <= 0:
+        return None
+    return sum((vals[i] - mean) * (vals[i - 1] - mean) for i in range(1, n)) / denom
+
+
+def check_capability_assumptions(vals: list, playbook: dict) -> dict:
+    """Independence (lag-1 autocorrelation) and normality (Jarque-Bera) checks required for a
+    conventional Cpk interpretation (NIST/SEMATECH e-Handbook 6.1.6). Returns flags, never raises."""
     cap = playbook["capability"]
-    vals = chart["values"]
+    n = len(vals)
+    flags = []
+    r1 = _lag1_autocorrelation(vals)
+    band = 2.0 / math.sqrt(n) if n > 0 else None
+    if r1 is not None and band is not None and abs(r1) > band:
+        flags.append(f"serial correlation: lag-1 autocorrelation {r1:.2f} exceeds +/-{band:.2f}")
+    jb = _normality_jarque_bera(vals)
+    alpha = float(cap.get("normality_alpha", 0.05))
+    if jb["p_value"] is not None and jb["p_value"] < alpha:
+        flags.append(f"non-normal daily peaks: Jarque-Bera p={jb['p_value']:.3f} (skew {jb['skewness']:.2f}, excess kurtosis {jb['excess_kurtosis']:.2f})")
+    return {"lag1_autocorrelation": r1, "autocorrelation_band": band, "jarque_bera": jb, "flags": flags, "note": "Daily peaks can carry seasonality and weather effects; a 60-day window limits but does not remove them."}
+
+
+def capacity_headroom(chart: dict, rating: float, projection: dict, playbook: dict) -> dict:
+    """One-sided Cpk (Cpu) against the rated maximum with a 95% interval; forecast margin against rating.
+
+    sigma comes from the average moving range (MRbar/d2). The interval uses Bissell's approximation
+    with the effective degrees of freedom of that estimator, 0.62 x (n-1) (Wheeler), which a simulation
+    in tests/test_pipeline.py shows gives about 95% coverage; n-1 would give about 88%.
+    """
+    cap = playbook["capability"]
+    vals = [v for v in chart["values"] if v is not None and math.isfinite(v)]
     n = len(vals)
     out = {
         "n": n,
@@ -333,6 +405,8 @@ def capacity_headroom(chart: dict, rating: float, projection: dict, playbook: di
         "mean": None,
         "sigma_within": None,
         "insufficient_data": False,
+        "assumption_flags": [],
+        "assumptions": None,
         "period_peak": projection.get("period_peak"),
         "period_peak_ratio": (projection["period_peak"] / rating) if projection.get("period_peak") is not None else None,
         "projected_peak": projection.get("projected_peak"),
@@ -341,7 +415,7 @@ def capacity_headroom(chart: dict, rating: float, projection: dict, playbook: di
     }
     if chart["status"] != "stable":
         out["insufficient_data"] = True
-        out["note"] = "Capability not calculated: load pattern is not confirmed stable"
+        out["note"] = f"Capability not calculated: load pattern is {chart['status'].replace('_', ' ')}, not confirmed stable"
         return out
     if n < int(cap["min_points"]) or n < 3:
         out["insufficient_data"] = True
@@ -355,8 +429,23 @@ def capacity_headroom(chart: dict, rating: float, projection: dict, playbook: di
         out["note"] = "Capability not calculated: zero variation in readings"
         return out
     cpk = (rating - mean) / (3.0 * sigma)
-    half = Z_95 * math.sqrt(1.0 / (9.0 * n) + (cpk * cpk) / (2.0 * (n - 1)))
-    out.update({"cpk": cpk, "cpk_ci_low": cpk - half, "cpk_ci_high": cpk + half, "mean": mean, "sigma_within": sigma, "confidence_level": cap["confidence_level"]})
+    df_factor = float(cap.get("mr_effective_df_factor", 0.62))
+    df_eff = max(1.0, df_factor * (n - 1))
+    half = Z_95 * math.sqrt(1.0 / (9.0 * n) + (cpk * cpk) / (2.0 * df_eff))
+    checks = check_capability_assumptions(vals, playbook)
+    out.update(
+        {
+            "cpk": cpk,
+            "cpk_ci_low": cpk - half,
+            "cpk_ci_high": cpk + half,
+            "mean": mean,
+            "sigma_within": sigma,
+            "effective_df": df_eff,
+            "confidence_level": cap["confidence_level"],
+            "assumption_flags": checks["flags"],
+            "assumptions": checks,
+        }
+    )
     return out
 
 
@@ -365,13 +454,34 @@ def capacity_headroom(chart: dict, rating: float, projection: dict, playbook: di
 _COND = re.compile(r"^\s*(\w+)\s*(>=|<=|==|!=|>|<|is missing|is present)\s*(.*?)\s*$")
 
 
-def load_decision_table(path=None) -> list[dict]:
+_PLACEHOLDER = re.compile(r"\$\{([a-zA-Z0-9_.]+)\}")
+
+
+def _resolve_placeholders(text: str, playbook: dict) -> str:
+    """Replace ${section.key} with the playbook value so thresholds live in one place."""
+
+    def sub(m):
+        node = playbook
+        for part in m.group(1).split("."):
+            if not isinstance(node, dict) or part not in node:
+                raise ValueError(f"decision table refers to unknown playbook value {m.group(1)!r}")
+            node = node[part]
+        return str(node)
+
+    return _PLACEHOLDER.sub(sub, text)
+
+
+def load_decision_table(path=None, playbook: dict | None = None) -> list[dict]:
     path = path or config.DECISION_TABLE_PATH
+    playbook = playbook or config.load_playbook()
     with open(path, "r", encoding="utf-8", newline="") as fh:
         rows = list(csv.DictReader(fh))
     for r in rows:
         if r["when"].startswith("REPLACE") or r["then"].startswith("REPLACE"):
             raise ValueError("rules/decision-table.csv still contains REPLACE placeholders")
+        r["when_template"] = r["when"]
+        r["when"] = _resolve_placeholders(r["when"], playbook)
+        r["notes"] = _resolve_placeholders(r["notes"], playbook)
     return rows
 
 
@@ -452,6 +562,7 @@ def evaluate_transformers(joined: dict, charts: dict, playbook: dict, table: lis
             "cpk_ci_high": capacity["cpk_ci_high"],
             "forecast_ratio": capacity["forecast_ratio"],
             "period_peak_ratio": capacity["period_peak_ratio"],
+            "assumption_flags": float(len(capacity["assumption_flags"])),
         }
         decision = needs_review(facts, table)
         results[tid] = {
@@ -477,7 +588,7 @@ def evaluate_transformers(joined: dict, charts: dict, playbook: dict, table: lis
 
 
 def summarize(results: dict) -> dict:
-    counts = {"within_limits": 0, "review_needed": 0, "stable": 0, "signal": 0, "insufficient_history": 0}
+    counts = {"within_limits": 0, "review_needed": 0, "stable": 0, "signal": 0, "insufficient_history": 0, "zero_variation": 0}
     for r in results.values():
         counts[r["status"]] = counts.get(r["status"], 0) + 1
         counts[r["stability"]] = counts.get(r["stability"], 0) + 1

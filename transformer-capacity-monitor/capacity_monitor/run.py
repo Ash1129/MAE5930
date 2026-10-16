@@ -56,7 +56,7 @@ def make_calibration_case(results: dict, period: Period) -> dict | None:
     if src["period_readings"]:
         src["period_readings"][-1] = dict(src["period_readings"][-1], load=bumped)
     src["status"] = "review_needed"
-    src["decision"] = {"outcome": "review_needed", "rule": "7", "reason": "Forecast peak near or above the rated maximum (90% of rating or more)", "condition": "forecast_ratio >= 0.9"}
+    src["decision"] = {"outcome": "review_needed", "rule": "9", "reason": "Forecast peak near or above the rated maximum (0.9 of rating or more)", "condition": "forecast_ratio >= 0.9"}
     src["capacity"]["cpk"] = 1.85
     src["capacity"]["cpk_ci_low"] = 1.52
     src["capacity"]["cpk_ci_high"] = 2.18

@@ -1,10 +1,12 @@
 rule,when,then,notes
 1,stability == 'insufficient_history',review_needed,Not enough stable history to judge the load pattern; a person decides
 2,stability == 'signal',review_needed,Chart signal: the load pattern changed; capability is not calculated for an unstable pattern
-3,period_peak_ratio >= 1.0,review_needed,A reading in the period reached or exceeded the rated maximum
-4,cpk is missing,review_needed,No capability result (insufficient data or calculation not possible)
-5,cpk < 1.33,review_needed,Low Cpk against the rated maximum (playbook threshold)
-6,cpk_ci_low < 1.33,review_needed,Uncertain Cpk: the lower 95% confidence bound crosses the review threshold
-7,forecast_ratio >= 0.9,review_needed,Forecast peak near or above the rated maximum (90% of rating or more)
-8,forecast_ratio is missing,review_needed,No forecast could be applied to this transformer
-9,otherwise,within_limits,Every transformer needs a defined outcome; first matching row wins
+3,stability == 'zero_variation',review_needed,Readings show no variation at all; check the meter or feed before trusting them
+4,period_peak_ratio >= 1.0,review_needed,A reading in the period reached or exceeded the rated maximum
+5,cpk is missing,review_needed,No capability result (insufficient data or calculation not possible)
+6,assumption_flags >= 1,review_needed,Capability assumptions not met (serial correlation or non-normal daily peaks); Cpk shown for information only
+7,cpk < ${capability.cpk_review_below},review_needed,Low Cpk against the rated maximum (playbook threshold ${capability.cpk_review_below})
+8,cpk_ci_low < ${capability.cpk_ci_low_review_below},review_needed,Uncertain Cpk: the lower 95% confidence bound is below ${capability.cpk_ci_low_review_below}
+9,forecast_ratio >= ${forecast.near_rating_ratio},review_needed,Forecast peak near or above the rated maximum (${forecast.near_rating_ratio} of rating or more)
+10,forecast_ratio is missing,review_needed,No forecast could be applied to this transformer
+11,otherwise,within_limits,Every transformer needs a defined outcome; first matching row wins

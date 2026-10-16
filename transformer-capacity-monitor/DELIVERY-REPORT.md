@@ -21,6 +21,24 @@ Why not READY:
   06:00 schedule, 7-day period, 60-day history, declared-primary-area allocation) are the builder's
   reversible defaults, not the owner's approved playbook. The named reviewer and alert recipient are not set.
 
+## Technical review fixes (2026-10-16, second pass)
+
+A technical review raised five issues. Each is fixed and tested:
+
+| Issue | Fix | Evidence |
+|---|---|---|
+| Forecast kW added to kVA peaks | `project_demand` converts forecast kW to the asset's unit using `forecast.power_factor` (0.95 default) from the playbook; kW-rated assets are added directly; the conversion and factor are recorded in the forecast assumptions shown to the reviewer | `test_forecast_projection_known_answer_with_unit_conversion` (hand-computed: 40 customers x 0.45 x 2.4 kW = 43.2 kW -> 45.47 kVA) |
+| Capability assumptions unchecked | Before any Cpk is reported, daily peaks pass a lag-1 autocorrelation check (band +/- 2/sqrt(n)) and a Jarque-Bera normality test (alpha 0.05, playbook). A failure sends the case to review (rule 6) with the Cpk shown for information only. Seasonality and weather are named as a residual limitation in the result | `test_capability_assumption_checks`; the review page shows "Capability assumptions: met / not met" with the statistics |
+| Confidence interval not validated | Bissell's approximation now uses the effective degrees of freedom of the moving-range sigma estimator, 0.62 x (n-1) (Wheeler). A 1,500-run Monte Carlo in the test suite checks coverage of the true Cpk is 92.5% to 97.5%; with n-1 it was 88% | `test_cpk_interval_coverage_by_simulation` (observed ~94-95%), `test_cpk_interval_hand_computed_known_answer` (endpoints against a hand calculation) |
+| Edge cases | Constant data -> chart status `zero_variation`, no Cpk, review rule 3; one or zero points -> insufficient history; NaN/inf readings are rejected at load and skipped in charts; every run rule (3-sigma, 2-of-3, 8-in-a-row, moving range) has a positive and negative test; forecast arithmetic has a known-answer test | `test_chart_edge_cases_constant_one_point_nonfinite`, `test_chart_run_rules_two_of_three_and_eight_in_a_row_and_mr` |
+| Configuration could disagree with behavior | The decision table now references playbook values as `${capability.cpk_review_below}` etc. and is resolved at load, so there is one source of truth; the Airflow DAG reads its cron and time zone from `rules/playbook.json` at parse time | `test_thresholds_have_one_source_of_truth`; DAG parse prints the playbook schedule |
+
+Test suite after the fixes: **24 passed**. Evaluation cases: 6 of 6.
+
+## Synthetic dataset scaled to 500 transformers
+
+`scripts/make_synthetic_data.py --count 500` keeps the 12 labeled cases and adds 488 generated transformers spread across the twelve areas (ratings 25 to 500 kVA, 86% designed to be within limits, the rest a mix of chart signal, low Cpk, uncertain Cpk, forecast exceedance and insufficient history). On this dataset one full run (steps 1-15, 732,000 hourly readings) takes about 3 seconds; the result was 500 monitored, 403 within limits, 97 review needed (36 chart signals, 7 insufficient history, 13 low Cpk, 20 uncertain Cpk, 21 forecast exceedances). The 42 MB readings file is not committed to git; the Start launcher regenerates it when missing.
+
 ## Launch location
 
 - Double-click `Start Capacity Monitor.command` (or `./scripts/start_airflow.sh` and `./scripts/start_app.sh`).
@@ -53,7 +71,7 @@ Environment: macOS, Python 3.12 venv, apache-airflow 3.3.2 (standalone, LocalExe
 
 | Test | Observed result |
 |---|---|
-| `pytest tests -q` (pipeline units, end-to-end runs, failure cases, web user path, approval bypass, injection) | **17 passed** |
+| `pytest tests -q` (pipeline units, end-to-end runs, failure cases, web user path, approval bypass, injection, known-answer and edge cases, CI simulation) | **24 passed** |
 | `scripts/run_evals.py` (the 6 cases in evals/examples.csv, isolated home) | **6 of 6 passed**; details in `evals/results.md` |
 | Labeled synthetic cases, period ending 2026-10-15 | 12 transformers: 7 within limits, 5 review needed. T-DRY-004 chart signal (beyond 3 sigma on 2026-10-13, Cpk withheld, peak 82% of rating); T-LAN-005 uncertain Cpk 1.43 (CI 1.16 to 1.70); T-CAR-006 forecast peak 135% of rating with current peak 70%; T-DAN-010 low Cpk 1.22; T-ULY-007 insufficient history (11 days) |
 | Airflow DAG import | Parsed with no import errors; appears in the Airflow API with schedule "At 06:00, only on Monday, Wednesday, and Friday" |

@@ -23,10 +23,10 @@ def test_labeled_synthetic_cases(sandbox):
     r = _results()
     assert r["T-DRY-004"]["stability"] == "signal" and r["T-DRY-004"]["capacity"]["cpk"] is None  # case 2
     assert r["T-DRY-004"]["capacity"]["period_peak_ratio"] < 1.0
-    assert r["T-LAN-005"]["decision"]["rule"] == "6"  # case 3: uncertain Cpk
-    assert r["T-CAR-006"]["decision"]["rule"] == "7" and r["T-CAR-006"]["capacity"]["forecast_ratio"] > 1.0  # case 4
+    assert r["T-LAN-005"]["decision"]["rule"] == "8"  # case 3: uncertain Cpk
+    assert r["T-CAR-006"]["decision"]["rule"] == "9" and r["T-CAR-006"]["capacity"]["forecast_ratio"] > 1.0  # case 4
     assert r["T-ULY-007"]["stability"] == "insufficient_history"
-    assert r["T-DAN-010"]["decision"]["rule"] == "5"
+    assert r["T-DAN-010"]["decision"]["rule"] == "7"
     assert r["T-ITH-001"]["status"] == "within_limits"
     assert all(s["status"] == "success" for s in run["steps"] if s["step"] not in (13,))
     assert [s["status"] for s in run["steps"] if s["step"] == 13] == ["waiting"]

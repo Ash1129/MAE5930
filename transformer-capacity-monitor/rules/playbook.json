@@ -1,5 +1,5 @@
 {
-  "version": "default-2026-10-16",
+  "version": "default-2026-10-16b",
   "_note": "Reversible defaults chosen by the builder. Replace with the approved grid-planning playbook values and record who approved them.",
   "timezone": "America/New_York",
   "schedule": {
@@ -23,18 +23,23 @@
     "limits_note": "Control limits come from the transformer's own historical daily peaks, never from the rated maximum."
   },
   "capability": {
-    "method": "One-sided Cpk (Cpu) against the rated maximum, sigma from the average moving range (MRbar/d2); 95% interval by Bissell's approximation",
+    "method": "One-sided Cpk (Cpu) against the rated maximum, sigma from the average moving range (MRbar/d2); 95% interval by Bissell's approximation with effective degrees of freedom 0.62 x (n-1) for the moving-range estimator",
     "confidence_level": 0.95,
     "min_points": 20,
     "cpk_review_below": 1.33,
     "cpk_ci_low_review_below": 1.33,
-    "uncertainty_note": "Uncertain = the estimate is at or above the threshold but the lower 95% bound is below it."
+    "uncertainty_note": "Uncertain = the estimate is at or above the threshold but the lower 95% bound is below it.",
+    "mr_effective_df_factor": 0.62,
+    "normality_alpha": 0.05,
+    "assumption_note": "Cpk is reported only when daily peaks pass a lag-1 autocorrelation check (+/- 2/sqrt(n)) and a Jarque-Bera normality test; otherwise the case goes to review."
   },
   "forecast": {
     "version": "TC-HP-2026-v1",
     "allocation_method": "declared_primary_area",
     "allocation_note": "When a transformer's location falls in more than one boundary area, use the primary area declared on the asset record and flag the assumption for the reviewer.",
-    "near_rating_ratio": 0.9
+    "near_rating_ratio": 0.9,
+    "power_factor": 0.95,
+    "unit_note": "Forecast demand is real power (kW per heat pump). Readings and ratings in kVA are apparent power; added kW is divided by power_factor before it is added. Assets rated in kW are added directly."
   },
   "review": {
     "reviewer_name": "",

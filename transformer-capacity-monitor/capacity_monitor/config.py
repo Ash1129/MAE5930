@@ -49,8 +49,8 @@ _DEFAULT_PLAYBOOK = {
     "period_days": 7,
     "history_days": 60,
     "chart": {"min_history_points": 20, "E2": 2.66, "D4": 3.267, "d2": 1.128},
-    "capability": {"confidence_level": 0.95, "min_points": 20, "cpk_review_below": 1.33, "cpk_ci_low_review_below": 1.33},
-    "forecast": {"version": "TC-HP-2026-v1", "allocation_method": "declared_primary_area", "near_rating_ratio": 0.9},
+    "capability": {"confidence_level": 0.95, "min_points": 20, "cpk_review_below": 1.33, "cpk_ci_low_review_below": 1.33, "mr_effective_df_factor": 0.62, "normality_alpha": 0.05},
+    "forecast": {"version": "TC-HP-2026-v1", "allocation_method": "declared_primary_area", "near_rating_ratio": 0.9, "power_factor": 0.95},
     "review": {"reviewer_name": "", "max_text_length": 2000},
     "retries": {"max_attempts": 3, "delay_seconds": 2},
 }

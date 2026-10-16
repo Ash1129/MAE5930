@@ -17,6 +17,7 @@
 <dt>Chart limits</dt><dd>{% if r.chart.center is not none %}CL {{ r.chart.center|num(1) }}, UCL {{ r.chart.ucl|num(1) }}, LCL {{ r.chart.lcl|num(1) }} (from history, not the rating){% else %}not computed{% endif %}</dd>
 <dt>Period peak</dt><dd>{{ r.capacity.period_peak|num(1) }} {{ r.unit }} = {{ r.capacity.period_peak_ratio|pct }} of rating</dd>
 <dt>Cpk vs rating</dt><dd>{% if r.capacity.cpk is not none %}{{ r.capacity.cpk|num }} (95% interval {{ r.capacity.cpk_ci_low|num }} to {{ r.capacity.cpk_ci_high|num }}, n={{ r.capacity.n }}){% else %}not calculated: {{ r.capacity.note }}{% endif %}</dd>
+<dt>Capability assumptions</dt><dd>{% if r.capacity.assumptions %}{% if r.capacity.assumption_flags %}<span class="tag bad">not met</span> {{ r.capacity.assumption_flags|join('; ') }}{% else %}<span class="tag ok">met</span> lag-1 autocorrelation {{ r.capacity.assumptions.lag1_autocorrelation|num }} (band &plusmn;{{ r.capacity.assumptions.autocorrelation_band|num }}), normality p={{ r.capacity.assumptions.jarque_bera.p_value|num(3) }}{% endif %}{% else %}not checked (no capability result){% endif %}</dd>
 <dt>Projected peak</dt><dd>{% if r.capacity.projected_peak is not none %}{{ r.capacity.projected_peak|num(1) }} {{ r.unit }} = {{ r.capacity.forecast_ratio|pct }} of rating (margin {{ r.capacity.forecast_margin|num(1) }}){% else %}not projected: {{ r.projection.assumptions.reason_not_projected }}{% endif %}</dd>
 </dl>
 </div>

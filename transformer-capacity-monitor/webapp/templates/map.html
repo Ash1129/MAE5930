@@ -71,6 +71,7 @@ POINTS.forEach(p => {
     ['Projected peak', p.projected_peak === null ? 'not projected' : fmt(p.projected_peak, 1) + ' ' + p.unit + ' (' + pct(p.forecast_ratio) + ' of rating)'],
   ];
   if (p.signals.length) rows.push(['Chart signals', p.signals.join('<br>')]);
+  if (p.assumption_flags && p.assumption_flags.length) rows.push(['Assumptions', p.assumption_flags.join('<br>')]);
   rows.push(['Disposition', p.disposition || 'none recorded']);
   const html = '<b>' + p.id + '</b> ' + p.name + '<table>' + rows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') + '</table>' +
     '<a class="popbtn" href="' + p.url + '">Open full review</a>';

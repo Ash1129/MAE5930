@@ -31,7 +31,21 @@ from airflow.sdk import Param, dag, task  # noqa: E402
 from airflow.sdk.bases.sensor import PokeReturnValue  # noqa: E402
 
 DAG_ID = "log_transformer_loads_and_monitor_capacity_again"
-LOCAL_TZ = "America/New_York"
+
+
+def _playbook_schedule() -> tuple[str, str]:
+    """Schedule and time zone come from rules/playbook.json so the documented playbook is the one that runs."""
+    import json
+
+    try:
+        with open(ROOT / "rules" / "playbook.json", "r", encoding="utf-8") as fh:
+            pb = json.load(fh)
+        return str(pb["schedule"]["cron"]), str(pb.get("timezone", "America/New_York"))
+    except (OSError, KeyError, ValueError):
+        return "0 6 * * 1,3,5", "America/New_York"
+
+
+SCHEDULE_CRON, LOCAL_TZ = _playbook_schedule()
 
 
 def _period_end_from_context(context) -> date:
@@ -99,7 +113,7 @@ def _on_dag_failure(context):
 
 @dag(
     dag_id=DAG_ID,
-    schedule="0 6 * * 1,3,5",  # Monday, Wednesday, Friday 06:00 local (rules/playbook.json)
+    schedule=SCHEDULE_CRON,  # from rules/playbook.json (default Monday, Wednesday, Friday 06:00 local)
     start_date=pendulum.datetime(2026, 10, 1, tz=LOCAL_TZ),
     catchup=False,
     max_active_runs=1,

@@ -39,6 +39,19 @@ Control-chart history is `history_days` (60) before the period end. `period_id =
 inputs reviewed; if a rerun changes a transformer's inputs the old disposition is kept in history but no longer
 counts. Report files are overwritten in `data/reports/<period>/` with per-run copies in `history/`.
 
+## Statistics (what the numbers mean and their limits)
+
+- **Chart**: individuals and moving-range chart on one value per day (the daily peak). Limits from the baseline days before the period (E2 = 2.66, D4 = 3.267, d2 = 1.128). Run rules: beyond 3 sigma, 2 of 3 beyond 2 sigma, 8 in a row one side, moving range beyond its limit. Constant data gives `zero_variation`; fewer than `min_history_points` baseline days gives `insufficient_history`.
+- **Cpk**: one-sided Cpu = (rating - mean) / (3 sigma), sigma = MRbar / d2 over the window. Reported only for stable charts with at least `min_points` values.
+- **Interval**: Bissell's approximation, half-width z x sqrt(1/(9n) + Cpk^2 / (2 df)), with df = `mr_effective_df_factor` x (n-1) = 0.62(n-1), the effective degrees of freedom of the average-moving-range estimator (Wheeler). `tests/test_pipeline.py` checks coverage by simulation (about 95%; n-1 would give about 88%).
+- **Assumptions**: a conventional Cpk reading needs independent, roughly normal observations (NIST/SEMATECH e-Handbook 6.1.6). The tool checks lag-1 autocorrelation (band +/- 2/sqrt(n)) and Jarque-Bera normality (alpha `normality_alpha`). A failed check routes the case to review (decision-table rule 6). Seasonality and weather effects over the 60-day window are not modeled; that is a known limitation for the reviewer to weigh.
+- **Forecast units**: heat-pump demand is real power (kW). For assets rated in kVA the added kW is divided by `forecast.power_factor` before it is added to the period peak; kW-rated assets add directly. The factor and note are in every result's forecast assumptions.
+- **Thresholds**: `rules/decision-table.csv` references playbook values as `${section.key}`; `load_decision_table` resolves them, so editing `rules/playbook.json` changes behavior. The DAG reads its cron and time zone from the playbook too.
+
+## Synthetic data
+
+`scripts/make_synthetic_data.py --count N` writes the 12 labeled cases plus N-12 generated transformers. The generator verifies each intended-pass series with the real chart, capability and assumption functions and redraws until it matches its label. `data/feeds/readings.csv` is gitignored (42 MB at 500 transformers); regenerate with the script.
+
 ## Guardrails
 
 Text fields in feeds and in review forms pass `guards.check_text` (length limit, blocked terms, instruction-like

@@ -60,14 +60,14 @@ def main():
             gen("normal"); st = fresh_store(); run = execute_run(END, "eval", st)
             r = {x["transformer_id"]: x for x in st.get_transformer_results(END)}["T-LAN-005"]
             c = r["capacity"]
-            ok = r["decision"]["rule"] == "6" and r["status"] == "review_needed"
+            ok = r["decision"]["rule"] == "8" and r["status"] == "review_needed"
             obs = f"T-LAN-005 cpk={c['cpk']:.2f} CI [{c['cpk_ci_low']:.2f}, {c['cpk_ci_high']:.2f}] threshold 1.33 -> rule {r['decision']['rule']} ({r['decision']['reason'][:50]}); review_needed"
         elif cid == "4":
             gen("normal"); st = fresh_store(); run = execute_run(END, "eval", st)
             r = {x["transformer_id"]: x for x in st.get_transformer_results(END)}["T-CAR-006"]
             c = r["capacity"]; a = r["projection"]["assumptions"]
-            ok = r["decision"]["rule"] == "7" and c["forecast_ratio"] > 1 and c["period_peak_ratio"] < 1
-            obs = f"T-CAR-006 period peak {c['period_peak_ratio']:.0%} of rating, projected peak {c['forecast_ratio']:.0%} of rating ({a['forecast_version']}, {a['horizon']}, allocation {a['allocation_method']}) -> rule 7; disposition required before finalize"
+            ok = r["decision"]["rule"] == "9" and c["forecast_ratio"] > 1 and c["period_peak_ratio"] < 1
+            obs = f"T-CAR-006 period peak {c['period_peak_ratio']:.0%} of rating, projected peak {c['forecast_ratio']:.0%} of rating ({a['forecast_version']}, {a['horizon']}, allocation {a['allocation_method']}) -> rule 9; disposition required before finalize"
         elif cid == "5":
             gen("normal"); st = fresh_store(); r1 = execute_run(END, "eval", st); st.finalize_period(END, "Eval reviewer"); r2 = execute_run(END, "eval", st)
             periods = st.list_periods(); p = periods[0]

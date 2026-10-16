@@ -8,6 +8,7 @@ Usage:
   python scripts/make_synthetic_data.py                     # normal scenario, 75 days ending today
   python scripts/make_synthetic_data.py --end 2026-10-15
   python scripts/make_synthetic_data.py --scenario boundary-mismatch | missing-rating | unsafe-text | normal
+  python scripts/make_synthetic_data.py --count 500          # the 12 labeled cases plus 488 generated ones
 """
 
 from __future__ import annotations
@@ -57,6 +58,33 @@ TRANSFORMERS = [
     ("T-TRU-012", "Main St pad", "TRU-V", -76.661, 42.541, 100, 48, "within"),
 ]
 
+ROAD_NAMES = ["Ridge Rd", "Mill St", "Lake Rd", "Hollow Rd", "Creek Rd", "Main St", "Hill Rd", "Valley Rd", "Church St", "School Rd", "Orchard Rd", "Station Rd", "Forest Home Dr", "Elm St", "Maple Ave", "Cemetery Rd", "Falls Rd", "Brook Rd", "Pine Tree Rd", "Hanshaw Rd"]
+RATINGS = [(25, 6), (37.5, 10), (50, 20), (75, 22), (100, 20), (167, 12), (250, 6), (333, 3), (500, 1)]  # kVA, weight
+AREA_WEIGHTS = {"ITH-C": 22, "ITH-T": 16, "CAY-V": 4, "DRY": 12, "LAN": 11, "CAR": 5, "DAN": 5, "ENF": 5, "GRO": 7, "NEW": 6, "ULY": 5, "TRU-V": 2}
+AREA_CODES = {"ITH-C": "ITC", "ITH-T": "ITT", "CAY-V": "CAY", "DRY": "DRY", "LAN": "LAN", "CAR": "CAR", "DAN": "DAN", "ENF": "ENF", "GRO": "GRO", "NEW": "NEW", "ULY": "ULY", "TRU-V": "TRU"}
+EXTRA_CASES = [("within", 86), ("signal", 5), ("lowcpk", 3), ("uncertain", 3), ("forecast", 2), ("insufficient", 1)]
+
+
+def extra_transformers(rng, count):
+    """Generate `count` more synthetic transformers beyond the labeled twelve."""
+    areas = {a[0]: a for a in AREAS}
+    out = []
+    per_area = {}
+    for i in range(count):
+        aid = rng.choices(list(AREA_WEIGHTS), weights=list(AREA_WEIGHTS.values()))[0]
+        _, name, kind, lon, lat, hw, hh = areas[aid]
+        per_area[aid] = per_area.get(aid, 0) + 1
+        tid = f"T-{AREA_CODES[aid]}-{100 + per_area[aid]:03d}"
+        plon = lon + rng.uniform(-hw * 0.9, hw * 0.9)
+        plat = lat + rng.uniform(-hh * 0.9, hh * 0.9)
+        rating = rng.choices([r for r, _ in RATINGS], weights=[w for _, w in RATINGS])[0]
+        customers = max(1, int(rating / rng.uniform(2.0, 3.5)))
+        case = rng.choices([c for c, _ in EXTRA_CASES], weights=[w for _, w in EXTRA_CASES])[0]
+        label = f"{rng.choice(ROAD_NAMES)} {'pad' if rating >= 100 else 'pole'}"
+        out.append((tid, label, aid, round(plon, 5), round(plat, 5), rating, customers, case))
+    return out
+
+
 PROFILE = [0.55, 0.52, 0.50, 0.49, 0.50, 0.54, 0.62, 0.72, 0.78, 0.80, 0.80, 0.79, 0.78, 0.78, 0.80, 0.84, 0.90, 0.96, 1.00, 0.98, 0.92, 0.82, 0.70, 0.60]
 
 
@@ -91,6 +119,8 @@ def draw_daily_peaks(rng, rating, case, start, end):
             continue
         if case in ("within", "overlap", "forecast") and cap["cpk_ci_low"] < 1.33:
             continue
+        if case in ("within", "overlap", "forecast", "uncertain", "lowcpk") and cap["assumption_flags"]:
+            continue
         if case == "signal":
             peaks[end - timedelta(days=2)] = rating * (mu + 5.5 * sd)  # special cause: beyond 3 sigma, still below rating
         return peaks
@@ -107,8 +137,10 @@ def main():
     ap.add_argument("--days", type=int, default=75)
     ap.add_argument("--scenario", default="normal", choices=["normal", "boundary-mismatch", "missing-rating", "unsafe-text"])
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--count", type=int, default=len(TRANSFORMERS), help="total transformers (the 12 labeled cases plus generated ones)")
     args = ap.parse_args()
     rng = random.Random(args.seed)
+    transformers = list(TRANSFORMERS) + extra_transformers(random.Random(args.seed + 1), max(0, args.count - len(TRANSFORMERS)))
     end = date.fromisoformat(args.end)
     start = end - timedelta(days=args.days - 1)
     config.FEEDS_DIR.mkdir(parents=True, exist_ok=True)
@@ -117,7 +149,7 @@ def main():
     with open(config.FEEDS_DIR / "readings.csv", "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["transformer_id", "timestamp", "load", "unit"])
-        for tid, _name, _area, _lon, _lat, rating, _cust, case in TRANSFORMERS:
+        for tid, _name, _area, _lon, _lat, rating, _cust, case in transformers:
             peaks = draw_daily_peaks(rng, rating, case, start, end)
             for d, peak in sorted(peaks.items()):
                 for h in range(24):
@@ -129,7 +161,7 @@ def main():
     with open(config.FEEDS_DIR / "assets.csv", "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["transformer_id", "name", "lat", "lon", "rated_max", "unit", "customers", "area_id", "effective_from", "effective_to", "notes"])
-        for tid, name, area, lon, lat, rating, cust, case in TRANSFORMERS:
+        for tid, name, area, lon, lat, rating, cust, case in transformers:
             r = "" if (args.scenario == "missing-rating" and tid == "T-GRO-009") else rating
             note = "SYNTHETIC record"
             if args.scenario == "unsafe-text" and tid == "T-ITH-001":
@@ -158,7 +190,7 @@ def main():
             w.writerow(["TC-HP-2026-v1", aid, "2030 winter peak", rng.randint(400, 6000), base, fc, 2.4, "2026-01-01", "2026-12-31", "SYNTHETIC forecast"])
             w.writerow(["TC-HP-2025-v2", aid, "2029 winter peak", rng.randint(400, 6000), 0.10, 0.16, 2.4, "2025-01-01", "2025-12-31", "SYNTHETIC superseded version"])
 
-    print(f"SYNTHETIC feeds written to {config.FEEDS_DIR} (scenario={args.scenario}, readings {start}..{end})")
+    print(f"SYNTHETIC feeds written to {config.FEEDS_DIR} (scenario={args.scenario}, {len(transformers)} transformers, readings {start}..{end})")
 
 
 if __name__ == "__main__":
