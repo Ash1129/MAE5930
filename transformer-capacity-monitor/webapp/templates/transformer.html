@@ -95,6 +95,29 @@
   th,td{text-align:left;padding:5px 12px 5px 0;border-bottom:1px solid rgba(var(--ink-rgb),.08)}
   th{font-weight:400;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
   .scroll{max-height:360px;overflow:auto}
+  /* inside the transformer: a modeled 3D cutaway driven by the week's hourly loads */
+  .inside{display:flex;flex-direction:column;gap:10px}
+  .inside .hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px}
+  .badge-modeled{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:999px;background:#F4B400;color:#1D2430}
+  .inside .lead{font-size:13px;color:var(--ink-60);flex-basis:100%}
+  .stage-wrap{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:16px;border:1px solid var(--line);border-radius:4px;background:var(--panel);padding:12px}
+  .stage{position:relative;height:380px;min-width:0;border-radius:4px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,rgba(var(--ink-rgb),.03),rgba(var(--ink-rgb),.12))}
+  .stage canvas{display:block;width:100%!important;height:100%!important;outline:none}
+  .stage .hint{position:absolute;left:10px;bottom:8px;font-size:11px;color:var(--ink-55);pointer-events:none}
+  .read{display:flex;flex-direction:column;gap:10px;font-size:13px;min-width:0}
+  .read .when{font-size:12px;color:var(--ink-60);min-height:32px}
+  .read .cell{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line)}
+  .read .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
+  .read .v{font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1.1}
+  .read .v small{font-family:var(--font-body);font-weight:400;font-size:12px;color:var(--ink-60);margin-left:4px}
+  .read .v .sw{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:6px}
+  .scrub{display:flex;align-items:center;gap:10px}
+  .scrub input[type=range]{flex:1;accent-color:var(--accent);margin:0}
+  .scrub .btn{padding:6px 12px;font-size:13px}
+  .scale{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-60);flex-wrap:wrap}
+  .scale .bar{width:160px;height:8px;border-radius:4px;background:linear-gradient(90deg,#2b6cb0,#1B7F4B 33%,#F4B400 58%,#F28C28 78%,#D7263D 92%,#7a0010)}
+  .inside .foot{font-size:12px;color:var(--ink-60)}
+  @media (max-width:720px){.stage-wrap{grid-template-columns:1fr}.stage{height:300px}}
   .asset-note{font-size:13px;color:var(--ink-60);padding:14px 0}
   @media (max-width:600px){
     .wrap{padding:22px 16px 64px;gap:30px}
@@ -195,6 +218,32 @@
     </details>
   </div>
 
+  <div class="inside" id="inside">
+    <div class="hd">
+      <h3>Inside the transformer</h3><span class="badge-modeled">Modeled</span>
+      <span class="lead">A cutaway of a {{ 'single-phase pole' if 'pole' in (r.name or '')|lower else 'three-phase pad-mounted' }} transformer, coloured by the oil and winding temperatures that this week's hourly loads would produce under the IEEE C57.91 loading guide. The tool has no sensors inside the unit, so these are estimates for understanding, not for decisions. Drag to turn it; scrub through the week.</span>
+    </div>
+    <div class="stage-wrap">
+      <div class="stage" id="stage"><span class="hint">drag to rotate · wheel to zoom</span></div>
+      <div class="read">
+        <div class="when" id="th-when">Loading the week's readings…</div>
+        <div class="cell"><span class="k">Load</span><span class="v" id="th-load">—</span></div>
+        <div class="cell"><span class="k">Oil, top of tank</span><span class="v" id="th-oil">—</span></div>
+        <div class="cell"><span class="k">Winding hot spot</span><span class="v" id="th-hot">—</span></div>
+        <div class="cell"><span class="k">Insulation ageing</span><span class="v" id="th-age">—</span></div>
+        <div class="cell"><span class="k">Week's hottest</span><span class="v" id="th-peak" style="font-size:15px">—</span></div>
+      </div>
+    </div>
+    <div class="scrub"><button class="btn" id="th-play" type="button">Play</button><input type="range" id="th-slider" min="0" max="0" value="0" aria-label="Hour of the week"><span class="scale"><span class="bar"></span>20 °C → 120 °C</span></div>
+    <div class="foot" id="th-foot"></div>
+    <details class="charts-more">
+      <summary>{{ chev }}How this estimate is made</summary>
+      <div class="in">
+        <p class="note">IEEE C57.91 exponential model, hour by hour from the recorded loads. K is load ÷ rating. Top-oil rise = <span id="th-p-to"></span> °C × ((K²·R + 1) ÷ (R + 1))<sup>n</sup>, approached with a <span id="th-p-tau"></span> h oil time constant. Hot-spot rise over the oil = <span id="th-p-hs"></span> °C × K<sup>2m</sup>. Ambient is fixed at <span id="th-p-amb"></span> °C (no weather feed). R = <span id="th-p-r"></span>, n = <span id="th-p-n"></span>, m = <span id="th-p-m"></span>. Ageing factor 1.0 means insulation ages at its design rate (110 °C hot spot); 2.0 means twice as fast. Parameters live in <code>rules/playbook.json → thermal_model</code>.</p>
+      </div>
+    </details>
+  </div>
+
   <div class="two">
     <div>
       <h3>What the tool checked</h3>
@@ -282,6 +331,107 @@
   {% if r.notes %}<div class="asset-note" style="margin-top:-24px">Asset note: {{ r.notes }}</div>{% endif %}
 </div>
 
+
+<script type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const URL = {{ url_for('api_transformer_thermal', period_id=period.period_id, tid=r.transformer_id)|tojson }};
+const $ = id => document.getElementById(id);
+const stage = $('stage');
+const dark = () => document.documentElement.dataset.theme === 'dark';
+
+// temperature -> colour (same ramp as the scale under the view)
+const STOPS = [[20, 0x2b6cb0], [50, 0x1B7F4B], [75, 0xF4B400], [95, 0xF28C28], [110, 0xD7263D], [125, 0x7a0010]];
+function tempColor(t) {
+  const c = new THREE.Color();
+  if (t <= STOPS[0][0]) return c.setHex(STOPS[0][1]);
+  for (let i = 1; i < STOPS.length; i++) if (t <= STOPS[i][0]) { const a = new THREE.Color(STOPS[i - 1][1]), b = new THREE.Color(STOPS[i][1]); return a.lerp(b, (t - STOPS[i - 1][0]) / (STOPS[i][0] - STOPS[i - 1][0])); }
+  return c.setHex(STOPS[STOPS.length - 1][1]);
+}
+
+// ---- scene ----
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+camera.position.set(3.4, 2.2, 4.2);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.1, 0); controls.enableDamping = true; controls.autoRotate = true; controls.autoRotateSpeed = 0.6; controls.minDistance = 3; controls.maxDistance = 12;
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+scene.add(new THREE.HemisphereLight(0xffffff, 0x9ca3af, 1.4));
+const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(4, 6, 3); scene.add(key);
+const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(-4, 2, -3); scene.add(fill);
+
+const steel = new THREE.MeshStandardMaterial({ color: 0x6b7280, metalness: 0.6, roughness: 0.45 });
+const paint = new THREE.MeshStandardMaterial({ color: 0x8fb3a0, metalness: 0.1, roughness: 0.6, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false });
+const oilMat = new THREE.MeshStandardMaterial({ color: 0xc9a227, transparent: true, opacity: 0.2, roughness: 0.2, depthWrite: false });
+const coreMat = new THREE.MeshStandardMaterial({ color: 0x4b5563, metalness: 0.8, roughness: 0.35 });
+const hvMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.55, emissive: 0x000000 });
+const lvMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.55, emissive: 0x000000 });
+const porcelain = new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.35 });
+
+const KIND = {{ ('pole' if 'pole' in (r.name or '')|lower else 'pad')|tojson }};
+const limbs = KIND === 'pole' ? [0] : [-1.05, 0, 1.05];
+const W = KIND === 'pole' ? 1.9 : 4.2, H = 2.3, D = 1.6;
+// tank (ghosted so the inside shows), oil, lid
+const tank = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), paint); tank.position.y = H / 2; scene.add(tank);
+const edges = new THREE.LineSegments(new THREE.EdgesGeometry(tank.geometry), new THREE.LineBasicMaterial({ color: 0x9ca3af, transparent: true, opacity: 0.6 })); edges.position.y = H / 2; scene.add(edges);
+const oil = new THREE.Mesh(new THREE.BoxGeometry(W - 0.08, H - 0.32, D - 0.08), oilMat); oil.position.y = (H - 0.32) / 2 + 0.04; scene.add(oil);
+const lid = new THREE.Mesh(new THREE.BoxGeometry(W + 0.12, 0.08, D + 0.12), steel); lid.position.y = H + 0.04; scene.add(lid);
+// core: limbs plus top and bottom yokes
+const yokeW = KIND === 'pole' ? 0.9 : 3.0;
+for (const x of limbs) { const limb = new THREE.Mesh(new THREE.BoxGeometry(0.34, 1.5, 0.34), coreMat); limb.position.set(x, H / 2, 0); scene.add(limb); }
+for (const y of [H / 2 - 0.85, H / 2 + 0.85]) { const yoke = new THREE.Mesh(new THREE.BoxGeometry(yokeW + (KIND === 'pole' ? 0 : 0.34), 0.2, 0.34), coreMat); yoke.position.set(0, y, 0); scene.add(yoke); }
+if (KIND === 'pole') { for (const x of [-0.45, 0.45]) { const side = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.9, 0.34), coreMat); side.position.set(x, H / 2, 0); scene.add(side); } }
+// windings: low-voltage inside, high-voltage outside
+const windings = [];
+for (const x of limbs) {
+  const lv = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 1.25, 40, 1, true), lvMat); lv.position.set(x, H / 2, 0); scene.add(lv); windings.push(lv);
+  const hv = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 1.15, 40, 1, true), hvMat); hv.position.set(x, H / 2, 0); scene.add(hv); windings.push(hv);
+  for (const y of [-0.62, 0.62]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.03, 8, 40), steel); ring.rotation.x = Math.PI / 2; ring.position.set(x, H / 2 + y, 0); scene.add(ring); }
+}
+// radiator fins on the back, bushings on the lid
+for (let i = 0; i < (KIND === 'pole' ? 6 : 12); i++) { const fin = new THREE.Mesh(new THREE.BoxGeometry(0.1, H - 0.5, 0.5), steel); fin.position.set(-W / 2 + 0.25 + i * ((W - 0.5) / Math.max((KIND === 'pole' ? 6 : 12) - 1, 1)), H / 2, -D / 2 - 0.28); scene.add(fin); }
+for (const x of limbs) { for (const [dx, h, r] of [[-0.22, 0.55, 0.07], [0.22, 0.32, 0.06]]) { const b = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.3, h, 16), porcelain); b.position.set(x + dx, H + 0.08 + h / 2, 0.2); scene.add(b); } }
+// ground shadow disc
+const disc = new THREE.Mesh(new THREE.CircleGeometry(3.6, 48), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.08 })); disc.rotation.x = -Math.PI / 2; disc.position.y = -0.01; scene.add(disc);
+
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+function frame() { controls.update(); renderer.render(scene, camera); requestAnimationFrame(frame); }
+frame();
+
+// ---- the week's estimates ----
+let data = null, i = 0, timer = null;
+const fmtWhen = ts => { const d = new Date(ts); return isNaN(d) ? ts : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false }); };
+function show(idx) {
+  if (!data) return;
+  i = Math.max(0, Math.min(idx, data.series.length - 1)); const s = data.series[i];
+  const hot = tempColor(s.hot_spot_c), oilC = tempColor(s.top_oil_c);
+  for (const w of windings) { w.material.color.copy(hot); w.material.emissive.copy(hot).multiplyScalar(s.hot_spot_c >= data.params.hot_spot_limit_c ? 0.5 : 0.22); }
+  oilMat.color.copy(oilC); oilMat.opacity = 0.16 + 0.16 * Math.min(s.k, 1.2);
+  $('th-slider').value = i;
+  $('th-when').textContent = fmtWhen(s.timestamp) + ' · hour ' + (i + 1) + ' of ' + data.series.length;
+  $('th-load').innerHTML = Math.round(s.k * 100) + '%<small>' + s.load.toFixed(1) + ' ' + data.unit + ' of ' + data.rating + '</small>';
+  $('th-oil').innerHTML = '<span class="sw" style="background:#' + oilC.getHexString() + '"></span>' + s.top_oil_c.toFixed(0) + ' °C';
+  $('th-hot').innerHTML = '<span class="sw" style="background:#' + hot.getHexString() + '"></span>' + s.hot_spot_c.toFixed(0) + ' °C<small>' + (s.hot_spot_c >= data.params.hot_spot_emergency_c ? 'emergency level' : s.hot_spot_c >= data.params.hot_spot_limit_c ? 'over the ' + data.params.hot_spot_limit_c + ' °C limit' : 'under the ' + data.params.hot_spot_limit_c + ' °C limit') + '</small>';
+  $('th-age').innerHTML = s.aging.toFixed(2) + '×<small>' + (s.aging < 0.1 ? 'negligible' : s.aging < 1 ? 'slower than design' : 'faster than design') + '</small>';
+}
+function play(on) { if (timer) { clearInterval(timer); timer = null; } $('th-play').textContent = on ? 'Pause' : 'Play'; if (on) timer = setInterval(() => { if (i >= data.series.length - 1) { play(false); return; } show(i + 1); }, 180); }
+$('th-play').onclick = () => play(!timer);
+$('th-slider').oninput = e => { play(false); show(+e.target.value); };
+fetch(URL).then(r => r.ok ? r.json() : Promise.reject(r.status)).then(j => {
+  data = j; $('th-slider').max = j.series.length - 1;
+  const p = j.params; for (const [k, v] of [['to', p.top_oil_rise_rated_c], ['tau', p.oil_time_constant_h], ['hs', p.hot_spot_rise_over_top_oil_rated_c], ['amb', p.ambient_c], ['r', p.loss_ratio_R], ['n', p.oil_exponent_n], ['m', p.winding_exponent_m]]) $('th-p-' + k).textContent = v;
+  if (j.peak) $('th-peak').innerHTML = j.peak.hot_spot_c.toFixed(0) + ' °C hot spot<small>' + fmtWhen(j.peak.timestamp) + '</small>';
+  $('th-foot').textContent = (j.hours_at_or_over_limit ? j.hours_at_or_over_limit + ' of ' + j.series.length + ' hours this week would put the hot spot at or over ' + p.hot_spot_limit_c + ' °C, where insulation ages faster than designed.' : 'No hour this week would put the hot spot over the ' + p.hot_spot_limit_c + ' °C limit under these assumptions.') + ' Estimates only: the unit carries no temperature sensors.';
+  const at = j.peak ? j.series.findIndex(x => x.timestamp === j.peak.timestamp) : 0;
+  show(at < 0 ? 0 : at);
+}).catch(() => { $('th-when').textContent = 'The modeled view is unavailable for this transformer.'; });
+</script>
 {% if period.status != 'final' %}
 <script>
 (() => {

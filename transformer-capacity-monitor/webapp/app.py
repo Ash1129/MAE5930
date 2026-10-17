@@ -18,7 +18,7 @@ if str(ROOT) not in sys.path:
 
 from flask import Flask, abort, flash, redirect, render_template, request, send_from_directory, url_for  # noqa: E402
 
-from capacity_monitor import ai_explain, airflow_client, config, explain, heat  # noqa: E402
+from capacity_monitor import ai_explain, airflow_client, config, explain, heat, thermal  # noqa: E402
 from capacity_monitor.charts import imr_svg, mini_imr_svg, rating_svg, review_chart_caption, review_chart_svg  # noqa: E402
 from capacity_monitor.guards import check_text  # noqa: E402
 from capacity_monitor.report import write_report  # noqa: E402
@@ -705,6 +705,17 @@ def api_transformer_mini(period_id, tid):
         "ai_on": ai_on,
         "model": ai_explain.SUMMARY_MODEL,
     }
+
+
+@app.route("/api/periods/<period_id>/transformers/<tid>/thermal")
+def api_transformer_thermal(period_id, tid):
+    """Modeled oil and hot-spot temperatures for the week, for the review page's 3D view. Not a decision input."""
+    r = store.get_transformer_result(period_id, tid)
+    if not r:
+        abort(404)
+    out = thermal.simulate(r["period_readings"], r["rated_max"], config.load_playbook())
+    out.update({"transformer_id": tid, "rating": r["rated_max"], "unit": r["unit"], "kind": "pole" if "pole" in (r.get("name") or "").lower() else "pad"})
+    return out
 
 
 @app.route("/api/periods/<period_id>/transformers/<tid>/summary")
