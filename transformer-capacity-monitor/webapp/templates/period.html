@@ -4,7 +4,7 @@
 <h1>Period ending {{ period.period_id }} <span class="tag {{ 'ok' if period.status == 'final' else 'warn' }}">{{ period.status }}</span></h1>
 <p class="small muted">{{ period.period.start }} to {{ period.period.end }}, chart history from {{ period.period.history_start }}. Generated {{ period.generated_at }} by run {{ period.run_id }}. Reruns: {{ period.rerun_count }}.</p>
 <p>Transformers {{ period.summary.transformers }} | within limits {{ period.summary.within_limits }} | review needed {{ period.summary.review_needed }} | stable {{ period.summary.stable }} | chart signal {{ period.summary.signal }} | insufficient history {{ period.summary.insufficient_history }}</p>
-<p><a class="btn" href="{{ url_for('period_map', period_id=period.period_id) }}">Open map of this period</a></p>
+<p><a class="btn" href="{{ url_for('period_map', period_id=period.period_id) }}">Open map of this period</a> <a class="btn" href="{{ url_for('dashboard', period=period.period_id) }}">Open the dashboard</a></p>
 {% if period.warnings %}<details><summary>{{ period.warnings|length }} warning(s) carried into the report</summary><ul>{% for w in period.warnings %}<li class="small">{{ w }}</li>{% endfor %}</ul></details>{% endif %}
 </div>
 
@@ -13,7 +13,7 @@
 <p class="small muted">Review one case at a time. Each needs a recorded disposition before the report can be finalized.</p>
 <table><tr><th>Transformer</th><th>Area</th><th>Why flagged</th><th>Stability</th><th>Cpk (95% CI)</th><th>Period peak / rating</th><th>Forecast peak / rating</th><th>Disposition</th><th></th></tr>
 {% for r in exceptions %}<tr>
-<td><b>{{ r.transformer_id }}</b><br><span class="small muted">{{ r.name }}</span></td>
+<td><b>{{ r.transformer_id|tid }}</b><br><span class="small muted">{{ r.name }}</span></td>
 <td class="small">{{ r.area_name }}</td>
 <td class="small">Rule {{ r.decision.rule }}: {{ r.decision.reason }}</td>
 <td><span class="tag {{ {'stable':'ok','signal':'bad','insufficient_history':'warn'}[r.stability] }}">{{ r.stability.replace('_',' ') }}</span></td>
@@ -41,7 +41,7 @@
 <div class="card">
 <h2>Within limits ({{ within|length }})</h2>
 <table><tr><th>Transformer</th><th>Area</th><th>Rated max</th><th>Period peak</th><th>Cpk (95% CI)</th><th>Projected peak</th><th></th></tr>
-{% for r in within %}<tr><td><b>{{ r.transformer_id }}</b> <span class="small muted">{{ r.name }}</span></td><td class="small">{{ r.area_name }}</td><td>{{ r.rated_max|num(0) }} {{ r.unit }}</td><td>{{ r.capacity.period_peak|num(1) }} ({{ r.capacity.period_peak_ratio|pct }})</td><td>{{ r.capacity.cpk|num }} ({{ r.capacity.cpk_ci_low|num }} to {{ r.capacity.cpk_ci_high|num }})</td><td>{{ r.capacity.projected_peak|num(1) }} ({{ r.capacity.forecast_ratio|pct }})</td><td><a href="{{ url_for('transformer_detail', period_id=period.period_id, tid=r.transformer_id) }}">details</a></td></tr>{% endfor %}</table>
+{% for r in within %}<tr><td><b>{{ r.transformer_id|tid }}</b> <span class="small muted">{{ r.name }}</span></td><td class="small">{{ r.area_name }}</td><td>{{ r.rated_max|num(0) }} {{ r.unit }}</td><td>{{ r.capacity.period_peak|num(1) }} ({{ r.capacity.period_peak_ratio|pct }})</td><td>{{ r.capacity.cpk|num }} ({{ r.capacity.cpk_ci_low|num }} to {{ r.capacity.cpk_ci_high|num }})</td><td>{{ r.capacity.projected_peak|num(1) }} ({{ r.capacity.forecast_ratio|pct }})</td><td><a href="{{ url_for('transformer_detail', period_id=period.period_id, tid=r.transformer_id) }}">details</a></td></tr>{% endfor %}</table>
 </div>
 
 <div class="card"><h2>Run history for this period</h2>

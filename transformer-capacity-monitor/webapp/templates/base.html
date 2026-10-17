@@ -2,6 +2,9 @@
 {# Shared shell for Dashboard, period, run, Setup and Review metrics: the Alerts page's light chrome plus generic components. #}
 {% block head %}
 <style>
+  /* light values for the older token names some pages still use (dashboard, area) */
+  :root{--bg:var(--ground);--surface:#f8f7f6;--surface-2:rgba(29,36,48,.04);--text:var(--ink-90);--muted:var(--ink-60);--divider:var(--line-16);
+    --bad:var(--review);--okbg:rgba(27,127,75,.08);--warnbg:rgba(154,91,0,.08);--badbg:rgba(215,38,61,.08);--infobg:rgba(31,95,168,.08);--accent-100:#fff3e4}
   main{max-width:1040px;margin:0 auto;padding:36px 24px 80px}
   h1,h2,h3{font-family:var(--font-heading);font-weight:600;line-height:1.15;margin:0 0 12px;letter-spacing:-.01em}
   main>h1:first-child,.card>h1:first-child{font-weight:400;font-size:40px;line-height:1}

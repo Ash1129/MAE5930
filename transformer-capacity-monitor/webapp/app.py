@@ -19,12 +19,22 @@ if str(ROOT) not in sys.path:
 from flask import Flask, abort, flash, redirect, render_template, request, send_from_directory, url_for  # noqa: E402
 
 from capacity_monitor import ai_explain, airflow_client, config, explain, heat  # noqa: E402
-from capacity_monitor.charts import mini_imr_svg, review_chart_caption, review_chart_svg  # noqa: E402
+from capacity_monitor.charts import imr_svg, mini_imr_svg, rating_svg, review_chart_caption, review_chart_svg  # noqa: E402
 from capacity_monitor.guards import check_text  # noqa: E402
 from capacity_monitor.report import write_report  # noqa: E402
 from capacity_monitor.run import execute_run, new_run_id  # noqa: E402
 from capacity_monitor.sources import feed_status, period_for  # noqa: E402
 from capacity_monitor.store import Store, now_iso  # noqa: E402
+from webapp.viz import (  # noqa: E402
+    STATUS_LABEL,
+    STATUS_ORDER,
+    STABILITY_LABEL,
+    STABILITY_ORDER,
+    county_control_charts,
+    forecast_row,
+    pie_svg,
+    summarize_results,
+)
 
 app = Flask(__name__, template_folder=str(Path(__file__).parent / "templates"))
 app.secret_key = os.environ.get("CAPMON_SECRET", "local-review-app-not-for-internet")
@@ -99,16 +109,140 @@ def _pct(v):
     return "-" if v is None else f"{float(v) * 100:,.0f}%"
 
 
+@app.template_filter("tid")
+def _tid(v):
+    """Drop the synthetic T- prefix. Stored ids and URLs keep it."""
+    s = "" if v is None else str(v)
+    return s[2:] if s.startswith("T-") else s
+
+
 # ---- dashboard / intake ------------------------------------------------------------------
+
+BAND_ORDER = ("high", "mid", "ok")
+BAND_LABEL = {"high": "90% or more", "mid": "70 to 90%", "ok": "Under 70%"}
+BAND_COLOR = {"high": "#d7263d", "mid": "#e1ad66", "ok": "#1b7f4b"}
+
+
+def _area_parts(name: str) -> tuple[str, str]:
+    for prefix, kind in (("City of ", "city"), ("Town of ", "town"), ("Village of ", "village")):
+        if name.startswith(prefix):
+            return name[len(prefix):], kind
+    return name, ""
+
+
+def _board_url(period_id: str, **params) -> str:
+    q = {"period": period_id}
+    q.update({k: v for k, v in params.items() if v})
+    return url_for("dashboard", **q)
+
+
+def _with_hrefs(slices: list[dict], current: str, key: str, period_id: str, status: str, stability: str, area: str, band: str) -> list[dict]:
+    params = {"status": status, "stability": stability, "area": area, "band": band}
+    out = []
+    for s in slices:
+        nxt = dict(params)
+        nxt[key] = "" if current == s["key"] else s["key"]
+        item = dict(s)
+        item["href"] = _board_url(period_id, **nxt)
+        out.append(item)
+    return out
+
 
 @app.route("/dashboard")
 def dashboard():
-    sched = airflow_client.status()
-    runs = store.list_runs(limit=15)
-    periods = store.list_periods(limit=10)
-    pb = config.load_playbook()
-    default_end = (date.today() - timedelta(days=1)).isoformat()
-    return render_template("dashboard.html", sched=sched, runs=runs, periods=periods, playbook=pb, default_end=default_end, feeds=feed_status(), alerts=store.list_alerts(limit=8, unacknowledged_only=True))
+    """One screen for a reviewer: outcome and load pies, control charts, then the queue."""
+    alerts = store.list_alerts(limit=8, unacknowledged_only=True)
+    periods = store.list_periods(limit=12)
+    period_id = request.args.get("period", "").strip()
+    if not period_id and periods:
+        period_id = periods[0]["period_id"]
+    period = store.get_period(period_id) if period_id else None
+    if period_id and not period:
+        abort(404)
+    status = request.args.get("status", "").strip()
+    stability = request.args.get("stability", "").strip()
+    area = request.args.get("area", "").strip()
+    band = request.args.get("band", "").strip()
+    if status not in ("", "all", *STATUS_ORDER):
+        status = ""
+    if stability not in ("", *STABILITY_ORDER):
+        stability = ""
+    if band not in ("", *BAND_ORDER):
+        band = ""
+
+    board = None
+    if period:
+        raw = store.get_transformer_results(period_id)
+        full = summarize_results(raw)
+        period_start = (period.get("period") or {}).get("start") or period_id
+        for row in full["transformers"]:
+            row["url"] = url_for("transformer_detail", period_id=period_id, tid=row["id"])
+        scope = [r for r in raw if not r.get("is_calibration") and (not area or r.get("area_id") == area)]
+        focused = summarize_results(scope) if area else full
+        for row in focused["transformers"]:
+            row["url"] = url_for("transformer_detail", period_id=period_id, tid=row["id"])
+        status_slices = _with_hrefs(focused["status_slices"], status, "status", period_id, status, stability, area, band)
+        stability_slices = _with_hrefs(focused["stability_slices"], stability, "stability", period_id, status, stability, area, band)
+        band_counts = []
+        for key in BAND_ORDER:
+            count = sum(1 for r in focused["transformers"] if r["usage_band"] == key)
+            if count:
+                band_counts.append({"key": key, "label": BAND_LABEL[key], "count": count, "color": BAND_COLOR[key]})
+        band_slices = _with_hrefs(band_counts, band, "band", period_id, status, stability, area, band)
+        for item in full["areas"]:
+            item["short"], item["kind"] = _area_parts(item["area_name"])
+        base_counts = {}
+        for item in full["areas"]:
+            base_counts[item["short"]] = base_counts.get(item["short"], 0) + 1
+        for item in full["areas"]:
+            if base_counts[item["short"]] > 1 and item["kind"]:
+                item["short"] = f"{item['short']} ({item['kind']})"
+        areas = sorted(full["areas"], key=lambda a: (-a["review_needed"], a["area_name"]))
+        rows = focused["transformers"]
+        if status == "all":
+            pass
+        elif status:
+            rows = [r for r in rows if r["status"] == status]
+        else:
+            rows = [r for r in rows if r["status"] == "review_needed"]
+        if stability:
+            rows = [r for r in rows if r["stability"] == stability]
+        if area:
+            rows = [r for r in rows if r["area_id"] == area]
+        if band:
+            rows = [r for r in rows if r["usage_band"] == band]
+        review_n = sum(1 for r in focused["transformers"] if r["status"] == "review_needed")
+        controls = county_control_charts(scope, period_start)
+        board = {
+            "status_slices": status_slices,
+            "stability_slices": stability_slices,
+            "band_slices": band_slices,
+            "status_svg": pie_svg(status_slices, (status if status and status != "all" else ("review_needed" if not status else None))),
+            "stability_svg": pie_svg(stability_slices, stability or None),
+            "band_svg": pie_svg(band_slices, band or None),
+            "areas": areas,
+            "rows": rows,
+            "review_n": review_n,
+            "total": len(focused["transformers"]),
+            "area_name": next((a["area_name"] for a in full["areas"] if a["area_id"] == area), area),
+            "queue": not status,
+            "controls": controls,
+        }
+    return render_template(
+        "dashboard.html",
+        period=period,
+        periods=[p["period_id"] for p in periods],
+        alerts=alerts,
+        board=board,
+        status=status,
+        stability=stability,
+        area=area,
+        band=band,
+        status_label=STATUS_LABEL.get(status, ""),
+        stability_label=STABILITY_LABEL.get(stability, ""),
+        band_label=BAND_LABEL.get(band, ""),
+        stability_labels=STABILITY_LABEL,
+    )
 
 
 @app.post("/runs")
@@ -153,9 +287,9 @@ def _finalize_blockers(period_id: str) -> list[str]:
             continue
         d = r.get("disposition")
         if not d:
-            blockers.append(f"{r['transformer_id']}: no disposition recorded for the current inputs")
+            blockers.append(f"{_tid(r['transformer_id'])}: no disposition recorded for the current inputs")
         elif d["decision"] == "request_changes" and not r["is_calibration"]:
-            blockers.append(f"{r['transformer_id']}: changes were requested; rerun or re-review before finalizing")
+            blockers.append(f"{_tid(r['transformer_id'])}: changes were requested; rerun or re-review before finalizing")
     return blockers
 
 
@@ -178,6 +312,8 @@ def transformer_detail(period_id, tid):
     r = store.get_transformer_result(period_id, tid)
     if not period or not r:
         abort(404)
+    svg = imr_svg(r["chart"], period["period"]["start"], r["unit"], r["rated_max"])
+    headroom = rating_svg(r["chart"], period["period"]["start"], r["rated_max"])
     pb = config.load_playbook()
     cap, fc = r["capacity"], pb["forecast"]["near_rating_ratio"]
     # same order and flags as before, worded for a non-statistician; the index of the item that matches the decision rule
@@ -201,7 +337,8 @@ def transformer_detail(period_id, tid):
         case = {"n": i + 1, "of": len(review_ids), "prev": review_ids[i - 1] if i > 0 else None, "next": review_ids[i + 1] if i + 1 < len(review_ids) else None}
     return render_template("transformer.html", period=period, r=r, chart_svg=review_chart_svg(r["chart"], period["period"]["start"], r["unit"], r["rated_max"]),
                            chart_caption=review_chart_caption(r["chart"], r["unit"]), checklist=checklist, cause=cause, why=explain.why_flagged(r, pb),
-                           decisions=DECISIONS, decision_chips=DECISION_CHIPS, review_started_at=now_iso(), playbook=pb, summary=summary, case=case)
+                           decisions=DECISIONS, decision_chips=DECISION_CHIPS, review_started_at=now_iso(), playbook=pb, summary=summary, case=case,
+                           svg=svg, headroom=headroom)
 
 
 @app.post("/periods/<period_id>/transformers/<tid>/disposition")
@@ -373,6 +510,36 @@ def _render_map(period_id: str | None):
         sched=airflow_client.status(),
         last_run=store.last_run(),
     )
+
+
+@app.route("/charts")
+def charts_latest():
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/periods/<period_id>/charts")
+def period_charts(period_id):
+    if not store.get_period(period_id):
+        abort(404)
+    q = {k: v for k, v in request.args.items() if k in ("status", "stability", "area", "band") and v}
+    q["period"] = period_id
+    return redirect(url_for("dashboard", **q))
+
+
+@app.route("/periods/<period_id>/areas/<area_id>")
+def area_detail(period_id, area_id):
+    period = store.get_period(period_id)
+    if not period:
+        abort(404)
+    model = summarize_results(store.get_transformer_results(period_id))
+    area = next((a for a in model["areas"] if a["area_id"] == area_id), None)
+    if not area:
+        abort(404)
+    for row in area["transformers"]:
+        row["url"] = url_for("transformer_detail", period_id=period_id, tid=row["id"])
+    version = config.load_playbook().get("forecast", {}).get("version", "")
+    forecast = forecast_row(config.FEEDS_DIR / config.FEED_FILES["forecast"], version, area_id)
+    return render_template("area.html", period=period, area=area, forecast=forecast)
 
 
 def _districts(boundaries) -> list[dict]:

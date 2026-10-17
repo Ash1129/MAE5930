@@ -163,7 +163,7 @@ def _facts(r: dict) -> str:
     proj = (r.get("projection") or {}).get("assumptions", {})
     sig = [f"{s['rule']} on {s['date']}" for s in (r.get("chart") or {}).get("signals", [])][:4]
     f = {
-        "transformer": f"{r.get('transformer_id')} {r.get('name')}, {r.get('area_name')}",
+        "transformer": f"{str(r.get('transformer_id') or '').removeprefix('T-')} {r.get('name')}, {r.get('area_name')}",
         "status": "review needed" if r.get("status") == "review_needed" else "within limits",
         "why flagged": (r.get("decision") or {}).get("reason"),
         "rated maximum": f"{r.get('rated_max')} {r.get('unit')}",

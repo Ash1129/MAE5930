@@ -1,5 +1,5 @@
 {% extends "light_base.html" %}
-{% block title %}{{ r.transformer_id }} · Transformer Capacity Monitor{% endblock %}
+{% block title %}{{ r.transformer_id|tid }} · Transformer Capacity Monitor{% endblock %}
 {% block head %}
 <style>
   .wrap{max-width:1040px;margin:0 auto;padding:28px 24px 80px;display:flex;flex-direction:column;gap:36px}
@@ -50,6 +50,12 @@
   .legend span{display:inline-flex;align-items:center;gap:6px}
   .panel{border:1px solid var(--line);border-radius:4px;padding:12px 8px 4px;background:var(--panel)}
   .caption{font-size:12px;color:var(--ink-60)}
+  .charts-more{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:6px}
+  .charts-more>summary{padding:12px 0;display:flex;align-items:center;gap:8px;font-size:14px}
+  .charts-more .in{padding:0 0 16px}
+  .charts-more h4{font-family:var(--font-heading);font-weight:600;font-size:18px;margin:6px 0 4px}
+  .charts-more .note{font-size:12px;color:var(--ink-60);margin:0 0 8px;max-width:780px}
+  .paper{overflow:auto} .paper svg{width:100%;height:auto;display:block}
 
   .checks{display:flex;flex-direction:column;margin-top:10px}
   .check{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid rgba(29,36,48,.1);font-size:14px;align-items:start}
@@ -111,7 +117,7 @@
     </div>
     <div class="title">
       <div class="t">
-        <h1>{{ r.transformer_id }} <span>{{ r.name }}</span></h1>
+        <h1>{{ r.transformer_id|tid }} <span>{{ r.name }}</span></h1>
         <div class="sub">{{ r.area_name }} · {{ r.customer_class }} · {{ r.rated_max|num(0) }} {{ r.unit }}</div>
       </div>
       {% if r.status == 'review_needed' %}<span class="chip c-review"><span class="d"></span>Review needed</span>{% else %}<span class="chip c-ok"><span class="d"></span>Within limits</span>{% endif %}
@@ -173,6 +179,19 @@
     </div>
     <div class="panel">{{ chart_svg|safe }}</div>
     <div class="caption">{{ chart_caption }}</div>
+    <details class="charts-more">
+      <summary>{{ chev }}Full control chart and headroom against the rating</summary>
+      <div class="in">
+        <h4>Control chart</h4>
+        <p class="note">One daily peak, so this is an I-MR chart: the peak, then how much it jumped from the day before. The shaded band is this week. The black line is the rated maximum. Red points sit outside limits taken from the days before this week. X-R, X-S, p, u and c charts need several readings in each sample, or many transformers, so they are not drawn for one unit.</p>
+        <div class="panel paper">{{ svg|safe }}</div>
+        {% if headroom %}
+        <h4>Headroom against the rating</h4>
+        <p class="note">The same peaks, as a percent of the nameplate. 70%, 90% and 100% are reference lines, not control limits. A red point is at or above 90%.</p>
+        <div class="panel paper">{{ headroom|safe }}</div>
+        {% endif %}
+      </div>
+    </details>
   </div>
 
   <div class="two">
