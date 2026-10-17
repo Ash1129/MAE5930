@@ -223,6 +223,17 @@
   #controls{position:absolute;right:332px;bottom:16px;z-index:30;display:flex;flex-direction:column;align-items:flex-end}
   #zoom{display:flex;flex-direction:column;width:40px;flex:none;border-radius:12px;overflow:hidden} #zoom button{width:40px;height:40px;flex:none;border-radius:0;box-sizing:border-box} #zoom .sep{height:1px;background:var(--ink-line)}
 
+  /* first-click tour */
+  #tutorial{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:24px;background:rgba(20,18,16,.45)}
+  #tutorial[hidden]{display:none}
+  #tutorial .card{width:min(440px,100%);box-sizing:border-box;padding:22px 22px 18px;border-radius:16px;background:var(--panel,#f7f4ee);color:var(--ink-90);border:1px solid rgba(var(--ink-rgb),.12);box-shadow:0 16px 50px rgba(0,0,0,.28)}
+  #tutorial h2{font-family:var(--font-heading);font-weight:600;font-size:26px;line-height:1.1;margin:0 0 14px}
+  #tutorial ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  #tutorial li{font-size:14px;line-height:1.4}
+  #tutorial li b{display:block;font-size:13px;letter-spacing:.04em}
+  #tutorial .ok{margin-top:16px;height:36px;padding:0 16px;border-radius:10px;border:1px solid var(--color-accent);background:transparent;color:var(--color-accent);font:inherit;font-size:14px;cursor:pointer}
+  #tutorial .ok:hover{background:var(--accent-tint)}
+
   /* narrow */
   body.narrow #districts{display:none}
   body.narrow #chips{top:76px;left:0;right:0;padding:0 16px}
@@ -362,6 +373,19 @@
   <!-- map controls -->
   <div id="controls">
     <div id="zoom" class="glass"><button class="icon-btn" id="zoom-in" aria-label="Zoom in"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><span class="sep"></span><button class="icon-btn" id="zoom-out" aria-label="Zoom out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button></div>
+  </div>
+</div>
+
+<div id="tutorial" hidden role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+  <div class="card">
+    <h2 id="tutorial-title">A quick tour</h2>
+    <ul>
+      <li><b>Map</b>Where each transformer stands. Choose a town to see the hourly heat.</li>
+      <li><b>Dashboard</b>The week in three counts: within limits, review needed, inspect now.</li>
+      <li><b>Alerts</b>A run that stopped, what went wrong, and what to fix.</li>
+      <li><b>Review metrics</b>Whether reviews are real: overrides, time spent, and planted errors caught.</li>
+    </ul>
+    <button id="tutorial-ok" class="ok" type="button">Got it</button>
   </div>
 </div>
 
@@ -716,7 +740,10 @@ setTheme(document.documentElement.dataset.theme === 'dark', false);
 $('bar-toggle').onclick = () => setCollapsed(true);
 $('bar-show').onclick = () => setCollapsed(false);
 try { if (localStorage.getItem('capmon.barHidden') === '1') setCollapsed(true, false); } catch (e) {}
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !S.alertsOpen && !S.popup) setCollapsed(true); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('tutorial').hidden) { closeTutorial(); return; }
+  if (e.key === 'Escape' && !S.alertsOpen && !S.popup) setCollapsed(true);
+});
 
 // ---- furniture ----
 $('zoom-in').onclick = () => { userMoved = true; map.zoomIn(); }; $('zoom-out').onclick = () => { userMoved = true; map.zoomOut(); };
@@ -725,6 +752,26 @@ document.addEventListener('click', e => { if (!$('alerts-card').contains(e.targe
 
 // ---- boot ----
 applyLayout(); renderDistricts(); renderSidebar(); labels(); renderStatus(SCHED, LAST_RUN); applySheet();
+
+function closeTutorial() {
+  $('tutorial').hidden = true;
+  try { localStorage.setItem('capmon.tutorial', '1'); } catch (e) {}
+}
+$('tutorial-ok').onclick = closeTutorial;
+try {
+  if (!localStorage.getItem('capmon.tutorial')) {
+    const arm = e => {
+      if (e.target.closest && e.target.closest('#tutorial')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      document.removeEventListener('pointerdown', arm, true);
+      document.addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); }, { capture: true, once: true });
+      $('tutorial').hidden = false;
+      $('tutorial-ok').focus();
+    };
+    document.addEventListener('pointerdown', arm, true);
+  }
+} catch (e) {}
 </script>
 </body>
 </html>
