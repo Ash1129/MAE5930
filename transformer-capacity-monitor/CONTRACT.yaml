@@ -61,7 +61,7 @@ tasks:
       hand-computed Bissell interval, forecast with unit conversion) and degenerate cases (constant
       data, n = 1, empty, non-finite). Deviation - the statistics are in capacity_monitor/pipeline.py,
       not app/qc.py.
-    result: "pytest tests -q printed '44 passed in 13.82s' on 2026-10-17."
+    result: "Most recent full suite printed '58 passed in 6.07s' on 2026-10-17; see H-12 and TEMPLATE-AUDIT.md."
 
   - id: H-04
     title: Working tool wired to the H-03 functions
@@ -86,7 +86,7 @@ tasks:
   - id: H-05
     title: Demonstration of the tool on every test dataset
     points: "10 - Tool Design: a clear demonstration of the tool, using test datasets"
-    status: done
+    status: in_progress
     owner: "Claude"
     started_at: "2026-10-16 18:25"
     owns: ["demo/"]
@@ -95,9 +95,9 @@ tasks:
       and a one-line "how to read this"; a teammate who did not write it follows it and gets the same
       numbers.
     result: >
-      demo/README.md covers normal, boundary-mismatch and missing-rating with pasted output and hand
-      checks for T-DRY-004, T-DAN-010, T-LAN-005, T-CAR-006 and T-ULY-007. Numbers refreshed after
-      the class-specific load shapes changed the seeded draws. Not yet followed by a teammate.
+      All three scenarios ran successfully as demonstrations in the 963bcdf audit: normal reached
+      step 15 (4 within, 5 review, 3 inspect); invalid cases failed at step 7 as intended. Walkthrough
+      output and hand checks refreshed for the 60-day baseline. Teammate reproduction remains open.
 
   - id: H-06
     title: Deploy to the course Posit Connect server
@@ -215,3 +215,19 @@ tasks:
       detection, withheld-capability diagnostics, review routing, continuing cross-period patterns,
       exact 60-day baseline, 95%-only validation and qualified captions. Saved data paths unchanged.
       Normality checking was left unchanged at the owner's request.
+
+  - id: H-13
+    title: Re-audit current template alignment after statistics fixes
+    points: "Supports documentation and demonstration; no additional rubric points"
+    status: done
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: ["TEMPLATE-AUDIT.md", "CONTRACT.yaml", "demo/README.md", "data/README.md", "START-HERE.md", "SPEC.md", "DELIVERY-REPORT.md", "manifest.json"]
+    definition_of_done: >
+      Current audit maps the rubric to code, tests and documentation; all three isolated demos
+      match the updated walkthrough; ledger and local links validate; saved analysis unchanged.
+    result: >
+      Three isolated demo commands match the updated guide; normal succeeds at step 15 and both
+      invalid cases stop at step 7. Current rubric mapping replaces stale findings. Ledger, local
+      links, manifest checksums and diff formatting validate; saved data paths unchanged. External
+      checks remain deferred per owner. Latest full suite evidence is 58 passed in 6.07s from H-12.

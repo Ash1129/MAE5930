@@ -76,7 +76,7 @@ it is a candidate for removal.
   Against a 100 kVA rating, mean = 59.992 and Cpk = (100 − 59.992)/(3 × 0.8865) = 15.04. This series
   alternates perfectly, so both assumption checks must also fire on it. Setting the period day
   2026-10-13 to 70 kVA must trigger "beyond 3 sigma" on that date. The real demo also gives a hand check:
-  T-DAN-010 has rating 50, mean 40.176 and σ 2.850, so Cpk = 9.824/8.551 = 1.15.
+  T-DAN-010 has rating 50, mean 39.91015 and σ 2.98383, so Cpk = 10.08985/8.95149 = 1.12717.
   These tests in `tests/test_pipeline.py` assert the known answers and degenerate cases:
   - `test_imr_chart_limits_come_from_history_not_rating` and `test_capability_cpk_and_interval` cover the series above.
   - `test_cpk_interval_hand_computed_known_answer` checks a 25-point interval computed by hand.
@@ -121,8 +121,7 @@ quartile trends, plus thermal and seasonal models. Aggregate trends have no stat
   - **Period report:** HTML, Markdown and JSON, finalized only after every flagged case has a disposition.
   - **Heatmap:** hourly load per transformer for any recorded date. A seasonal view labeled MODELED
     scales the recorded shapes by the playbook's assumed monthly factors. It is context only and feeds no decision.
-- *How to read this:* amber and red both need a person before the report goes out; red means send someone
-  to look now. The rule number names the reason, for example "rule 2: a run rule fired this period",
+- *How to read this:* amber and red both need a person before the report goes out; red prioritizes prompt engineering inspection; it is not an automatic dispatch or proof of failure. The rule number names the reason, for example "rule 2: a run rule fired this period",
   "rule 4: a few outliers", "rule 10: lower 95% bound below 1.33" or "rule 11: forecast peak at 90% of
   rating or more".
 

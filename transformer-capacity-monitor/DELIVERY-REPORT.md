@@ -3,26 +3,24 @@
 Built 2026-10-16 to the contract in DELIVERY.md. Fixed-rules pipeline, Apache Airflow scheduler,
 small browser review app. **No AI model takes part in any statistic or review decision.** An optional, off-by-default Claude CLI rewrite of alert and summary text exists for display only (see below).
 
-## Current snapshot (2026-10-17)
+## Current snapshot (2026-10-17, audited at 963bcdf)
 
-This section supersedes older feature counts and delivery gaps below; the dated sections remain
-historical evidence, not claims about the current checkout.
+This section supersedes historical descriptions and counts below.
 
-- Saved 2026-10-15 demonstration: 500 transformers, **22 inspect now, 97 review needed,
-  381 within limits**. Feeds, database and reports are now committed.
-- Map and heat views are combined. Dashboard/area views include aggregate charts; the transformer
-  page includes a labeled modeled thermal cutaway. AI remains optional and display-only.
-- Local four-file contract and Posit Connect publishing files now exist. The team confirms the app
-  is deployed. Public-access re-verification and clean-clone reproduction are deferred; starter/layout
-  and multi-file-case questions await the instructor; Devpost submission is planned for the end.
-- `METHODS.md` documents the new aggregate-chart formulas, units, assumptions, thermal/seasonal
-  models and existing tests. Statistical validation remains the next implementation task.
-- Current audit and remaining template deviations: `TEMPLATE-AUDIT.md`.
-- Local recovery: a stale server returned HTTP 500 with an SQLite UTF-8 decoding error. The local
-  database was backed up, the committed database restored, and the current server restarted;
-  following the root redirect to the map returned HTTP 200. No analysis or feed regeneration was run.
+- The preserved 2026-10-15 demonstration has 500 transformers: **22 inspect now, 97 review needed,
+  381 within limits**. It predates the new baseline/diagnostic semantics and was not rerun.
+- The dashboard retains pies and now shows descriptive daily near-rating percentage, unique signal
+  transformer counts and median/quartile loading. Aggregate p/u/X-S control limits were removed.
+- New analyses use 60 baseline days, baseline dependence screens at lags 1–7, continuing run
+  detection and 95%-only capability intervals. Normality-method changes were deferred by the owner.
+- Most recent full test run: **58 passed in 6.07s**. This audit reran the three demos in isolated
+  temporary homes: normal succeeds (4 within, 5 review, 3 inspect); both invalid cases stop at step 7.
+  `demo/README.md` now matches these current outputs and hand calculations.
+- The team confirms Posit Connect is deployed. Public-access re-verification and clean-clone checks
+  remain deferred; starter/layout and multi-file-case questions await the instructor; Devpost is at the end.
+- The current rubric mapping, remaining documentation gaps and evidence are in `TEMPLATE-AUDIT.md`.
 - Optional Claude text requires an installed, authenticated CLI and the owner's subscription;
-  hosted availability and costs are not implied by the free local Flask/Airflow stack.
+  hosted availability is environment-specific. All demonstration feeds remain synthetic.
 
 ## Status: DEMO ONLY (real processing and scheduler verified; real feeds and approved thresholds pending)
 

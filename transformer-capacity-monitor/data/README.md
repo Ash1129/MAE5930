@@ -6,6 +6,9 @@ collect it for real. **All data in this repository is SYNTHETIC.** It is generat
 
 ## 1. Files at a glance
 
+The saved 500-transformer analysis predates the corrected baseline semantics. Current isolated-demo
+outputs and hand checks are in `demo/README.md`; do not replace the working feeds to reproduce them.
+
 Row counts below are for the default `normal` run of 12 labeled transformers, which `scripts/run_demo.py`
 uses. The copy in `data/feeds/` may be a larger `--count` run for the map; see section 7.
 
@@ -137,7 +140,10 @@ The generator re-draws each series until the real pipeline confirms the intended
 
 | Transformer | Rating, kVA | Customers | Case | Mean, sd | What it demonstrates |
 |---|---|---|---|---|---|
-| T-ITH-001, T-ITH-002, T-CAY-003, T-GRO-009, T-ENF-011, T-TRU-012 | 167, 100, 100, 100, 75, 100 | 70, 40, 45, 50, 28, 48 | within | 0.60, 0.04 | stable, high Cpk, comfortable forecast margin |
+| T-ITH-001, T-ITH-002, T-CAY-003 | 167, 100, 100 | 70, 40, 45 | within | 0.60, 0.04 | stable, high Cpk, comfortable forecast margin |
+| T-ENF-011 | 75 | 28 | spike | 0.62, 0.04 with a planted exceedance | inspect now: a period peak reaches the rating |
+| T-GRO-009 | 100 | 50 | shift | 0.60, 0.04 with a planted shift | inspect now: a sustained pattern rule |
+| T-TRU-012 | 100 | 48 | outliers | 0.60, 0.04 with three planted outliers | inspect now: repeated outlier days |
 | T-NEW-008 | 50 | 20 | overlap | 0.60, 0.04 | location in four boundary areas; declared area NEW used and `allocation_flagged` recorded |
 | T-DRY-004 | 75 | 30 | signal | 0.60, 0.04, plus a spike of mean + 5.5 sd on 2026-10-13 | chart signal while still below rating; Cpk withheld |
 | T-LAN-005 | 167 | 75 | uncertain | 0.70, 0.0667 | Cpk at or above 1.33 but lower 95% bound below it |

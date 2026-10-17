@@ -35,10 +35,10 @@
       "checksum": "ead23ffb035a8ca27def77e714202198"
     },
     "CONTRACT.yaml": {
-      "checksum": "b390c675c009383289acc1a6896b61c3"
+      "checksum": "858c163ed51ea7e325e22cd95e4e0211"
     },
     "DELIVERY-REPORT.md": {
-      "checksum": "2556acf328293309880a885b7d5abc5f"
+      "checksum": "ddec9a562e1c18a2271145597b96593b"
     },
     "DELIVERY.md": {
       "checksum": "a3fe85f3666094583a9379476e7be821"
@@ -53,10 +53,10 @@
       "checksum": "6f3c03940cb5fd304ad7764fbdfe98cb"
     },
     "SPEC.md": {
-      "checksum": "5fd66b6310d3287ce28c3594bbeddf2b"
+      "checksum": "8db3bb0e0a4e05175a5e0cf98ac7477b"
     },
     "START-HERE.md": {
-      "checksum": "a7a5ba9efc50aae7161ebaa934a960b8"
+      "checksum": "f3fff18a2036d77ee0f13cc3ead84635"
     },
     "Start Capacity Monitor.bat": {
       "checksum": "6efaab532314207d6a3853a32520a708"
@@ -125,7 +125,7 @@
       "checksum": "1302305d65e7f117b16f87af3c5f6496"
     },
     "data/README.md": {
-      "checksum": "10ba4dea6840827457312453f82a1bcb"
+      "checksum": "e81254968c51cae5043d08d205f94dca"
     },
     "data/capacity_monitor.sqlite3": {
       "checksum": "68848f53379f818b5ecaa9df25854d62"
@@ -155,7 +155,7 @@
       "checksum": "48afee7a53b27a3a8c43258321eab8b2"
     },
     "demo/README.md": {
-      "checksum": "7efbe90287a7288a515ba7864b9c91f9"
+      "checksum": "7251787bb7a26a2bfeeefdd6ae87140e"
     },
     "deployme.ps1": {
       "checksum": "e72f125e8eecd35701c612a5054282d3"
@@ -287,7 +287,7 @@
       "checksum": "1ef0e93bea3cd2a78d3161fb82859800"
     },
     "webapp/templates/map.html": {
-      "checksum": "de9b0a4919169f298a9344e4426e1995"
+      "checksum": "aec7f61574d5cd4bcb1d5747b667a186"
     },
     "webapp/templates/metrics.html": {
       "checksum": "a2768ed84b1bde4d2df9bad49bb77702"
@@ -317,7 +317,7 @@
       "checksum": "7ad9529f3e1f71b13d4fdb9c3f3f52a0"
     },
     "TEMPLATE-AUDIT.md": {
-      "checksum": "1481af21bb45f1ea67b685ceb18029b6"
+      "checksum": "b0cc93918f255303de56ad22b597afdc"
     }
   }
 }

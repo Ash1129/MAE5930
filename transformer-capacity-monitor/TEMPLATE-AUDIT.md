@@ -1,102 +1,91 @@
-# Template and rubric audit — 2026-10-17
+# Template and rubric audit — 2026-10-17, revision 963bcdf
 
-Compared current checkout `5fdfdbc` with the local course materials:
-[template SPEC](../Timmy's%20stuff/SPEC.md),
-[task ledger](../Timmy's%20stuff/CONTRACT.yaml),
-[agent rules](../Timmy's%20stuff/AGENTS.md), and
-[100-point rubric](../Timmy's%20stuff/docs/criteria.md).
-This is a local-snapshot audit. The team confirms Posit Connect is deployed; re-verification is
-deferred. Clean-clone checks are also deferred, starter/layout and multi-file-case questions await
-the instructor, and Devpost submission is planned for the end. The next implementation task is
-statistical validation. These deferred items are tracked, not blockers to pushing this documentation.
+This replaces the earlier audit and its superseded follow-ups. Sources are the local course
+[template SPEC](../Timmy's%20stuff/SPEC.md), [ledger](../Timmy's%20stuff/CONTRACT.yaml),
+[agent rules](../Timmy's%20stuff/AGENTS.md), and [rubric](../Timmy's%20stuff/docs/criteria.md).
+This is an implementation/documentation audit, not a predicted judging score or real-utility validation.
 
-## Highest-priority remaining work
+## Conclusion
 
-| Priority | Requirement and observed state | Next action |
+The app now substantially follows the rubric's statistical separation and documentation principles.
+The unsupported aggregate control charts are gone; numerical descriptive functions live outside the
+web layer. Individual-chart findings 2–6 are implemented and tested. Full template compliance remains
+conditional on the explicitly deferred layout/dataset questions and delivery/reproducibility checks.
+Normality-method improvement remains deferred by owner choice, not considered statistically resolved.
+
+## Rubric mapping
+
+| Criterion | Current evidence | Remaining qualification |
 |---|---|---|
-| 1 | Valid QC analyses earn 25 points. Per-transformer analysis is in plain pipeline functions. The p/u/X-S calculations and quartiles are now in `capacity_monitor/aggregate.py`, with numerical known-answer and edge-case tests. | Extraction and numerical checks are complete. Next assess the baseline fallback and the binomial/Poisson/rational-subgroup assumptions documented in METHODS.md. |
-| 2 | The template requires explaining every printed number. SPEC previously omitted the new charts and contradicted the thermal visualization. These are now documented in METHODS.md. | Keep METHODS.md synchronized with the upcoming statistical changes; validate the methods separately. Do not equate modeled temperatures with measurements. |
-| 3 | Working public Posit Connect deployment is required. Publishing files exist and the team confirms deployment. Re-verification is deferred. | Verify the latest workflow, follow the public app redirect to a successful map, confirm saved counts, and put the tested public URL in README and delivery evidence. No need to run analysis for this check. |
-| 4 | Reproducibility requires a fresh clone. `requirements.txt` is pinned but `setup_env.sh` installs broad version ranges; `testme.sh` assumes Python/dependencies are ready. | Install from the pinned requirements, then check setup and launch in an isolated clean checkout. Preserve the saved feeds and database; verify 22/97/381 without Run now. |
-| 5 | The template names a starter copied into `app/`, `app/qc.py`, and the four-file launch/deploy contract. Scripts now exist, but in this project's app root; Flask was built independently. | Resolve the explicit layout/stack deviation with the instructor, or adapt to the required structure. Renaming a folder does not establish that a starter was used. Keep the workflow and manifest consistent with any move. |
-| 6 | The template asks for 2–3 small CSV datasets in `data/`. Current cases are generated multi-file scenarios; one large saved demonstration is committed. | Commit small self-contained scenario fixtures with required companion files and exact expected outcomes, or confirm the multi-feed equivalent is acceptable. Current isolated scenario commands are useful but not literal fixture compliance. |
-| 7 | Public repo and Devpost submission are required; teammate reproduction is part of the ledger's completion checks. | At the end, verify public access, submit the repo plus demo and live URL, and record the teammate walkthrough. Record evidence rather than assuming these are complete. |
+| Working tool, 25 | Flask review app, preserved sample database, backend finalization gate; recent local dashboard and review-page HTTP 200 checks; web-path tests | Team confirms deployed; current public access is not reverified in this audit. |
+| Valid QC analysis, 25 | Plain I-MR/capability/forecast functions in `capacity_monitor/pipeline.py`; descriptive functions in `aggregate.py`; regression, known-answer, edge-case and simulation tests | Synthetic-case evidence is not validation on real load/weather data. Statistical limitations remain documented. |
+| Prompt fit, 5 | SPEC names Smart Grid Transformer Surges and links load monitoring, headroom and heat-pump growth to planning decisions | Forecast explicitly covers heat pumps, not separate EV/data-center scenarios; observed readings can include any load. This is a disclosed scope choice. |
+| Clear user/use case, 5 | Named grid-planning engineer; exception review and period sign-off | No independent utility-user evaluation claimed. “Inspect now” is a prioritization rule, not automatic dispatch. |
+| Minimal reasonable inputs, 5 | Four required utility feeds; optional ambient and asset thermal fields have defaults | File replacement is still a developer/IT workflow; no browser upload. The rubric does not require five inputs. |
+| Demonstration, 10 | All three isolated demo commands executed in this audit; walkthrough numbers and hand checks refreshed | Teammate walkthrough not verified. Preserved 500-transformer demo uses the earlier analysis version. |
+| Documentation, 10 | README, SPEC, METHODS, codebook, demo, start guide and developer notes explain inputs, formulas, assumptions and usage | Add the tested public URL later. Historical delivery sections remain explicitly historical. |
+| 2–3 working datasets, 5 | Normal, boundary-mismatch and missing-rating scenarios ran as documented | Generated multi-file scenarios differ from the template's small committed CSV fixtures; instructor question deferred. |
+| Codebook, 5 | Input schemas/units/collection methods and planted cases in data/README; optional model sources in METHODS | Scenario rows were corrected for the three inspection cases during this audit. |
+| Public/reproducible code, 5 | Public repository location documented; requirements, manifest, launch and publish scripts exist | Fresh-clone verification is deferred; setup currently installs version ranges. Public accessibility and Devpost are not independently checked here. |
 
-## Statistical review questions before adding more features
+## Resolved since the first audit
 
-- The p chart treats the daily count at/above 90% of rating as a binomial fraction. Document why
-  transformers can be treated as independent trials; shared weather and unequal equipment may violate this.
-- The u chart counts I-MR signal events per transformer. Multiple rules can fire for one asset/day;
-  explain the counting convention and assess the Poisson/equal-opportunity assumptions.
-- The X-S chart groups different transformers on a day. Explain whether these form rational subgroups;
-  heterogeneous ratings, customer classes and shared weather can make conventional limits misleading.
-- `county_control_statistics` currently falls back to all dates when no pre-period baseline exists.
-  An explicit insufficient-baseline result is preferable to silently fitting on review-period observations.
-- The modeled thermal functions live outside the web layer and have dedicated tests. The report should
-  distinguish these illustrative estimates from validated asset-specific thermal forecasts.
-- “Inspect now” is a configured prioritization label. It does not establish a validated safety threshold
-  or an automatic field dispatch; the engineer still makes and records the decision.
+- Aggregate calculations moved out of `webapp/viz.py`; numerical summaries have independent tests.
+- County p/u/X-S limits, alarm points and baseline fallback removed. Replacement daily trends show
+  near-rating percentage, unique affected transformer counts and median with the middle-50% band.
+- Individual baseline dependence checks at lags 1–7 run before capability availability is assessed;
+  flags carry into review routing. Checks are pointwise exploratory screens, not proof of independence.
+- Eight-point runs that continue into the review period remain signaled on subsequent days.
+- `history_days` now means baseline days: 60 before the seven-day review period, 67 total.
+- Confidence intervals explicitly support only 95%; other configured levels are rejected.
+- Chart wording distinguishes run-pattern signals from limit exceedances; “no issue detected” avoids
+  asserting independence or stability. Legacy saved results identify missing baseline diagnostics.
+- METHODS documents current formulas, units, numerical outputs, model defaults and limitations.
 
-## What is already in place
+## Current evidence
 
-- Named user, prompt and engineering decision in SPEC; four required feeds plus optional ambient data.
-  The rubric asks for minimal feasible inputs, not a minimum of five inputs.
-- I-MR, capability/interval, forecast and three-tier decision functions; automated tests.
-- Local `testme.sh`, `manifestme.sh`, `deployme.sh`, README, Connect manifest and publish workflow.
-- Committed 2026-10-15 sample report: 500 total, 22 inspect now, 97 review needed, 381 within limits.
-- Integrated map/heat controls, review checklist, backend finalization gate and optional display-only AI.
-- No requirement in the reviewed rubric to replace this working app with a new Version 2 or add graphs.
-  New-data upload would improve usability but is not explicitly mandated by that rubric.
+| Check | Observed result |
+|---|---|
+| Latest full suite, preceding statistics-fix verification | `58 passed in 6.07s`; not repeated for these documentation-only edits |
+| `scripts/run_demo.py normal`, run in this audit | Success, step 15; 12 transformers: 4 within, 5 review, 3 inspect |
+| `scripts/run_demo.py boundary-mismatch`, run in this audit | Expected failed analysis at step 7, wrong-period boundary identified |
+| `scripts/run_demo.py missing-rating`, run in this audit | Expected failed analysis at step 7, T-GRO-009 missing rating identified |
+| Scenario isolation | Each command creates its own temporary CAPMON_HOME; working feeds/database/reports untouched |
+| Numerical walkthrough | Updated from the isolated run, including T-DAN-010 Cpk 1.13 and T-LAN-005 Cpk 1.59, interval 1.24–1.95 |
+| Current saved app | Prior check after latest fixes: transformer review HTTP 200, qualified caption and legacy diagnostics label |
+| Static audit checks | Ledger parses, task IDs unique, required contract files exist, local documentation links resolve, manifest checksums match, git diff --check passes |
+| Saved outputs | Working feeds, database and reports have no Git diff; preserved counts remain 22/97/381 |
 
-## Documentation changes made in this audit
+The normal demo is freshly generated and analyzed only in a temporary directory. The preserved app
+analysis is not the same dataset or analysis version; its counts must not be presented as expected
+output from rerunning current rules. No evaluation script, scheduler trigger or working-data rerun was
+performed. Older test/evaluation counts remain dated historical evidence.
 
-- METHODS: numerical formulas, denominators, baselines, units, assumptions, parameter precedence,
-  thermal known answers, existing coverage and remaining statistical work.
-- README-DEVELOPER: correct current rule number and tracked-feed status; link the method reference.
-- SPEC: current scripts/deployment implementation, three outcomes, optional inputs, added charts,
-  thermal scope, committed demo data and remaining deviations.
-- README: use `testme.sh`, explain saved counts, distinguish publish files from verified deployment,
-  and identify aggregate computations outside the core pipeline.
-- CONTRACT: remove obsolete missing-script/untracked-data claims; preserve open external checks.
-- Data codebook: correct committed output status and ambient feed usage.
-- Demo guide: separate isolated 12-transformer cases from the saved 500-transformer app; remove the
-  instruction to regenerate working feeds just to view the demonstration.
-- START-HERE: update the dashboard description.
-- DELIVERY-REPORT: current snapshot supersedes historical feature counts and delivery gaps.
+## Remaining items and agreed timing
 
-## Evidence and limits
+| Item | Disposition |
+|---|---|
+| Posit Connect URL/public access | Deployed per team; verify later and add the tested URL to README/delivery evidence. |
+| Reproducibility | Deferred. Install from pinned requirements rather than ranges, then verify a clean checkout. |
+| Starter, stack and `app/` layout | Ask instructor later. Four-file contract exists in `transformer-capacity-monitor/`, but no starter was copied and Flask differs from the named dashboard stacks. |
+| Multi-file datasets | Ask instructor later whether the three generated feed-set scenarios satisfy the fixture requirement. |
+| Devpost submission | Planned for the end. No submission action taken. |
+| Teammate demonstration/method explanation | Have a teammate reproduce the walkthrough and explain the method before closing the corresponding ledger checks. |
+| Normality | Owner deferred changes. Current Jarque–Bera asymptotic screen is retained; it is not an exact finite-sample test. |
+| Real utility feeds, approved thresholds, field-calibrated thermal values | Outside the hackathon demo; do not claim operational readiness. |
 
-- `.venv/bin/python -m pytest tests -q`: **44 passed in 5.19s**. Tests use isolated temporary data;
-  no production analysis or feed regeneration was invoked. Passing tests alone does not establish
-  that the new aggregate charts have adequate statistical validation.
-- During the preceding local recovery, the Git database passed SQLite integrity_check (`ok`);
-  the restarted app's root redirect led to a map returning HTTP 200.
-- Documentation audit checks: ledger parses, required contract files exist, `git diff --check` passes.
-- Not performed: fresh clone/dependency installation, demo commands, live publication, public browser
-  check, Devpost verification, real-data validation, or approval of utility thresholds.
-- Older sections of DELIVERY-REPORT retain dated historical results; this audit's snapshot takes
-  precedence for the current implementation. AI CLI access is optional and environment-specific.
+Additional statistical limitations remain: dependence screens have multiple-comparison false positives,
+capability intervals were simulated under independent normal observations rather than weather-dependent
+loads, and the synthetic generator selects cases matching intended labels. Missing daily/hourly coverage
+can affect peaks; the current completeness check requires a reading each period day, not all expected
+hourly intervals. Thermal and seasonal outputs remain explicitly MODELED. The public assumption-check
+helper is not hardened for empty direct input, though the capability caller guards sample size.
 
-## Aggregate extraction follow-up
+## Documentation refreshed in this audit
 
-Calculations and box quartiles now live in `capacity_monitor/aggregate.py`, without web imports,
-markup or I/O. The web wrapper preserves its existing output contract. Numerical tests cover p/u/X/S
-known answers and degenerate cases; saved-data SVGs and counts match the prior implementation exactly.
-The all-date fallback is retained and identified in the numerical metadata. This is architectural and
-numerical verification, not resolution of the modeling assumptions listed above.
-
-## Descriptive trends supersede aggregate control charts
-
-The p/u/X-S charts and their aggregate alarm limits have now been replaced with daily near-rating
-percentage, unique transformers with signals, and median loading with a quartile band. This resolves
-the aggregate baseline-fallback and distribution/subgroup concerns above by removing the inference;
-it does not validate those discarded limits. Pie summaries, individual I-MR charts, per-transformer
-outcomes and the saved analysis remain unchanged. Current formulas and tests are in METHODS.md.
-The next assumptions review concerns the individual I-MR/capability analysis.
-
-## Individual-chart review follow-up
-
-Findings 2–6 are implemented: baseline dependence screens, continuing runs, 60 baseline days,
-95%-only interval validation, and qualified signal/assumption wording. Normality changes were
-explicitly deferred by the owner. Current semantics and remaining limitations are in METHODS.md.
-Saved demo outputs remain historical; this work does not claim real-data validation.
+- Replaced this audit's contradictory historical findings with the current rubric mapping.
+- Updated demo output and hand checks for the corrected baseline; retained the separate saved-data demo.
+- Corrected planted-case codebook rows and the start guide's dashboard description.
+- Updated SPEC's worked example and inspection interpretation, and DELIVERY-REPORT's current snapshot.
+- Updated the task ledger and deployment-manifest checksums without publishing or changing analysis data.
+  The full checksum check also found and corrected a pre-existing stale checksum for map.html.

@@ -11,7 +11,7 @@ equipment or operating settings.
    `./scripts/start_airflow.sh`). On Windows, double-click `Start Capacity Monitor.bat`, or from this folder run
    `.venv\Scripts\python.exe -m webapp.app`. Your browser opens http://127.0.0.1:5055 on the **Map**: every transformer
    as a dot, green for within limits, amber for needing review and red for needing an inspection now; click an amber or red dot for its numbers and
-   **Open full review**. Pick a district on the left to zoom in and see load by hour (recorded) or by month (a labeled model). Scheduled runs happen on their own on Monday, Wednesday and Friday at 06:00 when the Airflow scheduler is running (macOS or Linux; on Windows the review app runs the same analysis when you press **Run now**). The **Dashboard** shows county/district summaries, aggregate control charts and a review queue. Scheduler controls and run history are available in the app.
+   **Open full review**. Pick a district on the left to zoom in and see load by hour (recorded) or by month (a labeled model). Scheduled runs happen on their own on Monday, Wednesday and Friday at 06:00 when the Airflow scheduler is running (macOS or Linux; on Windows the review app runs the same analysis when you press **Run now**). The **Dashboard** shows county/district summaries, descriptive daily trends and a review queue. Scheduler controls and run history are available in the app.
 2. **Review the exceptions.** Open the period, press **Review** on each flagged transformer, read the
    checklist beside the chart and source readings, then choose **Approve conclusion**, **Request changes**
    or **Reject** (with a note). One case at a time; nothing is batch-approved.
