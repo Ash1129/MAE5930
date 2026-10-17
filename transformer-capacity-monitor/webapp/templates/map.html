@@ -110,33 +110,30 @@
   body.phone #bar .brand{font-size:18px}
   body.narrow #heat{top:180px}
 
-  /* districts: an outline of dashes on the left edge (after the section outline on ashwinprajeeth.com);
-     labels slide out and the list gains a glass background on hover or keyboard focus */
-  #districts{position:absolute;left:10px;top:50%;transform:translateY(-50%);z-index:20;opacity:.85;transition:opacity .25s}
-  #districts:hover,#districts:focus-within{opacity:1}
-  #districts .dtitle{display:inline-block;font-family:var(--font-heading);font-weight:700;font-size:18px;letter-spacing:.02em;color:var(--ink-90);background:rgba(255,255,255,.72);backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);border:1px solid rgba(255,255,255,.45);border-radius:10px;padding:4px 12px;margin:0 0 6px 2px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.6)}
-  #district-list{list-style:none;margin:0;padding:6px 5px;display:flex;flex-direction:column;gap:1px;border:1px solid transparent;border-radius:14px;transition:background-color .25s,border-color .25s,box-shadow .25s,backdrop-filter .25s}
-  #districts:hover #district-list,#districts:focus-within #district-list{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(1.7);-webkit-backdrop-filter:blur(18px) saturate(1.7);border-color:rgba(255,255,255,.45);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(255,255,255,.12),0 6px 22px rgba(0,0,0,.18)}
+  /* District names stay visible. Hiding them until hover, and hiding the top chips above
+     1000px, made Chrome at 100% zoom (and Windows display scaling) show only the map.
+     The same rules apply on macOS and Windows. */
+  #districts{position:absolute;left:10px;top:116px;bottom:72px;z-index:20;overflow:auto;max-width:250px}
+  #districts .dtitle{display:inline-block;font-family:var(--font-heading);font-weight:700;font-size:18px;letter-spacing:.02em;color:var(--ink-90);background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.45);border-radius:10px;padding:4px 12px;margin:0 0 6px 2px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+  #district-list{list-style:none;margin:0;padding:6px 5px;display:flex;flex-direction:column;gap:1px;border:1px solid rgba(255,255,255,.45);border-radius:14px;background:rgba(255,255,255,.78);box-shadow:0 6px 22px rgba(0,0,0,.18)}
   .drow{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:3px;font-size:12px;line-height:1.3;color:rgba(29,36,48,.82);box-sizing:border-box;min-height:22px}
-  .drow .dash{flex:0 0 auto;width:10px;height:2px;border-radius:2px;background:#fff;box-shadow:0 0 5px rgba(0,0,0,.6);transition:width .2s,background-color .2s}
-  #districts:hover .drow .dash,#districts:focus-within .drow .dash{width:11px;background:rgba(29,36,48,.3);box-shadow:none}
-  .drow .txt{white-space:nowrap;opacity:0;max-width:0;overflow:hidden;transition:max-width .25s,opacity .2s;display:flex;align-items:baseline;gap:6px}
-  #districts:hover .drow .txt,#districts:focus-within .drow .txt{opacity:1;max-width:240px}
+  .drow .dash{flex:0 0 auto;width:11px;height:2px;border-radius:2px;background:rgba(29,36,48,.45)}
+  .drow .txt{white-space:nowrap;display:flex;align-items:baseline;gap:6px}
   .drow .nm{font-size:13px}
   .drow .sub{font-size:11px;color:var(--ink-60)}
   .drow .red{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#b01d30} .drow .red i{width:6px;height:6px;border-radius:50%;background:#D7263D;display:inline-block}
   .drow:hover{color:var(--ink-90)} #districts:hover .drow:hover .dash{background:rgba(29,36,48,.6)}
   .drow.on{color:var(--ink-90)} .drow.on .nm{font-weight:600}
-  .drow.on .dash{background:#fff;width:16px} #districts:hover .drow.on .dash,#districts:focus-within .drow.on .dash{background:var(--ink-90);width:16px}
+  .drow.on .dash{background:var(--ink-90);width:16px}
   .drow:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px;border-radius:6px}
-  #chips{position:absolute;top:76px;left:0;right:0;z-index:20;display:flex;gap:6px;overflow-x:auto;padding:0 16px;scrollbar-width:none} #chips::-webkit-scrollbar{display:none}
+  #chips{position:absolute;top:62px;left:16px;right:332px;z-index:26;display:flex;gap:6px;overflow-x:auto;padding:0;scrollbar-width:none} #chips::-webkit-scrollbar{display:none}
   .chip{all:unset;cursor:pointer;flex:none;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:999px;font-size:13px;white-space:nowrap;background:rgba(255,255,255,.62);color:var(--ink-90);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(255,255,255,.35);box-shadow:0 4px 14px rgba(0,0,0,.2);box-sizing:border-box}
   .chip.on{background:rgba(29,36,48,.9);color:#fff}
   .chip .red{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#b01d30} .chip.on .red{color:#ffb3bd}
   .chip .red i{width:6px;height:6px;border-radius:50%;background:#D7263D;display:inline-block}
 
   /* heat strip */
-  #heat{position:absolute;top:80px;left:64px;right:332px;z-index:20;padding:12px 16px;box-sizing:border-box}
+  #heat{position:absolute;top:112px;left:270px;right:332px;z-index:20;padding:12px 16px;box-sizing:border-box}
   #heat .head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
   #heat .dname{font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1;margin-right:4px}
   #heat .clock{margin-left:auto;font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1}
@@ -219,8 +216,8 @@
 
   /* narrow */
   body.narrow #districts{display:none}
-  body.wide #chips{display:none}
-  body.narrow #heat{left:16px;right:16px}
+  body.narrow #chips{top:76px;left:0;right:0;padding:0 16px}
+  body.narrow #heat{top:180px;left:16px;right:16px}
   body.narrow #side{top:auto;right:0;left:0;bottom:0;width:auto;height:140px;border-radius:20px 20px 0 0}
   body.narrow #side.first{height:220px} body.narrow #side.open{height:62%}
   body.narrow #legend,body.narrow #controls{bottom:152px} body.narrow #side.first~#legend,body.narrow #side.first~#controls{bottom:232px} body.narrow #side.open~#legend,body.narrow #side.open~#controls{bottom:calc(62% + 12px)}
@@ -424,13 +421,25 @@ const reds = POINTS.filter(p => p.status === 'review_needed');
 
 // ---- map ----
 const map = L.map('map', { zoomControl: false, attributionControl: true, fadeAnimation: false }).setView([42.44, -76.5], 10);
+map.createPane('heat');
+const heatPane = map.getPane('heat');
+heatPane.style.zIndex = '350';
+heatPane.style.pointerEvents = 'none';
 const sat = L.layerGroup([
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' }),
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: .8 })]).addTo(map);
 const streets = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap contributors' });
 const boundaryLayers = {};
 if (BOUNDARIES) L.geoJSON(BOUNDARIES, { style: { color: '#fff', weight: 1.5, fillOpacity: .03, dashArray: '5 4', opacity: .85 }, onEachFeature: (f, l) => { boundaryLayers[f.properties.area_id] = l; l.bindTooltip(f.properties.name, { sticky: true }); } }).addTo(map);
-const heat = L.heatLayer([], { radius: 22, blur: 18, maxZoom: 14, max: 1, gradient: { .15: '#1a237e', .35: GREEN, .6: AMBER, .8: '#ff6d00', 1: RED } });
+// maxZoom is the map zoom where a point reaches full strength. A dedicated pane keeps the
+// canvas in CSS pixels, so Windows display scaling and Chrome zoom do not shift it off the map.
+const heat = L.heatLayer([], { pane: 'heat', radius: 28, blur: 20, maxZoom: 10, minOpacity: 0.45, max: 1, gradient: { .15: '#1a237e', .35: GREEN, .6: AMBER, .8: '#ff6d00', 1: RED } });
+function settleHeat() {
+  if (!map.hasLayer(heat) || !heat._canvas) return;
+  L.DomUtil.removeClass(heat._canvas, 'leaflet-zoom-animated');
+  heat.redraw();
+}
+map.on('moveend', settleHeat);
 const dots = L.layerGroup().addTo(map);
 const markers = {};
 POINTS.forEach(p => {
@@ -442,7 +451,9 @@ POINTS.forEach(p => {
 });
 const bPts = BOUNDARIES ? (BOUNDARIES.features || []).flatMap(f => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).flatMap(p => p[0]).map(c => [c[1], c[0]])) : [];
 const countyBounds = POINTS.length ? L.latLngBounds(POINTS.map(p => [p.lat, p.lon])).pad(.08) : (bPts.length ? L.latLngBounds(bPts) : null);
-const fitPad = () => wide() ? { paddingTopLeft: [70, 80], paddingBottomRight: [340, 80] } : { paddingTopLeft: [20, 130], paddingBottomRight: [20, 160] };
+const fitPad = () => wide()
+  ? { paddingTopLeft: [248, S.district ? 270 : 120], paddingBottomRight: [332, 80] }
+  : { paddingTopLeft: [16, S.district ? 220 : 130], paddingBottomRight: [16, 170] };
 if (countyBounds) map.fitBounds(countyBounds, fitPad());
 map.on('move zoom', positionPopup);
 map.on('click', () => { closePopup(); setAlerts(false); });
@@ -485,7 +496,7 @@ function selectDistrict(id) {
   S.district = id; closePopup();
   POINTS.forEach(p => markers[p.id].setStyle({ fillOpacity: !id || p.area === id ? .95 : .25, opacity: !id || p.area === id ? 1 : .3 }));
   Object.entries(boundaryLayers).forEach(([k, l]) => l.setStyle({ opacity: !id || k === id ? .85 : .3, weight: k === id ? 2.5 : 1.5 }));
-  if (d) { map.fitBounds(d.bbox, fitPad()); if (!map.hasLayer(heat)) heat.addTo(map); }
+  if (d) { if (!map.hasLayer(heat)) heat.addTo(map); map.fitBounds(d.bbox, fitPad()); settleHeat(); }
   else { if (map.hasLayer(heat)) map.removeLayer(heat); if (countyBounds) map.fitBounds(countyBounds, fitPad()); }
   $('heat').hidden = !d || S.firstLaunch;
   if (d) $('heat-name').textContent = d.fullName;
