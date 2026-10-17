@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate clearly labeled SYNTHETIC feeds into data/feeds/ for local testing.
+"""Generate clearly labeled synthetic utility feeds into data/feeds/ for local testing.
 
-Nothing here is real utility data. Boundaries are simplified rectangles around
-approximate Tompkins County town centers, not official shapes.
+Municipal boundaries come from the public New York State GIS boundary service;
+all transformer, load, forecast and weather data generated here are synthetic.
 
 Usage:
   python scripts/make_synthetic_data.py                     # normal scenario, 75 days ending today
@@ -240,16 +240,11 @@ def main():
                 plate = [round(rng.uniform(46, 58), 1), round(rng.uniform(22, 30), 1), round(rng.uniform(3.8, 5.2) if pole else rng.uniform(2.8, 3.8), 2), round(rng.uniform(1.4, 2.4) if pole else rng.uniform(2.4, 3.6), 1)]
             w.writerow([tid, name, lat, lon, r, "kVA", cust, area, "2024-01-01", "", note, classes[tid], *plate])
 
-    # boundaries
-    feats = []
-    for aid, name, kind, lon, lat, hw, hh in AREAS:
-        feats.append({"type": "Feature", "properties": {"area_id": aid, "name": name, "kind": kind}, "geometry": {"type": "Polygon", "coordinates": rect(lon, lat, hw, hh)}})
-    valid_to = "2025-12-31" if args.scenario == "boundary-mismatch" else "2026-12-31"
-    gj = {
-        "type": "FeatureCollection",
-        "metadata": {"approved_version": "SYNTHETIC-2026-10", "valid_from": "2026-01-01", "valid_to": valid_to, "source": "SYNTHETIC simplified rectangles around approximate town centers; replace with approved county GIS boundaries"},
-        "features": feats,
-    }
+    # Use the published municipal geometry for every scenario. Keep its approval
+    # window fixed so the boundary-mismatch case still fails at the intended guard.
+    gj = json.loads((ROOT / "data/reference/tompkins_municipal_boundaries.geojson").read_text(encoding="utf-8"))
+    if args.scenario == "boundary-mismatch":
+        gj["metadata"]["valid_to"] = "2025-12-31"
     (config.FEEDS_DIR / "boundaries.geojson").write_text(json.dumps(gj, indent=1), encoding="utf-8")
 
     # heat-pump forecast

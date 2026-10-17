@@ -60,7 +60,7 @@ Four required feeds and one optional feed in `data/feeds/`. Their columns are de
 |---|---|
 | `readings.csv` | hourly transformer load in kVA |
 | `assets.csv` | nameplate rating in kVA, location, customers served, declared area |
-| `boundaries.geojson` | town and village polygons with their approval dates |
+| `boundaries.geojson` | public New York State city, town and selected village polygons with the demo coverage dates |
 | `heat_pump_forecast.csv` | base and forecast heat-pump share by area, kW per heat pump |
 | `ambient.csv` (optional) | outside air temperature, hourly or daily; read only by the modeled views (the review page's 3D cutaway and the map's Temperature heat view) |
 

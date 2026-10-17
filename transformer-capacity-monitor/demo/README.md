@@ -60,9 +60,10 @@ mean **review needed** (amber). Each flagged row shows a different reason:
 | T-CAR-006 | 11, forecast | Healthy today at 73% of rating with Cpk 2.65. Heat-pump growth adds 68.2 kVA, so the projected peak is 142% of the 100 kVA rating. | 73.30 + 60 × (0.57 − 0.12) × 2.4 / 0.95 = 141.5 kVA |
 | T-ULY-007 | 5, insufficient history | A new transformer with 12 days of readings. Only 5 fall before the period, short of the 20 baseline days a chart needs. | 5 < 20 |
 
-T-NEW-008 sits where four synthetic boundary rectangles overlap: ITH-T, DAN, ENF and NEW. It is within
-limits. Its forecast assumptions record `allocation_flagged: true`, the four located areas, and that its
-declared primary area NEW was used. No warning is raised, because the declared area contains the location.
+The saved report's allocation example for T-NEW-008 refers to the former synthetic rectangle boundary
+set. The map now uses public NYS municipal geometries, and this synthetic transformer's coordinates are
+not a verified Newfield location. Treat that saved spatial example as historical; the analysis has not
+been rerun against the new boundary feed.
 
 **See the committed demonstration in the app.** Run `./testme.sh` and open
 http://127.0.0.1:5055. The saved 2026-10-15 analysis has **500 transformers: 22 inspect now,

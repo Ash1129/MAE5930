@@ -8,7 +8,7 @@
 | `airflow/dags/log_transformer_loads_and_monitor_capacity_again.py` | Airflow 3 DAG: feed-readiness sensor, then one task per step calling `RunContext`. Small JSON references via XCom; bulk data in `data/work/<run_id>/`. |
 | `webapp/` | Flask review app (port 5055): intake, run progress, exception review, backend-enforced finalization, scheduler status and pause, setup, alerts, metrics. |
 | `rules/playbook.json`, `rules/decision-table.csv` | Approved thresholds and the first-match-wins review decision table. |
-| `data/feeds/` | Input feeds (synthetic until replaced). `data/reports/<period>/` outputs. `data/capacity_monitor.sqlite3` run log, results, dispositions, alerts. |
+| `data/feeds/` | Synthetic utility inputs plus public NYS municipal boundaries. `data/reports/<period>/` outputs. `data/capacity_monitor.sqlite3` run log, results, dispositions, alerts. |
 | `scripts/` | `setup_env.sh` (venv + Airflow + Flask), `env.sh`, `start_app.sh`, `start_airflow.sh`, `stop.sh`, `status.sh`, `make_synthetic_data.py`, `run_evals.py`. |
 | `tests/` | pytest: pipeline units, end-to-end runs and failure cases, web user path including the approval bypass attempt. |
 

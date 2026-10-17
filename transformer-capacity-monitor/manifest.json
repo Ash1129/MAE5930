@@ -47,10 +47,10 @@
       "checksum": "1d3dceaa751b71cad10fefad173eba1f"
     },
     "README-DEVELOPER.md": {
-      "checksum": "f57ff62848184deaa2a184e50307f9b6"
+      "checksum": "b5fa28c41b9d4798ce242476646277e9"
     },
     "README.md": {
-      "checksum": "6f3c03940cb5fd304ad7764fbdfe98cb"
+      "checksum": "f444d21a3924e7a6d4f68d9e19bc33a8"
     },
     "SPEC.md": {
       "checksum": "8db3bb0e0a4e05175a5e0cf98ac7477b"
@@ -125,7 +125,7 @@
       "checksum": "1302305d65e7f117b16f87af3c5f6496"
     },
     "data/README.md": {
-      "checksum": "e81254968c51cae5043d08d205f94dca"
+      "checksum": "4f5b65b2cfa44ae48199de91de73b1c7"
     },
     "data/capacity_monitor.sqlite3": {
       "checksum": "68848f53379f818b5ecaa9df25854d62"
@@ -137,7 +137,7 @@
       "checksum": "cec3961a47ee25803195c694e257690b"
     },
     "data/feeds/boundaries.geojson": {
-      "checksum": "9b15d891919486572ba8456b1fcddc22"
+      "checksum": "a75a96dd40709e4937f96949cb6b34e6"
     },
     "data/feeds/heat_pump_forecast.csv": {
       "checksum": "8bec687c1eb970bcbc64678ea5d04cc9"
@@ -155,7 +155,7 @@
       "checksum": "48afee7a53b27a3a8c43258321eab8b2"
     },
     "demo/README.md": {
-      "checksum": "7251787bb7a26a2bfeeefdd6ae87140e"
+      "checksum": "86630e19e96001f5bb6208d8535c8d4a"
     },
     "deployme.ps1": {
       "checksum": "e72f125e8eecd35701c612a5054282d3"
@@ -206,7 +206,7 @@
       "checksum": "d710f00147ea819e3d64a7c924e86236"
     },
     "scripts/make_synthetic_data.py": {
-      "checksum": "cc335a0867a5a85c81d91356f35ac10e"
+      "checksum": "75b02ab064823cfc9f04a35a1fa8183d"
     },
     "scripts/run_demo.py": {
       "checksum": "1fdcd7acda4ed419e03da6d270e4b115"
@@ -336,6 +336,9 @@
     },
     "webapp/static/fonts/CormorantGaramond.ttf": {
       "checksum": "618588c6026366f173cd30e38d54cc28"
+    },
+    "data/reference/tompkins_municipal_boundaries.geojson": {
+      "checksum": "a75a96dd40709e4937f96949cb6b34e6"
     }
   }
 }
