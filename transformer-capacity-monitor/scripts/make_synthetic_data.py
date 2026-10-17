@@ -192,6 +192,14 @@ def rect(lon, lat, hw, hh):
     return [[[lon - hw, lat - hh], [lon + hw, lat - hh], [lon + hw, lat + hh], [lon - hw, lat + hh], [lon - hw, lat - hh]]]
 
 
+def expand_boundaries(gj, points_by_area):
+    """Redraw feed outlines so each generated site falls inside its area."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from fit_boundaries import expand_boundaries as _expand
+    return _expand(gj, points_by_area)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--end", default=date.today().isoformat(), help="last day of readings (YYYY-MM-DD)")
@@ -245,7 +253,13 @@ def main():
     gj = json.loads((ROOT / "data/reference/tompkins_municipal_boundaries.geojson").read_text(encoding="utf-8"))
     if args.scenario == "boundary-mismatch":
         gj["metadata"]["valid_to"] = "2025-12-31"
-    (config.FEEDS_DIR / "boundaries.geojson").write_text(json.dumps(gj, indent=1), encoding="utf-8")
+    # The reference polygons are the state civil boundaries. Generated sites use a
+    # rectangle around each town, so redraw the feed outlines until those sites sit inside.
+    by_area = {}
+    for _tid, _name, area, lon, lat, *_rest in transformers:
+        by_area.setdefault(area, []).append((lon, lat))
+    expand_boundaries(gj, by_area)
+    (config.FEEDS_DIR / "boundaries.geojson").write_text(json.dumps(gj, indent=1) + "\n", encoding="utf-8", newline="\n")
 
     # heat-pump forecast
     with open(config.FEEDS_DIR / "heat_pump_forecast.csv", "w", newline="", encoding="utf-8") as fh:
