@@ -24,7 +24,7 @@
 </div>
 {% if r.chart.signals %}<h3>Chart signals</h3><table><tr><th>Rule</th><th>Date</th><th>Value</th><th>In period</th></tr>{% for s in r.chart.signals %}<tr><td>{{ s.rule }}</td><td>{{ s.date }}</td><td>{{ s.value|num(1) }}</td><td>{{ 'yes' if s.in_period else 'no (history)' }}</td></tr>{% endfor %}</table>{% endif %}
 <h3>Control chart (shaded = this period; black line = rated maximum)</h3>
-<div style="overflow:auto">{{ svg|safe }}</div>
+<div class="paper">{{ svg|safe }}</div>
 <details><summary>Forecast assumptions</summary><pre>{{ r.projection.assumptions|tojson(indent=1) }}</pre></details>
 <details><summary>Source readings in the period (last {{ period_readings|length }} of {{ r.period_readings|length }})</summary>
 <table><tr><th>Timestamp</th><th>Load</th><th>Unit</th></tr>{% for x in period_readings %}<tr><td>{{ x.timestamp }}</td><td>{{ x.load|num(2) }}</td><td>{{ x.unit }}</td></tr>{% endfor %}</table></details>

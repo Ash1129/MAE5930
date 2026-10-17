@@ -9,7 +9,7 @@
   <dt>Period</dt><dd><a href="{{ url_for('period_detail', period_id=run.period_id) }}">{{ run.period_id }}</a></dd>
   <dt>Triggered by</dt><dd>{{ run.triggered_by }}</dd>
   <dt>Status</dt><dd><span class="tag {{ 'ok' if run.status == 'success' else ('bad' if run.status == 'failed' else 'info') }}">{{ run.status }}</span> {% if run.finished_at %}<span class="muted small">finished {{ run.finished_at }}</span>{% endif %}</dd>
-  {% if run.error %}<dt>Error</dt><dd class="bad" style="background:none">{{ run.error }}</dd>{% endif %}
+  {% if run.error %}<dt>Error</dt><dd class="bad">{{ run.error }}</dd>{% endif %}
 </dl>
 {% if run.problems %}<h3>What stopped this run</h3>
 {% for p in run.problems %}{% set x = p|explain_problem %}{% if x.note %}{% else %}<div class="xp" style="margin-bottom:10px"><div class="xp-title">{{ x.title }}</div><div class="xp-row"><span class="xp-k">What happened</span><span>{{ x.meaning }}</span></div><div class="xp-row"><span class="xp-k">What to do</span><span>{{ x.action }}</span></div></div>{% endif %}{% endfor %}
