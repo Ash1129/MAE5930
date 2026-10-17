@@ -755,10 +755,15 @@ applyLayout(); renderDistricts(); renderSidebar(); labels(); renderStatus(SCHED,
 
 function closeTutorial() {
   $('tutorial').hidden = true;
+  try { localStorage.setItem('capmon.tutorial', '1'); } catch (e) {}
 }
 $('tutorial-ok').onclick = closeTutorial;
-$('tutorial').hidden = false;
-$('tutorial-ok').focus();
+try {
+  if (!localStorage.getItem('capmon.tutorial')) {
+    $('tutorial').hidden = false;
+    $('tutorial-ok').focus();
+  }
+} catch (e) {}
 </script>
 </body>
 </html>
