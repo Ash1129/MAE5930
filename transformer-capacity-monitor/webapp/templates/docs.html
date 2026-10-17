@@ -1,0 +1,198 @@
+{% extends "light_base.html" %}
+{% block title %}Docs · Transformer Capacity Monitor{% endblock %}
+{% block head %}
+<style>
+  .hero{background:linear-gradient(135deg,rgba(182,130,53,.16),rgba(var(--ink-rgb),.04) 60%,rgba(31,95,168,.08));border-bottom:1px solid var(--line)}
+  .hero .in{max-width:1040px;margin:0 auto;padding:56px 24px 44px}
+  .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-700);font-weight:600}
+  .hero h1{font-family:var(--font-heading);font-weight:400;font-size:52px;line-height:1;margin:10px 0 12px;letter-spacing:-.01em}
+  .hero p{font-size:17px;color:var(--ink-75);max-width:640px;margin:0;text-wrap:pretty}
+  .wrap{max-width:1040px;margin:0 auto;padding:36px 24px 90px;display:grid;grid-template-columns:200px minmax(0,1fr);gap:48px}
+  .toc{position:sticky;top:76px;align-self:start;display:flex;flex-direction:column;gap:2px;border-left:1px solid var(--line);padding-left:4px}
+  .toc a{display:block;padding:7px 12px;border-radius:8px;font-size:13px;color:var(--ink-75);text-decoration:none;transition:background .15s}
+  .toc a:hover{background:rgba(var(--ink-rgb),.05);color:var(--ink-90)}
+  .toc a.on{color:var(--accent-700);box-shadow:inset 2px 0 0 var(--accent);background:rgba(182,130,53,.06)}
+  .body{min-width:0;display:flex;flex-direction:column;gap:56px}
+  section{scroll-margin-top:84px}
+  h2{font-family:var(--font-heading);font-weight:600;font-size:30px;line-height:1.1;margin:0 0 14px;letter-spacing:-.01em}
+  h3{font-family:var(--font-heading);font-weight:600;font-size:21px;margin:26px 0 8px}
+  p{margin:0 0 12px;max-width:72ch;text-wrap:pretty} .lead{font-size:16px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px;margin-top:18px}
+  .card{display:block;padding:16px 18px;border:1px solid var(--line);border-radius:4px;background:var(--panel);text-decoration:none;color:inherit;transition:border-color .15s,background .15s}
+  .card:hover{border-color:var(--accent);background:rgba(182,130,53,.06)}
+  .card b{display:block;font-family:var(--font-heading);font-weight:600;font-size:19px;color:var(--accent-700);margin-bottom:4px}
+  .card span{font-size:13px;color:var(--ink-60)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:10px 0 6px}
+  th,td{text-align:left;padding:9px 12px 9px 0;border-bottom:1px solid rgba(var(--ink-rgb),.1);vertical-align:top}
+  th{font-weight:400;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
+  td code,p code,li code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:rgba(var(--ink-rgb),.06);padding:1px 5px;border-radius:3px}
+  .tier{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:2px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+  .tier i{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .t-ok{color:var(--ok)} .t-amber{color:var(--amber)} .t-red{color:var(--review)}
+  pre{background:rgba(var(--ink-rgb),.04);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto;white-space:pre-wrap;word-break:break-word;color:var(--ink-80)}
+  ul{padding-left:20px;margin:0 0 12px} li{margin:4px 0}
+  .faq details{border-top:1px solid var(--line)} .faq details:last-child{border-bottom:1px solid var(--line)}
+  .faq summary{padding:14px 0;font-family:var(--font-heading);font-weight:600;font-size:19px;display:flex;align-items:center;gap:10px}
+  .faq .a{padding:0 0 16px 22px;color:var(--ink-80)}
+  .note{font-size:12px;color:var(--ink-60)}
+  form.inline{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 12px}
+  form.inline input[type=text]{font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line-16);border-radius:4px;background:var(--panel);color:inherit;min-width:min(100%,280px)}
+  form.inline .btn{text-decoration:none}
+  .cta{border-top:1px solid var(--line);padding-top:24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .cta .btn{text-decoration:none}
+  @media (max-width:760px){.wrap{grid-template-columns:1fr;gap:28px;padding:28px 16px 64px}.toc{position:static;flex-direction:row;flex-wrap:wrap;border-left:0;padding:0}.hero .in{padding:40px 16px 32px}.hero h1{font-size:40px}}
+</style>
+{% endblock %}
+{% block content %}
+{% set chev %}<svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>{% endset %}
+<div class="hero"><div class="in">
+  <div class="eyebrow">Docs</div>
+  <h1>Documentation</h1>
+  <p>How a transformer gets its colour, where the data comes from, and how to use and cite the tool.</p>
+</div></div>
+
+<main id="main-content" class="wrap" tabindex="-1">
+  <nav class="toc" aria-label="On this page">
+    <a href="#overview" class="on">Overview</a>
+    <a href="#rules">Rules &amp; tiers</a>
+    <a href="#data">Data</a>
+    <a href="#setup">Setup</a>
+    <a href="#api">API</a>
+    <a href="#cite">How to cite</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+
+  <div class="body">
+    <section id="overview">
+      <h2>What the monitor measures</h2>
+      <p class="lead">The monitor watches every distribution transformer in Tompkins County against its nameplate rating. Each run takes the {{ playbook.period_days }}-day review week, draws the daily peak load on a control chart built from the {{ playbook.history_days }} days before it, measures the room left below the rating, projects heat-pump growth, and sorts the transformer into one of three tiers: <span class="tier t-ok"><i></i>within limits</span>, <span class="tier t-amber"><i></i>review needed</span> or <span class="tier t-red"><i></i>inspect now</span>.</p>
+      <p>Every statistic and every tier is a fixed rule written down in the playbook and the decision table. A named reviewer records a decision on each flagged transformer before the week's report can be finalized. The tool never changes equipment or operating settings.</p>
+      <div class="cards">
+        <a class="card" href="#rules"><b>Rules &amp; tiers</b><span>The chart rules, the thresholds, and the thirteen decision-table rows in order.</span></a>
+        <a class="card" href="#data"><b>Data</b><span>The four feeds, the optional outside-air feed, and what in this copy is synthetic.</span></a>
+        <a class="card" href="#setup"><b>Setup</b><span>Reviewer name, the optional AI wording, scheduler and alert delivery.</span></a>
+        <a class="card" href="#api"><b>API</b><span>Every read-only route, runnable in your browser.</span></a>
+        <a class="card" href="#cite"><b>How to cite</b><span>Ready-to-paste APA and BibTeX.</span></a>
+        <a class="card" href="#faq"><b>FAQ</b><span>Why a colour changed, what “modeled” means, what the tool does not claim.</span></a>
+      </div>
+      <p class="note" style="margin-top:18px">Working with the raw files? The <a href="https://github.com/Ash1129/MAE5930/blob/main/transformer-capacity-monitor/data/README.md">data codebook</a> lists every column and unit, and the API returns the same numbers the pages show.</p>
+    </section>
+
+    <section id="rules">
+      <h2>Rules &amp; tiers</h2>
+      <p class="lead">Runs happen on the playbook schedule (<code>{{ playbook.schedule.cron }}</code>, {{ playbook.timezone }}): Monday, Wednesday and Friday at 06:00. Each one scores the {{ playbook.period_days }} days ending the day before.</p>
+      <h3>The control chart</h3>
+      <p>One value per transformer per day, its daily peak load, on an individuals and moving-range (I-MR) chart. The centre line and limits come from the transformer's own {{ playbook.history_days }}-day baseline, never from the rating: centre = mean, UCL/LCL = mean ± {{ playbook.chart.E2 }} × MR-bar, MR UCL = {{ playbook.chart.D4 }} × MR-bar. Four run rules apply: a point beyond 3 sigma, 2 of 3 beyond 2 sigma on one side, 8 in a row on one side, and a moving range above its UCL. A chart needs at least {{ playbook.chart.min_history_points }} baseline days.</p>
+      <h3>Room left today</h3>
+      <p>For a stable chart, a one-sided capability index against the rating, Cpk = (rating − mean) ÷ 3σ with σ = MR-bar ÷ {{ playbook.chart.d2 }}, and a 95% interval (Bissell's approximation, effective degrees of freedom {{ playbook.capability.mr_effective_df_factor }} × (n − 1)). It is withheld when the daily peaks fail a lag-1 autocorrelation or normality check. Review below {{ playbook.capability.cpk_review_below }}.</p>
+      <h3>The winter estimate</h3>
+      <p>This week's peak plus customers × (forecast heat-pump share − today's share) × kW per heat pump ÷ {{ playbook.forecast.power_factor }} power factor, using the forecast for the transformer's declared area. Review when it reaches {{ (playbook.forecast.near_rating_ratio * 100)|round|int }}% of the rating. It is always labelled as an estimate.</p>
+      <h3>The decision table</h3>
+      <p>First matching row wins. Rules 1 to 3 are <span class="tier t-red"><i></i>inspect now</span>, 4 to 12 are <span class="tier t-amber"><i></i>review needed</span>, and 13 is <span class="tier t-ok"><i></i>within limits</span>. Thresholds are read from <code>rules/playbook.json</code> (version <code>{{ playbook.version }}</code>) when the table loads, so there is one place to change them.</p>
+      <table>
+        <tr><th>Rule</th><th>When</th><th>Tier</th><th>Meaning</th></tr>
+        {% for row in table %}
+        <tr><td>{{ row.rule }}</td><td><code>{{ row.when }}</code></td><td>{% if row.then == 'inspect_now' %}<span class="tier t-red"><i></i>inspect now</span>{% elif row.then == 'review_needed' %}<span class="tier t-amber"><i></i>review needed</span>{% else %}<span class="tier t-ok"><i></i>within limits</span>{% endif %}</td><td>{{ row.notes }}</td></tr>
+        {% endfor %}
+      </table>
+      <p class="note">The map's heat view and the review page's cutaway also show a modeled winding temperature (IEEE C57.91 loading guide, with the outside air). It is for understanding only; no rule reads it.</p>
+    </section>
+
+    <section id="data">
+      <h2>Data</h2>
+      <p class="lead">Four files in <code>data/feeds/</code> drive a run. A fifth, outside air, is optional and feeds only the modeled views.</p>
+      <table>
+        <tr><th>File</th><th>One row is</th><th>Used for</th><th>Status</th></tr>
+        <tr><td><code>{{ feeds.readings.file }}</code></td><td>one transformer, one hour: <code>transformer_id, timestamp, load, unit</code></td><td>the daily peaks on every chart</td><td>{% if feeds.readings.present %}<span class="tier t-ok"><i></i>present</span> <span class="note">{{ feeds.readings.bytes }} bytes, {{ feeds.readings.modified }}</span>{% else %}<span class="tier t-red"><i></i>missing</span>{% endif %}</td></tr>
+        <tr><td><code>{{ feeds.assets.file }}</code></td><td>one transformer: rating, location, customers, declared area, optional nameplate thermal values</td><td>the rating line, the map, the winter estimate</td><td>{% if feeds.assets.present %}<span class="tier t-ok"><i></i>present</span> <span class="note">{{ feeds.assets.bytes }} bytes, {{ feeds.assets.modified }}</span>{% else %}<span class="tier t-red"><i></i>missing</span>{% endif %}</td></tr>
+        <tr><td><code>{{ feeds.boundaries.file }}</code></td><td>one town, village or city polygon with its approval dates</td><td>districts on the map and forecast allocation</td><td>{% if feeds.boundaries.present %}<span class="tier t-ok"><i></i>present</span> <span class="note">{{ feeds.boundaries.bytes }} bytes, {{ feeds.boundaries.modified }}</span>{% else %}<span class="tier t-red"><i></i>missing</span>{% endif %}</td></tr>
+        <tr><td><code>{{ feeds.forecast.file }}</code></td><td>one area and forecast version: heat-pump shares and kW per pump</td><td>the winter estimate</td><td>{% if feeds.forecast.present %}<span class="tier t-ok"><i></i>present</span> <span class="note">{{ feeds.forecast.bytes }} bytes, {{ feeds.forecast.modified }}</span>{% else %}<span class="tier t-red"><i></i>missing</span>{% endif %}</td></tr>
+        <tr><td><code>{{ optional_feeds.ambient.file }}</code> <span class="note">optional</span></td><td>one hour (or day) of outside air in °C</td><td>the modeled temperature views only</td><td>{% if optional_feeds.ambient.present %}<span class="tier t-ok"><i></i>present</span> <span class="note">{{ optional_feeds.ambient.bytes }} bytes, {{ optional_feeds.ambient.modified }}</span>{% else %}<span class="tier t-amber"><i></i>not provided</span> <span class="note">fixed playbook ambient is used</span>{% endif %}</td></tr>
+      </table>
+      <p class="note">Files live in <code>{{ feeds_dir }}</code>. Expected columns: <code>readings.csv</code> transformer_id, timestamp (ISO 8601), load, unit · <code>assets.csv</code> transformer_id, name, lat, lon, rated_max, unit, customers, area_id, effective_from, effective_to, notes, plus optional top_oil_rise_c, hot_spot_rise_c, loss_ratio, oil_time_constant_h · <code>boundaries.geojson</code> FeatureCollection with metadata.valid_from / valid_to / approved_version and feature properties area_id, name, kind · <code>heat_pump_forecast.csv</code> forecast_version, area_id, horizon_label, households, hp_share_base, hp_share_forecast, kw_per_heat_pump, valid_from, valid_to, notes · <code>ambient.csv</code> timestamp and temp_c (hourly) or date and temp_c (daily).</p>
+      <p>A run refuses incomplete or mismatched inputs and posts an alert instead of publishing a partial report: a missing file, a transformer without a rating, a boundary file valid for another period, or days without readings all stop it before analysis.</p>
+      <p><b>Everything in this copy is synthetic.</b> The 500 transformers, their readings, the boundaries' assignment of transformers, the forecast and the outside-air feed are generated by <code>scripts/make_synthetic_data.py</code> with a fixed seed, and planted cases exercise each rule. Replace the feeds with exports from your meter, asset, GIS and forecast systems, keep the same columns, and run a period. The <a href="https://github.com/Ash1129/MAE5930/blob/main/transformer-capacity-monitor/data/README.md">codebook</a> describes every column and how to collect it for real.</p>
+    </section>
+
+    <section id="setup">
+      <h2>Setup</h2>
+      <p class="lead">Two settings live in the app; everything else is a file or an environment variable, so nothing secret is ever typed here.</p>
+      <h3>Reviewer</h3>
+      <p>The named grid-planning reviewer receives the review queue and is the only one who can finalize a week's report.</p>
+      <form method="post" action="{{ url_for('setup') }}" class="inline"><label for="reviewer_name" class="note">Reviewer name</label> <input type="text" id="reviewer_name" name="reviewer_name" value="{{ reviewer_name }}" maxlength="120"> <button class="btn" type="submit">Save</button></form>
+      <h3>AI explanations <span class="note">optional, off by default</span></h3>
+      <p>When on, the map popup adds a one or two sentence summary of each transformer and each new alert is reworded in plain English, both written by Claude Haiku (<code>claude-haiku-5-5</code>) through the <code>claude</code> command-line tool on this computer, on your own Claude subscription. The rule-based text always stays as the fallback; Claude never changes a result, threshold or setting, and the alert text is passed to it as data so wording inside a data file cannot steer it. Each distinct alert is explained once and cached.</p>
+      <p>Status: {% if ai.available %}<span class="tier t-ok"><i></i>claude found</span> <span class="note">{{ ai.cli }}</span>{% else %}<span class="tier t-red"><i></i>claude not found</span> <span class="note">install Claude Code and sign in, then restart the app</span>{% endif %} · explanations cached: {{ ai.cached }}</p>
+      <form method="post" action="{{ url_for('setup_ai') }}" class="inline"><label><input type="checkbox" name="ai_explanations" value="on" {% if ai.enabled %}checked{% endif %}> Turn on AI explanations</label> <button class="btn" type="submit">Save</button></form>
+      <p class="note">Cost: about one short call per new alert, against the Claude subscription signed in on this computer. A server running the app needs its own signed-in Claude Code, or this stays off.</p>
+      <h3>Scheduler</h3>
+      <p>{% if sched.available %}<span class="tier t-ok"><i></i>Airflow reachable</span> at <code>{{ sched.url }}</code> · DAG <code>{{ sched.dag_id }}</code> · {% if sched.is_paused %}paused{% else %}active{% endif %} · next run {{ sched.next_run or '–' }}{% else %}<span class="tier t-red"><i></i>Airflow not reachable</span> <span class="note">{{ sched.error }}</span>{% endif %}</p>
+      <p>Schedule: {{ playbook.schedule.description }} Change the cron in <code>rules/playbook.json</code> and the DAG file together. Pause, resume and Run now live on the <a href="{{ url_for('dashboard') }}">dashboard</a>.</p>
+      <h3>Failure alerts</h3>
+      <p>Failures always appear on the <a href="{{ url_for('alerts') }}">Alerts</a> page. E-mail delivery is enabled by setting environment variables before starting the app:</p>
+      <table>
+        {% for k, v in env.items() %}<tr><td><code>{{ k }}</code></td><td>{% if v == 'set' %}<span class="tier t-ok"><i></i>set</span>{% else %}<span class="tier t-amber"><i></i>not set</span>{% endif %}</td></tr>{% endfor %}
+      </table>
+      <h3>Storage and retries</h3>
+      <p>Database <code>{{ db }}</code> · reports <code>{{ reports }}</code> · a failed run is retried {{ playbook.retries.max_attempts }} times, then fails and posts an alert. Airflow and this app are free open-source software running on this computer; nothing leaves this machine unless e-mail alerts are configured or AI explanations are turned on.</p>
+    </section>
+
+    <section id="api">
+      <h2>API</h2>
+      <p class="lead">Every page reads the same JSON you can. All routes are read-only unless marked POST, return JSON, and need no key on this local copy.</p>
+      <table>
+        <tr><th>Route</th><th>Returns</th></tr>
+        <tr><td><a href="{{ url_for('api_status') }}"><code>GET /api/status</code></a></td><td>scheduler state, the last run, the latest unacknowledged alert and the alert count</td></tr>
+        <tr><td><a href="{{ url_for('health') }}"><code>GET /health</code></a></td><td>a liveness check for the deployment</td></tr>
+        <tr><td><a href="{{ url_for('api_heat_recorded', date=heat_date) }}"><code>GET /api/heat/recorded?date=YYYY-MM-DD</code></a></td><td>24 hourly loads per transformer for a recorded day, plus modeled winding hot spots and the outside air used</td></tr>
+        <tr><td><a href="{{ url_for('api_heat_seasonal', month=1) }}"><code>GET /api/heat/seasonal?month=1..12</code></a></td><td>a MODELED typical day for that month: loads scaled by the playbook's monthly factors and the typical outside air, with hot spots</td></tr>
+        <tr><td>{% if example %}<a href="{{ url_for('api_transformer_mini', period_id=example.period, tid=example.tid) }}">{% endif %}<code>GET /api/periods/&lt;period&gt;/transformers/&lt;id&gt;/mini</code>{% if example %}</a>{% endif %}</td><td>the popup's compact control chart (SVG) and one-line rule-based summary</td></tr>
+        <tr><td>{% if example %}<a href="{{ url_for('api_transformer_thermal', period_id=example.period, tid=example.tid) }}">{% endif %}<code>GET /api/periods/&lt;period&gt;/transformers/&lt;id&gt;/thermal</code>{% if example %}</a>{% endif %}</td><td>the week's modeled oil and hot-spot temperatures, hour by hour, with the parameter and ambient sources used</td></tr>
+        <tr><td><code>GET /api/periods/&lt;period&gt;/transformers/&lt;id&gt;/summary</code></td><td>the optional plain-language summary; 409 when that setting is off</td></tr>
+        <tr><td><code>GET /api/runs/&lt;run_id&gt;</code></td><td>a run's status and current step; <code>POST /api/runs</code> with <code>{"period_end": "YYYY-MM-DD"}</code> starts one</td></tr>
+        <tr><td><code>GET /reports/&lt;period&gt;/report.json</code></td><td>the period report as data (also <code>report.md</code> and <code>report.html</code>)</td></tr>
+      </table>
+      <p class="note">Transformer ids in URLs keep their stored form (for example <code>T-ENF-011</code>) even though pages print them without the prefix.</p>
+    </section>
+
+    <section id="cite">
+      <h2>How to cite</h2>
+      <p class="lead">If the tool, its rules or its synthetic data appear in your work, cite the repository.</p>
+      <h3>APA</h3>
+      <pre>Witt, S., Prajeeth, A., Zhang, D., &amp; Alnamlah, A. S. (2026). <i>Transformer Capacity Monitor: logging transformer loads and monitoring capacity against limits across Tompkins County</i> (Version {{ playbook.version }}) [Computer software]. Cornell University, MAE 5930. https://github.com/Ash1129/MAE5930</pre>
+      <h3>BibTeX</h3>
+      <pre>@software{transformer_capacity_monitor_2026,
+  author  = {Witt, Spencer and Prajeeth, Ashwin and Zhang, Daoming and Alnamlah, Abdullah Saleh},
+  title   = {Transformer Capacity Monitor: logging transformer loads and monitoring capacity against limits across Tompkins County},
+  year    = {2026},
+  version = {{ '{' }}{{ playbook.version }}{{ '}' }},
+  url     = {https://github.com/Ash1129/MAE5930},
+  note    = {Cornell University, MAE 5930. All bundled data is synthetic.}
+}</pre>
+    </section>
+
+    <section id="faq" class="faq">
+      <h2>FAQ</h2>
+      <details open><summary>{{ chev }}Why did a transformer turn amber or red?</summary><div class="a">Open it from the map or the dashboard: the top of its page names the rule that matched and says what happened in plain words. Red means a reading reached the rating, a run rule fired this week, or three or more days fell outside the normal range. Amber means a few outliers, thin or uncertain headroom, a winter estimate near the rating, or not enough history yet.</div></details>
+      <details><summary>{{ chev }}What does “modeled” mean?</summary><div class="a">Anything with that badge is calculated from the recorded loads and published formulas, not measured: the seasonal heat view, the winding and oil temperatures in the cutaway, and the winter estimate. The tool has no sensors inside a transformer and no weather station of its own. Modeled values are for understanding; no rule reads them.</div></details>
+      <details><summary>{{ chev }}Does the tool change any equipment or settings?</summary><div class="a">No. It reads files, draws charts, and records the reviewer's decisions. Nothing it does reaches a transformer, a switch or a SCADA system.</div></details>
+      <details><summary>{{ chev }}Where is AI used?</summary><div class="a">Nowhere in a statistic or a decision. One optional setting, off by default, asks the local <code>claude</code> command-line tool to reword alert and summary text in plain language; the rule-based text is always kept and nothing it writes changes a result.</div></details>
+      <details><summary>{{ chev }}Why is a control limit not the rating?</summary><div class="a">Control limits describe how much a transformer's own load usually varies; the rating is the nameplate. A transformer can be well inside its limits and still close to its rating, or far below its rating and still show a real change in pattern. The pages show both.</div></details>
+      <details><summary>{{ chev }}Can I run it on real data?</summary><div class="a">Yes. Keep the column names in the codebook, drop the exports into <code>data/feeds/</code>, approve the thresholds in <code>rules/playbook.json</code>, and run a period. Replace the synthetic boundaries and forecast with the county GIS layer and the planning team's forecast first.</div></details>
+      <div class="cta" style="margin-top:28px">
+        <a class="btn" href="{{ url_for('map_latest') }}">Explore the map</a>
+        <a class="btn" href="{{ url_for('about') }}">Who we are</a>
+        <span class="note">Something missing here? Open an issue on <a href="https://github.com/Ash1129/MAE5930/issues">GitHub</a>.</span>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  const links = [...document.querySelectorAll('.toc a')], sections = links.map(a => document.querySelector(a.getAttribute('href')));
+  const pick = () => { let cur = 0; sections.forEach((s, i) => { if (s && s.getBoundingClientRect().top <= 120) cur = i; }); links.forEach((a, i) => a.classList.toggle('on', i === cur)); };
+  document.addEventListener('scroll', pick, { passive: true }); pick();
+})();
+</script>
+{% endblock %}

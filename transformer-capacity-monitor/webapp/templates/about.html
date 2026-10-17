@@ -1,0 +1,102 @@
+{% extends "light_base.html" %}
+{% block title %}About · Transformer Capacity Monitor{% endblock %}
+{% block head %}
+<style>
+  .hero{background:linear-gradient(135deg,rgba(31,95,168,.10),rgba(var(--ink-rgb),.04) 55%,rgba(182,130,53,.16));border-bottom:1px solid var(--line)}
+  .hero .in{max-width:1040px;margin:0 auto;padding:56px 24px 44px}
+  .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-700);font-weight:600}
+  .hero h1{font-family:var(--font-heading);font-weight:400;font-size:52px;line-height:1;margin:10px 0 12px;letter-spacing:-.01em}
+  .hero p{font-size:17px;color:var(--ink-75);max-width:640px;margin:0;text-wrap:pretty}
+  .wrap{max-width:1040px;margin:0 auto;padding:40px 24px 90px;display:flex;flex-direction:column;gap:52px}
+  h2{font-family:var(--font-heading);font-weight:600;font-size:30px;line-height:1.1;margin:0 0 14px;letter-spacing:-.01em}
+  p{margin:0 0 12px;max-width:72ch;text-wrap:pretty} .lead{font-size:16px}
+  .arrow{color:var(--accent-700);text-decoration:none;font-weight:600;font-family:var(--font-heading);font-size:16px}
+  .people{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+  .person{padding:18px 20px;border:1px solid var(--line);border-radius:4px;background:var(--panel);display:grid;grid-template-columns:72px 1fr;gap:16px;align-items:start}
+  .person .init{width:72px;height:72px;border-radius:50%;border:1px solid var(--accent);color:var(--accent-700);font-family:var(--font-heading);font-weight:600;font-size:24px;display:grid;place-items:center;overflow:hidden;background:rgba(182,130,53,.08)}
+  .person .init img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+  .person b{display:block;font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1.15}
+  .person .role{display:block;font-size:12px;color:var(--accent-700);margin:2px 0 6px;letter-spacing:.02em}
+  .person .aff{display:block;font-size:12px;color:var(--ink-60);margin-bottom:6px}
+  .person .did{font-size:13.5px;color:var(--ink-80);margin:0}
+  .person a{font-size:12px}
+  .refs{display:flex;flex-direction:column}
+  .ref{padding:14px 0;border-top:1px solid var(--line);display:grid;gap:3px}
+  .ref:last-child{border-bottom:1px solid var(--line)}
+  .ref .when{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
+  .ref .t{font-family:var(--font-heading);font-weight:600;font-size:19px;line-height:1.2}
+  .ref .t a{text-decoration:none;color:inherit} .ref .t a:hover{color:var(--accent-700)}
+  .ref .who{font-size:13px;color:var(--ink-75)}
+  .ref .use{font-size:12.5px;color:var(--ink-60)}
+  .more{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+  .more a{display:block;padding:16px 18px;border:1px solid var(--line);border-radius:4px;background:var(--panel);text-decoration:none;color:inherit;transition:border-color .15s}
+  .more a:hover{border-color:var(--accent)}
+  .more b{display:block;font-family:var(--font-heading);font-weight:600;font-size:19px;color:var(--accent-700)}
+  .more span{font-size:13px;color:var(--ink-60)}
+  .cta{border-top:1px solid var(--line);padding-top:28px}
+  .cta h2{font-size:34px;font-weight:400}
+  .cta .row{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px} .cta .btn{text-decoration:none}
+  .note{font-size:12px;color:var(--ink-60)}
+  @media (max-width:760px){.wrap{padding:28px 16px 64px;gap:40px}.hero .in{padding:40px 16px 32px}.hero h1{font-size:40px}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="hero"><div class="in">
+  <div class="eyebrow">About</div>
+  <h1>Who we are</h1>
+  <p>A Cornell team building a fixed-rules monitor for the distribution transformers that keep Tompkins County's lights on.</p>
+</div></div>
+
+<main id="main-content" class="wrap" tabindex="-1">
+  <section>
+    <h2>Why we do this</h2>
+    <p class="lead">The Transformer Capacity Monitor watches every distribution transformer in the county against its nameplate rating, three times a week, and tells a grid-planning engineer which few need a look: within limits, review needed, or inspect now.</p>
+    <p>Distribution transformers are the last step between the grid and a street, and they are sized for the load a street used to have. Heat pumps change that: a neighbourhood that electrifies its heating can push a transformer past its rating on a cold evening years before anyone planned to replace it. Utilities have the hourly readings to see this coming, but five hundred transformers produce more charts than a person can read every week.</p>
+    <p>So we built a monitor that reads them all with the same fixed rules, statistical process control on each transformer's own history plus a capability check against its rating, and shows the engineer only the exceptions, with the reason in plain words and a record of the decision taken. Every statistic and tier is a written rule; nothing is left to a model's judgement.</p>
+    <a class="arrow" href="{{ url_for('docs') }}#rules">How a transformer gets its colour →</a>
+  </section>
+
+  <section>
+    <h2>The team</h2>
+    <p class="note" style="margin-bottom:14px">Four systems engineering students at Cornell. Roles describe who built what rather than job titles.</p>
+    <div class="people">
+      {% for m in team %}
+      <div class="person">
+        <span class="init">{% if m.photo %}<img src="{{ url_for('static', filename=m.photo) }}" alt="{{ m.name }}">{% else %}{{ m.initials }}{% endif %}</span>
+        <div><b>{{ m.name }}</b><span class="role">{{ m.role }}</span><span class="aff">Cornell University · MAE 5930</span><p class="did">{{ m.did }}</p></div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="note" style="margin-top:14px">Built in MAE 5930 (Systems Engineering, Cornell University), taught by <a href="https://timothyfraser.com">Timothy Fraser, PhD</a>, who set the delivery contract the tool is built to.</p>
+  </section>
+
+  <section>
+    <h2>Methods we rely on</h2>
+    <p class="lead">None of the statistics here are ours. These are the published methods the rules implement, in the order the pipeline uses them.</p>
+    <div class="refs">
+      <div class="ref"><span class="when">1956 · Western Electric Company</span><span class="t">Statistical Quality Control Handbook</span><span class="who">Western Electric Co., Indianapolis</span><span class="use">The run rules: a point beyond 3σ, 2 of 3 beyond 2σ, 8 in a row on one side.</span></div>
+      <div class="ref"><span class="when">2019 · Wiley, 8th ed.</span><span class="t">Introduction to Statistical Quality Control</span><span class="who">Montgomery, D. C.</span><span class="use">The individuals and moving-range chart and its constants (d₂ = {{ playbook.chart.d2 }}, D₄ = {{ playbook.chart.D4 }}, E₂ = {{ playbook.chart.E2 }}).</span></div>
+      <div class="ref"><span class="when">1990 · Quality and Reliability Engineering International 6(4), 259–261</span><span class="t"><a href="https://doi.org/10.1002/qre.4680060405">How reliable is your capability index? ↗</a></span><span class="who">Bissell, A. F.</span><span class="use">The 95% interval on Cpk, with effective degrees of freedom for the moving-range estimate of σ.</span></div>
+      <div class="ref"><span class="when">1980 · Economics Letters 6(3), 255–259</span><span class="t"><a href="https://doi.org/10.1016/0165-1765(80)90024-5">Efficient tests for normality, homoscedasticity and serial independence of regression residuals ↗</a></span><span class="who">Jarque, C. M. &amp; Bera, A. K.</span><span class="use">The normality check that must pass before a Cpk is reported.</span></div>
+      <div class="ref"><span class="when">NIST/SEMATECH</span><span class="t"><a href="https://www.itl.nist.gov/div898/handbook/">e-Handbook of Statistical Methods ↗</a></span><span class="who">National Institute of Standards and Technology</span><span class="use">Process capability assumptions (section 6.1.6) and the autocorrelation screen.</span></div>
+      <div class="ref"><span class="when">2011 · IEEE Std C57.91</span><span class="t"><a href="https://standards.ieee.org/ieee/C57.91/4823/">IEEE Guide for Loading Mineral-Oil-Immersed Transformers and Step-Voltage Regulators ↗</a></span><span class="who">IEEE Power &amp; Energy Society</span><span class="use">The top-oil and hot-spot temperature model behind the modeled cutaway and the map's temperature view.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>More from the project</h2>
+    <div class="more">
+      <a href="https://github.com/Ash1129/MAE5930"><b>GitHub ↗</b><span>The code, the synthetic data, the rules and the delivery report.</span></a>
+      <a href="{{ url_for('docs') }}"><b>Documentation</b><span>Rules and tiers, data, API, how to cite.</span></a>
+      <a href="https://github.com/Ash1129/MAE5930/blob/main/transformer-capacity-monitor/DELIVERY-REPORT.md"><b>Delivery report ↗</b><span>What was built, what was tested, and what is still a demo.</span></a>
+    </div>
+    <p class="note" style="margin-top:14px">Citing the tool or its data? <a href="{{ url_for('docs') }}#cite">Docs: How to cite →</a></p>
+  </section>
+
+  <section class="cta">
+    <h2>See the county for yourself</h2>
+    <p class="lead">Open the map, pick a town, and follow one flagged transformer through to a decision.</p>
+    <div class="row"><a class="btn" href="{{ url_for('map_latest') }}">Explore the map</a><a class="btn" href="{{ url_for('dashboard') }}">Open the dashboard</a><a class="btn" href="{{ url_for('docs') }}">Read the docs</a></div>
+  </section>
+</main>
+{% endblock %}

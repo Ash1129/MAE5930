@@ -36,7 +36,7 @@ equipment or operating settings.
 
 ## Feeding it real data
 
-The tool reads four files from `data/feeds/` (columns are listed on the Setup page):
+The tool reads four files from `data/feeds/` (columns are listed under Docs › Data in the app):
 `readings.csv`, `assets.csv`, `boundaries.geojson`, `heat_pump_forecast.csv`.
 The files there now are **synthetic sample data** for 500 made-up transformers. The 2026-10-15 readings, the review database, and that period's report are already in git, so opening the app shows the finished analysis (including Inspect now) without running it again. Replace the feeds with exports from your meter, asset, GIS and forecast systems, keep the same columns, and run a period when you want a new one.
 

@@ -703,6 +703,7 @@ def scheduler_action(action):
 
 @app.route("/setup", methods=["GET", "POST"])
 def setup():
+    """Setup now lives on the Docs page; the address is kept for old links and the reviewer-name form."""
     if request.method == "POST":
         name = request.form.get("reviewer_name", "").strip()
         if check_text(name, "reviewer", max_len=120):
@@ -710,9 +711,7 @@ def setup():
         else:
             store.set_setting("reviewer_name", name)
             flash("Saved.", "info")
-        return redirect(url_for("setup"))
-    env = {k: ("set" if os.environ.get(k) else "not set") for k in ("CAPMON_ALERT_TO", "CAPMON_SMTP_HOST", "CAPMON_SMTP_USER", "CAPMON_SMTP_PASSWORD")}
-    return render_template("setup.html", feeds=feed_status(), optional_feeds=optional_feed_status(), feeds_dir=str(config.FEEDS_DIR), playbook=config.load_playbook(), sched=airflow_client.status(), env=env, db=str(config.DB_PATH), reports=str(config.REPORTS_DIR), ai=ai_explain.status(store))
+    return redirect(url_for("docs") + "#setup")
 
 
 @app.post("/alerts/<int:alert_id>/ack")
@@ -727,12 +726,12 @@ def ai_explain_alert(alert_id):
     if not alert:
         abort(404)
     if not ai_explain.enabled(store):
-        flash("AI explanations are off. Turn them on in Setup.", "error")
+        flash("AI explanations are off. Turn them on under Docs › Setup.", "error")
     elif not ai_explain.cli_path():
         flash("The claude command-line tool was not found on this computer.", "error")
     else:
         rec = ai_explain.explain_alert_record(store, alert, force=True)
-        flash("A plainer explanation is ready." if rec else "No usable plainer version came back; the fixed-rule text stays. See Setup for details.", "info" if rec else "error")
+        flash("A plainer explanation is ready." if rec else "No usable plainer version came back; the fixed-rule text stays. See Docs › Setup for details.", "info" if rec else "error")
     return redirect(request.referrer or url_for("alerts"))
 
 
@@ -741,7 +740,7 @@ def setup_ai():
     on = request.form.get("ai_explanations") == "on"
     store.set_setting(ai_explain.SETTING_KEY, "on" if on else "off")
     flash("AI explanations turned " + ("on." if on else "off."), "info")
-    return redirect(url_for("setup"))
+    return redirect(url_for("docs") + "#setup")
 
 
 @app.route("/alerts")
@@ -758,6 +757,63 @@ def alerts():
 @app.route("/metrics")
 def metrics():
     return render_template("metrics.html", m=store.review_metrics())
+
+
+@app.route("/docs")
+def docs():
+    """Rules, data, API and citation, read from the live playbook and decision table so the page cannot drift."""
+    from capacity_monitor.pipeline import load_decision_table
+
+    pb = config.load_playbook()
+    example = None
+    periods = store.list_periods(limit=1)
+    if periods:
+        flagged = [r for r in store.get_transformer_results(periods[0]["period_id"]) if r["status"] != "within_limits"]
+        if flagged:
+            example = {"period": periods[0]["period_id"], "tid": flagged[0]["transformer_id"]}
+    days = heat.dates()
+    env = {k: ("set" if os.environ.get(k) else "not set") for k in ("CAPMON_ALERT_TO", "CAPMON_SMTP_HOST", "CAPMON_SMTP_USER", "CAPMON_SMTP_PASSWORD")}
+    return render_template(
+        "docs.html",
+        playbook=pb,
+        table=load_decision_table(playbook=pb),
+        feeds=feed_status(),
+        optional_feeds=optional_feed_status(),
+        feeds_dir=str(config.FEEDS_DIR),
+        example=example,
+        heat_date=days[-1] if days else date.today().isoformat(),
+        sched=airflow_client.status(),
+        env=env,
+        db=str(config.DB_PATH),
+        reports=str(config.REPORTS_DIR),
+        ai=ai_explain.status(store),
+    )
+
+
+TEAM = [
+    {"slug": "spencer", "name": "Spencer Witt", "initials": "SW", "role": "Developer · data and workflow",
+     "did": "Replaced the synthetic map rectangles with NYS municipal boundaries, added the transformer follow-up workflow, reworked the review layout, improved accessibility, and documented the chart methods."},
+    {"slug": "ashwin", "name": "Ashwin Prajeeth", "initials": "AP", "role": "Developer · review app and rules",
+     "did": "Built the fixed-rules pipeline, the decision table and its three tiers, the map and its heat views, the review pages with the modeled transformer cutaway, and the synthetic datasets."},
+    {"slug": "daoming", "name": "Daoming Zhang", "initials": "DZ", "role": "Developer · deployment and map experience",
+     "did": "Published the review app to Posit Connect from GitHub Actions, added the first-visit tour and the county seal, refined the dashboard and the map's review screens, and committed the finished analysis so a checkout opens ready to read."},
+    {"slug": "abdullah", "name": "Abdullah Saleh Alnamlah", "initials": "AA", "role": "Team member",
+     "did": "Member of the MAE 5930 project team."},
+]
+
+
+def _headshot(slug: str) -> str | None:
+    """Static path of the first headshot found for a team member, or None (the page then shows initials)."""
+    for ext in ("jpg", "jpeg", "png", "webp"):
+        if (Path(app.static_folder) / "team" / f"{slug}.{ext}").exists():
+            return f"team/{slug}.{ext}"
+    return None
+
+
+@app.route("/about")
+def about():
+    team = [dict(m, photo=_headshot(m["slug"])) for m in TEAM]
+    return render_template("about.html", playbook=config.load_playbook(), team=team)
 
 
 @app.route("/api/status")

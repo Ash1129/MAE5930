@@ -1,7 +1,7 @@
 """Optional AI-written explanations of alerts through the Claude CLI (the owner's own subscription).
 
 How it is kept safe and cheap:
-- Off by default; the Setup page turns it on. Works only where the `claude` CLI is installed and signed in.
+- Off by default; the Setup section of the Docs page turns it on. Works only where the `claude` CLI is installed and signed in.
 - The rule-based explanation (explain.py) is always computed and always shown as the fallback.
 - The alert text is passed to Claude as DATA between markers, with an instruction that it may contain
   instruction-like text that must be ignored. Claude's answer is only displayed, never acted on.

@@ -289,7 +289,8 @@
         <a href="{{ url_for('dashboard') }}">Dashboard</a>
         <a href="{{ url_for('alerts') }}">Alerts</a>
         <a href="{{ url_for('metrics') }}">Review metrics</a>
-        <a href="{{ url_for('setup') }}" id="setup-link">Setup</a>
+        <a href="{{ url_for('docs') }}" id="setup-link">Docs</a>
+        <a href="{{ url_for('about') }}">About</a>
       </nav>
       <div class="header-tools">
         <span id="reviewer" title="Reviewer: {{ reviewer_name or 'not set' }}"><span id="reviewer-initials"></span><span id="reviewer-name">{{ reviewer_name or 'Reviewer not set' }}</span></span>
@@ -628,7 +629,7 @@ function renderSidebar() {
   const undecided = reds.filter(p => !p.disposition).length;
   const fin = $('finalize');
   if (PERIOD_STATUS === 'final') { fin.disabled = true; $('finalize-why').textContent = 'Finalized; rerun the period to review again'; }
-  else { fin.disabled = undecided > 0 || !REVIEWER; $('finalize-why').textContent = undecided > 0 ? undecided + ' flagged cases still need a decision before the report can be finalized' : (REVIEWER ? 'Every flagged case has a decision' : 'Set the reviewer name in Setup to finalize'); }
+  else { fin.disabled = undecided > 0 || !REVIEWER; $('finalize-why').textContent = undecided > 0 ? undecided + ' flagged cases still need a decision before the report can be finalized' : (REVIEWER ? 'Every flagged case has a decision' : 'Set the reviewer name under Docs › Setup to finalize'); }
 }
 $('tier-select').onchange = e => { S.tier = e.target.value; renderSidebar(); };
 $('tier-select').onclick = e => e.stopPropagation();

@@ -64,7 +64,7 @@ def test_full_user_path_and_approval_gate(sandbox):
     # dispositions are locked after finalization
     client.post(f"/periods/2026-10-15/transformers/{t}/disposition", data={"decision": "reject", "reviewer": "Tester", "notes": "late"})
     assert webapp.store.get_transformer_result("2026-10-15", t)["disposition"]["decision"] == "approve"
-    assert client.get("/metrics").status_code == 200 and client.get("/setup").status_code == 200 and client.get("/alerts").status_code == 200
+    assert client.get("/metrics").status_code == 200 and client.get("/docs").status_code == 200 and client.get("/about").status_code == 200 and client.get("/setup").status_code == 302 and client.get("/alerts").status_code == 200
 
 
 def test_missing_input_shows_failed_run(sandbox):
@@ -111,7 +111,7 @@ def test_shared_polish_assets_and_keyboard_landmarks(sandbox):
     client, webapp = _client(sandbox)
     css = client.get('/static/ui-polish.css')
     assert css.status_code == 200 and b'@font-face' in css.data
-    for path in ('/dashboard', '/alerts', '/setup', '/metrics'):
+    for path in ('/dashboard', '/alerts', '/docs', '/about', '/metrics'):
         html = client.get(path).get_data(as_text=True)
         assert 'ui-polish.css' in html
         assert 'fonts.googleapis.com' not in html

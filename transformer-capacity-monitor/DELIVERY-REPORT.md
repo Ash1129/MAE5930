@@ -69,7 +69,7 @@ The map popup now shows a Claude Haiku summary (Claude CLI, `claude-haiku-5-5`, 
 ## Plain-language alerts (added 2026-10-16)
 
 - **Rule-based explanations** (`capacity_monitor/explain.py`, no AI): every alert and failed run shows a headline, "What happened" and "What to do" written from fixed templates for the known failure patterns (wrong-period boundary file, missing rating, missing feed, incomplete readings, unit mismatch, forecast version, scheduler task failure), with the technical text under "Technical details" and overlap notes grouped as "nothing to fix". Duplicate scheduler alerts are suppressed.
-- **AI explanations through the Claude CLI** (`capacity_monitor/ai_explain.py`, optional, owner's choice): when turned on in Setup and the `claude` command-line tool is installed and signed in, each new alert is also rewritten by Claude. Guardrails: the alert text is passed as data between markers with an instruction to ignore embedded instructions; the answer must be JSON with title/meaning/action; it is length-limited, PII-redacted and refused if it contains instruction-like or blocked wording; results are cached per distinct alert; Claude's text is display-only and never feeds a decision. Tested with a fake CLI (`tests/test_ai_explain.py`) and with one real call on this Mac (12 s; a correct explanation of the boundary-period failure). This departs from the brief's "no AI" rule at the owner's explicit request and only in the presentation layer; the rule-based text remains the fallback and is what the tool shows when the CLI is absent.
+- **AI explanations through the Claude CLI** (`capacity_monitor/ai_explain.py`, optional, owner's choice): when turned on under Docs › Setup and the `claude` command-line tool is installed and signed in, each new alert is also rewritten by Claude. Guardrails: the alert text is passed as data between markers with an instruction to ignore embedded instructions; the answer must be JSON with title/meaning/action; it is length-limited, PII-redacted and refused if it contains instruction-like or blocked wording; results are cached per distinct alert; Claude's text is display-only and never feeds a decision. Tested with a fake CLI (`tests/test_ai_explain.py`) and with one real call on this Mac (12 s; a correct explanation of the boundary-period failure). This departs from the brief's "no AI" rule at the owner's explicit request and only in the presentation layer; the rule-based text remains the fallback and is what the tool shows when the CLI is absent.
 
 ## Map and heatmap (added 2026-10-16)
 
@@ -138,13 +138,13 @@ timeout at full length, production Airflow deployment (standalone mode is for de
 
 ## Setup remaining (owner actions)
 
-1. Replace the synthetic feeds in `data/feeds/` with real exports (columns listed on the Setup page), or have
+1. Replace the synthetic feeds in `data/feeds/` with real exports (columns listed under Docs › Data in the app), or have
    IT point `capacity_monitor/sources.py` at the meter, asset, GIS and forecast systems. Then run one period and
    compare with the current manual process (run alongside for two weeks, as the plan says).
 2. Approve the playbook values in `rules/playbook.json` and `rules/decision-table.csv`: measurement period,
    schedule and time zone, late-data cutoff, Cpk thresholds, forecast margin, run rules, minimum history,
    forecast version and allocation method. Record who approved them.
-3. Enter the named reviewer on the Setup page; set `CAPMON_ALERT_TO` and `CAPMON_SMTP_*` in the environment
+3. Enter the named reviewer under Docs › Setup in the app; set `CAPMON_ALERT_TO` and `CAPMON_SMTP_*` in the environment
    (before starting the app) if failure alerts should also go by e-mail; agree the escalation path.
 4. Decide where it runs for real. Today it runs on this Mac (free; nothing leaves the machine). For unattended
    operation use a machine that stays on, or a managed Airflow service (priced by its provider, which would be a new

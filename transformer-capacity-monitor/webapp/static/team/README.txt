@@ -1,0 +1,1 @@
+Headshots for the About page. One file per person, named after the slug in webapp/app.py (spencer, ashwin, daoming, abdullah) with a .jpg, .png or .webp extension. Square crops look best; the page shows initials when a file is missing.

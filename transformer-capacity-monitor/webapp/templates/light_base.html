@@ -109,7 +109,8 @@
     <a href="{{ url_for('dashboard') }}"{% if ep in ('dashboard', 'period_detail', 'run_detail') %} aria-current="page"{% endif %}>Dashboard</a>
     <a href="{{ url_for('alerts') }}"{% if ep == 'alerts' %} aria-current="page"{% endif %}>Alerts</a>
     <a href="{{ url_for('metrics') }}"{% if ep == 'metrics' %} aria-current="page"{% endif %}>Review metrics</a>
-    <a href="{{ url_for('setup') }}"{% if ep == 'setup' %} aria-current="page"{% endif %}>Setup</a>
+    <a href="{{ url_for('docs') }}"{% if ep == 'docs' %} aria-current="page"{% endif %}>Docs</a>
+    <a href="{{ url_for('about') }}"{% if ep == 'about' %} aria-current="page"{% endif %}>About</a>
   </nav>
   <div class="tools">
     {% if reviewer_name %}<span class="reviewer" title="Reviewer: {{ reviewer_name }}"><span class="initials">{{ initials[:2] }}</span><span class="name">{{ reviewer_name }}</span></span>
