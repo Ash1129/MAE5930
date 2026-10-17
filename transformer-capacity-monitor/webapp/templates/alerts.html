@@ -1,20 +1,118 @@
-{% extends "base.html" %}
+{% extends "light_base.html" %}
+{% block title %}Alerts · Transformer Capacity Monitor{% endblock %}
+{% block head %}
+<style>
+  .wrap{max-width:960px;margin:0 auto;padding:40px 24px 80px}
+  .head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 24px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+  .head .t{flex:1;min-width:240px}
+  .head h1{font-family:var(--font-heading);font-weight:400;font-size:40px;line-height:1;margin:0}
+  .head .sub{font-size:14px;color:var(--ink-60);margin-top:8px}
+  .seg{display:inline-flex;border:1px solid var(--line-16);border-radius:4px;overflow:hidden}
+  .seg a{padding:7px 14px;font-size:13px;color:var(--ink-80);text-decoration:none;transition:background .15s}
+  .seg a+a{border-left:1px solid var(--line-16)}
+  .seg a:hover{background:rgba(29,36,48,.04)}
+  .seg a[aria-current="true"]{color:var(--accent-700);box-shadow:inset 0 0 0 1px var(--accent)}
+  .seg a span{color:var(--ink-60)}
+  .empty{padding:64px 0;text-align:center;color:var(--ink-60)}
+  .empty b{display:block;font-family:var(--font-heading);font-weight:600;font-size:22px;color:var(--ink-90)}
+  .empty div{font-size:13px;margin-top:6px}
+
+  article{display:grid;grid-template-columns:150px minmax(0,1fr) 170px;gap:0 28px;padding:26px 0;border-bottom:1px solid var(--line);transition:background .15s}
+  article:hover{background:rgba(29,36,48,.02)}
+  article.acked{opacity:.7}
+  .when{display:flex;flex-direction:column;gap:8px;font-size:13px}
+  .when .dt{line-height:1.3} .when .dt div+div{color:var(--ink-60)}
+  .when .chip{align-self:flex-start}
+  .when .run{font-size:12px;color:var(--ink-60);line-height:1.4} .when .run .sn{color:var(--ink-75)}
+  .lvl-error{color:var(--review)} .lvl-warning{color:var(--warn)}
+  .body{min-width:0}
+  .body h2{font-family:var(--font-heading);font-weight:600;font-size:23px;line-height:1.15;margin:0 0 12px;letter-spacing:-.01em}
+  .rows{display:grid;grid-template-columns:104px 1fr;gap:10px 14px;font-size:14px}
+  .rows .micro{padding-top:5px}
+  .more{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:14px;font-size:12px}
+  .more details{min-width:0;flex-basis:100%}
+  .more summary{color:var(--ink-60);display:inline-flex;align-items:center;gap:6px}
+  .more ul{margin:8px 0 0 18px;padding:0;color:var(--ink-75);display:flex;flex-direction:column;gap:4px}
+  .ai-line{color:var(--ink-50);flex-basis:100%}
+  .ai-line form{display:inline}
+  .ai-line button{all:unset;cursor:pointer;color:var(--ink-60);text-decoration:underline;text-underline-offset:3px}
+  .ai-line button:hover{color:var(--accent-700)}
+  .ack{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:12px;text-align:right}
+  .ack form{margin:0}
+  .ack .help{color:var(--ink-60)}
+  .ack .done{display:inline-flex;align-items:center;gap:6px;color:var(--ok)}
+  .ack .by{color:var(--ink-60)}
+  .ack .via{color:var(--ink-50);margin-top:auto;padding-top:6px}
+  .foot{font-size:12px;color:var(--ink-50);margin-top:20px}
+  @media (max-width:760px){
+    .wrap{padding:28px 16px 64px}
+    article{grid-template-columns:1fr;gap:14px}
+    .when{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 12px}
+    .when .run{flex-basis:100%}
+    .ack{align-items:flex-start;text-align:left}
+    .rows{grid-template-columns:1fr;gap:2px}
+    .rows .micro{padding-top:8px}
+  }
+</style>
+{% endblock %}
 {% block content %}
-<div class="card"><h1>Alerts</h1>
-<p class="small muted">Each alert says what happened and what to do. The technical text is under "Technical details".</p>
-<table><tr><th>When</th><th>Run</th><th>Alert</th><th>Delivery</th><th>Acknowledged</th></tr>
-{% for a in alerts %}{% set e = a|explain %}<tr><td class="small">{{ a.created_at[:16].replace('T', ' ') }}<br><span class="tag {{ 'bad' if a.level == 'error' else 'warn' }}">{{ a.level }}</span></td><td class="small">{% if a.run_id %}<a href="{{ url_for('run_detail', run_id=a.run_id) }}">period {{ a.period_id }}</a>{% if e.step %}<br>stopped at step {{ e.step }}: {{ e.step_name }}{% endif %}{% endif %}</td><td>{% set e = a|explain %}
-<div class="xp">
-  {% if e.ai %}<div class="ai"><div class="xp-title">{{ e.ai.title }} <span class="tag info">written by Claude</span></div><div class="xp-row"><span class="xp-k">What happened</span><span>{{ e.ai.meaning }}</span></div><div class="xp-row"><span class="xp-k">What to do</span><span>{{ e.ai.action }}</span></div></div>
-<details class="small"><summary>Rule-based explanation</summary>{% endif %}
-  <div class="xp-title">{{ e.title }}</div>
-  <div class="xp-row"><span class="xp-k">What happened</span><span>{{ e.meaning }}</span></div>
-  <div class="xp-row"><span class="xp-k">What to do</span><span>{{ e.action }}</span></div>
-  {% for o in e.others %}<div class="xp-row"><span class="xp-k">Also</span><span>{{ o.meaning }} {{ o.action }}</span></div>{% endfor %}
-  {% if e.notes %}<details class="small"><summary>{{ e.notes|length }} note(s), nothing to fix</summary><ul>{% for n in e.notes %}<li>{{ n }}</li>{% endfor %}</ul></details>{% endif %}
-  {% if e.ai %}</details>{% endif %}
-{% if e.ai_on %}<form method="post" action="{{ url_for('ai_explain_alert', alert_id=a.id) }}" style="margin-top:6px"><button class="btn small">{{ 'Ask Claude again' if e.ai else 'Explain with Claude' }}</button>{% if e.ai_error %} <span class="small muted">last attempt: {{ e.ai_error }}</span>{% endif %}</form>{% endif %}
-  <details class="small"><summary>Technical details</summary><pre style="white-space:pre-wrap">{{ e.details }}</pre></details>
-</div></td><td class="small muted">{{ a.delivered }}</td><td>{% if a.acknowledged_at %}<span class="small">{{ a.acknowledged_by }}<br>{{ a.acknowledged_at[:16].replace('T', ' ') }}</span>{% else %}<form method="post" action="{{ url_for('ack_alert', alert_id=a.id) }}"><button class="btn">Acknowledge</button></form>{% endif %}</td></tr>
-{% else %}<tr><td colspan="5" class="muted">No alerts.</td></tr>{% endfor %}</table></div>
+{% set chev %}<svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>{% endset %}
+<div class="wrap">
+  <div class="head">
+    <div class="t">
+      <h1>Alerts</h1>
+      <div class="sub">{% if n_open %}{{ n_open }} {{ 'alert needs' if n_open == 1 else 'alerts need' }} a look. Each one says what happened and what to do; the technical text is tucked underneath.{% else %}Nothing needs a look right now. Each alert says what happened and what to do; the technical text is tucked underneath.{% endif %}</div>
+    </div>
+    <nav class="seg" aria-label="Show">
+      <a href="{{ url_for('alerts', show='open') }}"{% if show == 'open' %} aria-current="true"{% endif %}>Open <span>{{ n_open }}</span></a>
+      <a href="{{ url_for('alerts', show='acked') }}"{% if show == 'acked' %} aria-current="true"{% endif %}>Acknowledged <span>{{ n_acked }}</span></a>
+      <a href="{{ url_for('alerts', show='all') }}"{% if show == 'all' %} aria-current="true"{% endif %}>All</a>
+    </nav>
+  </div>
+
+  {% if not alerts %}
+  <div class="empty">
+    {% if show == 'open' %}<b>All clear</b><div>Every alert has been acknowledged. The scheduler posts here if a run stops.</div>
+    {% elif show == 'acked' %}<b>Nothing here yet</b><div>Acknowledged alerts will appear here.</div>
+    {% else %}<b>No alerts yet</b><div>The scheduler posts here if a run stops or an input looks wrong.</div>{% endif %}
+  </div>
+  {% endif %}
+
+  {% for a in alerts %}{% set e = a|explain %}
+  <article class="{{ 'acked' if a.acknowledged_at and show == 'all' else '' }}">
+    <div class="when">
+      <div class="dt"><div>{{ a.created_at|day }}</div><div>{{ a.created_at|clock }}</div></div>
+      <span class="chip {{ 'lvl-error' if a.level == 'error' else 'lvl-warning' }}"><span class="d"></span>{{ 'Run stopped' if a.level == 'error' else 'Needs attention' }}</span>
+      {% if a.run_id %}<div class="run"><a href="{{ url_for('run_detail', run_id=a.run_id) }}">Week ending {{ a.period_id }}</a>{% if e.step %}<br>Stopped at step {{ e.step }} of 15<br><span class="sn">{{ e.step_name }}</span>{% endif %}</div>{% endif %}
+    </div>
+
+    <div class="body">
+      <h2>{{ e.ai.title if e.ai else e.title }}</h2>
+      <div class="rows">
+        <span class="micro">What happened</span><span>{{ e.ai.meaning if e.ai else e.meaning }}</span>
+        <span class="micro">What to do</span><span>{{ e.ai.action if e.ai else e.action }}</span>
+        {% for o in e.others %}<span class="micro">Also</span><span>{{ o.meaning }} {{ o.action }}</span>{% endfor %}
+      </div>
+      <div class="more">
+        {% if e.notes %}<details><summary>{{ chev }}{{ e.notes|length }} {{ 'note' if e.notes|length == 1 else 'notes' }}, nothing to fix</summary><ul>{% for n in e.notes %}<li>{{ n }}</li>{% endfor %}</ul></details>{% endif %}
+        <details><summary>{{ chev }}Technical details</summary><pre class="tech">{{ e.details }}</pre></details>
+        {% if e.ai_on %}<span class="ai-line">{% if e.ai %}Reworded in plain language from the fixed-rule text.{% else %}Written from fixed rules.{% endif %} <form method="post" action="{{ url_for('ai_explain_alert', alert_id=a.id) }}"><button>{{ 'Ask again' if e.ai else 'Ask for a plainer version' }}</button></form>{% if e.ai_error %} · last attempt did not work{% endif %}</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="ack">
+      {% if a.acknowledged_at %}
+      <span class="done"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Acknowledged</span>
+      <span class="by">by {{ a.acknowledged_by }}<br>{{ a.acknowledged_at|day }}, {{ a.acknowledged_at|clock }}</span>
+      {% else %}
+      <form method="post" action="{{ url_for('ack_alert', alert_id=a.id) }}"><button class="btn">Acknowledge</button></form>
+      <span class="help">Marks it read for everyone. It stays in the list.</span>
+      {% endif %}
+      <span class="via">{{ a.delivered|delivery }}</span>
+    </div>
+  </article>
+  {% endfor %}
+
+  <div class="foot">Alerts are written by the tool from fixed rules when a run stops or an input looks wrong. Acknowledging does not change any equipment or rerun anything — use Run now on the map for that.</div>
+</div>
 {% endblock %}

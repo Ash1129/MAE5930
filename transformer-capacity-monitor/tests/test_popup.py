@@ -97,11 +97,12 @@ def test_review_page_shows_summary_on_top(sandbox, tmp_path, monkeypatch):
     client = _run(webapp)
     webapp.store.set_setting(ai_explain.SETTING_KEY, "off")
     page = client.get("/periods/2026-10-15/transformers/T-CAR-006").data.decode()
-    assert "Rule-based summary" in page and page.index('id="summary"') < page.index("Checklist")
+    assert "Why it&#39;s on the list" in page and page.index('id="summary"') < page.index("What the tool checked")
+    assert "transformers/T-CAR-006/summary" not in page  # off: rule text only, no fetch
     webapp.store.set_setting(ai_explain.SETTING_KEY, "on")
     page = client.get("/periods/2026-10-15/transformers/T-CAR-006").data.decode()
-    assert "Writing a summary with Claude Haiku" in page  # not cached yet: the page fetches it
+    assert "transformers/T-CAR-006/summary" in page  # not cached yet: the page fetches it
     client.get("/api/periods/2026-10-15/transformers/T-CAR-006/summary")
     page = client.get("/periods/2026-10-15/transformers/T-CAR-006").data.decode()
-    assert "projected peak is 135%" in page and "Written by Claude Haiku" in page  # cached: rendered server-side
+    assert "projected peak is 135%" in page and "Claude" not in page  # cached: rendered server-side, no vendor name
     assert len(log.read_text().strip().splitlines()) == 1

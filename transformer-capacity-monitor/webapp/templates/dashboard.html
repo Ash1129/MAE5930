@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block page_head %}<style>.when-cell,.pid-cell{white-space:nowrap}</style>{% endblock %}
 {% block content %}
 <div class="grid">
   <div class="card">
@@ -31,29 +32,26 @@
 {% if alerts %}
 <div class="card"><h2>Needs attention</h2>
 <table><tr><th>When</th><th>Run</th><th>Alert</th><th></th></tr>
-{% for a in alerts %}{% set e = a|explain %}<tr><td class="small">{{ a.created_at[:16].replace('T', ' ') }}</td><td class="small">{% if a.run_id %}<a href="{{ url_for('run_detail', run_id=a.run_id) }}">period {{ a.period_id }}</a>{% if e.step %}<br>step {{ e.step }}: {{ e.step_name }}{% endif %}{% endif %}</td><td>{% set e = a|explain %}
+{% for a in alerts %}{% set e = a|explain %}<tr><td class="small">{{ a.created_at|day }}<br><span class="muted">{{ a.created_at|clock }}</span></td><td class="small">{% if a.run_id %}<a href="{{ url_for('run_detail', run_id=a.run_id) }}">Week ending {{ a.period_id }}</a>{% if e.step %}<br><span class="muted">Stopped at step {{ e.step }} of 15</span>{% endif %}{% endif %}</td><td>{% set e = a|explain %}
 <div class="xp">
-  {% if e.ai %}<div class="ai"><div class="xp-title">{{ e.ai.title }} <span class="tag info">written by Claude</span></div><div class="xp-row"><span class="xp-k">What happened</span><span>{{ e.ai.meaning }}</span></div><div class="xp-row"><span class="xp-k">What to do</span><span>{{ e.ai.action }}</span></div></div>
-<details class="small"><summary>Rule-based explanation</summary>{% endif %}
-  <div class="xp-title">{{ e.title }}</div>
-  <div class="xp-row"><span class="xp-k">What happened</span><span>{{ e.meaning }}</span></div>
-  <div class="xp-row"><span class="xp-k">What to do</span><span>{{ e.action }}</span></div>
+  <div class="xp-title">{{ e.ai.title if e.ai else e.title }}</div>
+  <div class="xp-row"><span class="xp-k">What happened</span><span>{{ e.ai.meaning if e.ai else e.meaning }}</span></div>
+  <div class="xp-row"><span class="xp-k">What to do</span><span>{{ e.ai.action if e.ai else e.action }}</span></div>
   {% for o in e.others %}<div class="xp-row"><span class="xp-k">Also</span><span>{{ o.meaning }} {{ o.action }}</span></div>{% endfor %}
-  {% if e.notes %}<details class="small"><summary>{{ e.notes|length }} note(s), nothing to fix</summary><ul>{% for n in e.notes %}<li>{{ n }}</li>{% endfor %}</ul></details>{% endif %}
-  {% if e.ai %}</details>{% endif %}
-{% if e.ai_on %}<form method="post" action="{{ url_for('ai_explain_alert', alert_id=a.id) }}" style="margin-top:6px"><button class="btn small">{{ 'Ask Claude again' if e.ai else 'Explain with Claude' }}</button>{% if e.ai_error %} <span class="small muted">last attempt: {{ e.ai_error }}</span>{% endif %}</form>{% endif %}
+  {% if e.notes %}<details class="small"><summary>{{ e.notes|length }} {{ 'note' if e.notes|length == 1 else 'notes' }}, nothing to fix</summary><ul>{% for n in e.notes %}<li>{{ n }}</li>{% endfor %}</ul></details>{% endif %}
   <details class="small"><summary>Technical details</summary><pre style="white-space:pre-wrap">{{ e.details }}</pre></details>
-</div></td><td><form method="post" action="{{ url_for('ack_alert', alert_id=a.id) }}"><button class="btn">Acknowledge</button></form></td></tr>{% endfor %}
+  {% if e.ai_on %}<div class="ai-line">{% if e.ai %}Reworded in plain language from the fixed-rule text.{% else %}Written from fixed rules.{% endif %} <form method="post" action="{{ url_for('ai_explain_alert', alert_id=a.id) }}"><button>{{ 'Ask again' if e.ai else 'Ask for a plainer version' }}</button></form>{% if e.ai_error %} · last attempt did not work{% endif %}</div>{% endif %}
+</div></td><td><form method="post" action="{{ url_for('ack_alert', alert_id=a.id) }}"><button class="btn primary">Acknowledge</button></form></td></tr>{% endfor %}
 </table></div>
 {% endif %}
 <div class="grid">
 <div class="card"><h2>Periods</h2>
 <table><tr><th>Period end</th><th>Report</th><th>Transformers</th><th>Review needed</th><th>Reruns</th><th></th></tr>
-{% for p in periods %}<tr><td><a href="{{ url_for('period_detail', period_id=p.period_id) }}">{{ p.period_id }}</a></td><td>{% if p.status == 'final' %}<span class="tag ok">final</span>{% else %}<span class="tag warn">draft</span>{% endif %}</td><td>{{ p.summary.transformers }}</td><td>{{ p.summary.review_needed }}</td><td>{{ p.rerun_count }}</td><td><a href="{{ url_for('report_file', period_id=p.period_id, filename='report.html') }}" target="_blank">report</a></td></tr>
+{% for p in periods %}<tr><td class="pid-cell"><a href="{{ url_for('period_detail', period_id=p.period_id) }}">{{ p.period_id }}</a></td><td>{% if p.status == 'final' %}<span class="tag ok">final</span>{% else %}<span class="tag warn">draft</span>{% endif %}</td><td>{{ p.summary.transformers }}</td><td>{{ p.summary.review_needed }}</td><td>{{ p.rerun_count }}</td><td><a href="{{ url_for('report_file', period_id=p.period_id, filename='report.html') }}" target="_blank">report</a></td></tr>
 {% else %}<tr><td colspan="6" class="muted">No periods yet. Run one above.</td></tr>{% endfor %}</table></div>
 <div class="card"><h2>Recent runs</h2>
 <table><tr><th>Started</th><th>Period</th><th>By</th><th>Status</th><th>Step</th></tr>
-{% for r in runs %}<tr><td><a href="{{ url_for('run_detail', run_id=r.run_id) }}">{{ r.started_at }}</a></td><td>{{ r.period_id }}</td><td>{{ r.triggered_by }}</td><td><span class="tag {{ 'ok' if r.status == 'success' else ('bad' if r.status == 'failed' else 'info') }}">{{ r.status }}</span></td><td class="small">{{ r.current_step }}{% if r.error %} <span class="muted">{{ r.error[:80] }}</span>{% endif %}</td></tr>
+{% for r in runs %}<tr><td class="when-cell"><a href="{{ url_for('run_detail', run_id=r.run_id) }}">{{ r.started_at|day }} {{ r.started_at|clock }}</a></td><td class="pid-cell">{{ r.period_id }}</td><td>{{ r.triggered_by }}</td><td><span class="tag {{ 'ok' if r.status == 'success' else ('bad' if r.status == 'failed' else 'info') }}">{{ r.status }}</span></td><td class="small">{{ r.current_step }}{% if r.error %} <span class="muted">{{ r.error[:80] }}</span>{% endif %}</td></tr>
 {% else %}<tr><td colspan="5" class="muted">No runs yet.</td></tr>{% endfor %}</table></div>
 </div>
 {% endblock %}

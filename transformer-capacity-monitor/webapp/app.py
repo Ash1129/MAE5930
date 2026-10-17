@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 import sys
 import threading
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
 from flask import Flask, abort, flash, redirect, render_template, request, send_from_directory, url_for  # noqa: E402
 
 from capacity_monitor import ai_explain, airflow_client, config, explain, heat  # noqa: E402
-from capacity_monitor.charts import imr_svg, mini_imr_svg  # noqa: E402
+from capacity_monitor.charts import mini_imr_svg, review_chart_caption, review_chart_svg  # noqa: E402
 from capacity_monitor.guards import check_text  # noqa: E402
 from capacity_monitor.report import write_report  # noqa: E402
 from capacity_monitor.run import execute_run, new_run_id  # noqa: E402
@@ -32,6 +32,7 @@ store = Store()
 _running: dict[str, threading.Thread] = {}
 
 DECISIONS = {"approve": "Approve", "request_changes": "Request changes", "reject": "Reject"}
+DECISION_CHIPS = {"approve": "Approved", "request_changes": "Changes requested", "reject": "Rejected"}
 
 
 def reviewer_name() -> str:
@@ -40,7 +41,7 @@ def reviewer_name() -> str:
 
 @app.context_processor
 def _ctx():
-    return {"reviewer_name": reviewer_name(), "unacked_alerts": len(store.list_alerts(unacknowledged_only=True)), "now": now_iso()}
+    return {"reviewer_name": reviewer_name(), "unacked_alerts": len(store.list_alerts(unacknowledged_only=True)), "now": now_iso(), "latest_alert": _latest_alert()}
 
 
 @app.template_filter("num")
@@ -67,6 +68,30 @@ def _explain_problem(text):
     if text.startswith("warning:"):
         return {"note": explain.explain_note(text[len("warning:"):].strip()) or text[len("warning:"):].strip()}
     return explain.explain_problem(text)
+
+
+@app.template_filter("day")
+def _day(iso):
+    """'2026-10-16T06:02:11-04:00' -> 'Fri 16 Oct'."""
+    try:
+        return datetime.fromisoformat(iso).strftime("%a %-d %b")
+    except (TypeError, ValueError):
+        return iso or ""
+
+
+@app.template_filter("clock")
+def _clock(iso):
+    return (iso or "")[11:16]
+
+
+@app.template_filter("delivery")
+def _delivery(text):
+    t = (text or "").lower()
+    if t.startswith("email to"):
+        return "Sent by email"
+    if t.startswith("email failed"):
+        return "Email failed; shown here"
+    return "Shown here only"
 
 
 @app.template_filter("pct")
@@ -153,21 +178,30 @@ def transformer_detail(period_id, tid):
     r = store.get_transformer_result(period_id, tid)
     if not period or not r:
         abort(404)
-    svg = imr_svg(r["chart"], period["period"]["start"], r["unit"], r["rated_max"])
     pb = config.load_playbook()
+    cap, fc = r["capacity"], pb["forecast"]["near_rating_ratio"]
+    # same order and flags as before, worded for a non-statistician; the index of the item that matches the decision rule
     checklist = [
-        ("Chart signals investigated (dates, rule, source readings)", r["stability"] == "signal"),
-        ("Enough stable history for limits and capability", r["stability"] == "insufficient_history"),
-        (f"Cpk at or above {pb['capability']['cpk_review_below']} and lower bound above {pb['capability']['cpk_ci_low_review_below']}", r["capacity"]["cpk"] is not None and (r["capacity"]["cpk"] < pb["capability"]["cpk_review_below"] or r["capacity"]["cpk_ci_low"] < pb["capability"]["cpk_ci_low_review_below"])),
-        (f"Forecast peak below {int(pb['forecast']['near_rating_ratio'] * 100)}% of rating; allocation assumption acceptable", r["capacity"]["forecast_ratio"] is not None and r["capacity"]["forecast_ratio"] >= pb["forecast"]["near_rating_ratio"]),
-        ("Period readings below the rated maximum", r["capacity"]["period_peak_ratio"] is not None and r["capacity"]["period_peak_ratio"] >= 1.0),
-        ("Capability assumptions met (independent, roughly normal daily peaks)", bool(r["capacity"].get("assumption_flags"))),
-        ("Numbers shown agree with the chart and source readings", False),
+        ("Load pattern looked at for changes", r["stability"] == "signal"),
+        ("Enough steady history to judge it", r["stability"] == "insufficient_history"),
+        (f"Room left today is healthy (Cpk {pb['capability']['cpk_review_below']} or more)", cap["cpk"] is not None and (cap["cpk"] < pb["capability"]["cpk_review_below"] or cap["cpk_ci_low"] < pb["capability"]["cpk_ci_low_review_below"])),
+        (f"Winter estimate stays under {int(fc * 100)}% of the rating", cap["forecast_ratio"] is not None and cap["forecast_ratio"] >= fc),
+        ("No reading this week reached the rating", cap["period_peak_ratio"] is not None and cap["period_peak_ratio"] >= 1.0),
+        ("Daily peaks behave well enough for the headroom figure", bool(cap.get("assumption_flags"))),
+        ("Numbers match the chart and the raw readings", False),
     ]
+    cause = {"2": 0, "1": 1, "7": 2, "8": 2, "9": 3, "4": 4, "6": 5}.get(str(r["decision"]["rule"])) if r["status"] == "review_needed" else None
     ai_on = ai_explain.enabled(store) and ai_explain.cli_path() is not None
     summary = {"rule": explain.summarize_transformer(r), "ai": ai_explain.cached_summary(store, period_id, r) if ai_on else None, "ai_on": ai_on,
                "url": url_for("api_transformer_summary", period_id=period_id, tid=tid)}
-    return render_template("transformer.html", period=period, r=r, svg=svg, checklist=checklist, decisions=DECISIONS, review_started_at=now_iso(), playbook=pb, period_readings=r["period_readings"][-48:], summary=summary)
+    review_ids = [x["transformer_id"] for x in store.get_transformer_results(period_id) if x["status"] == "review_needed"]
+    case = None
+    if tid in review_ids:
+        i = review_ids.index(tid)
+        case = {"n": i + 1, "of": len(review_ids), "prev": review_ids[i - 1] if i > 0 else None, "next": review_ids[i + 1] if i + 1 < len(review_ids) else None}
+    return render_template("transformer.html", period=period, r=r, chart_svg=review_chart_svg(r["chart"], period["period"]["start"], r["unit"], r["rated_max"]),
+                           chart_caption=review_chart_caption(r["chart"], r["unit"]), checklist=checklist, cause=cause, why=explain.why_flagged(r, pb),
+                           decisions=DECISIONS, decision_chips=DECISION_CHIPS, review_started_at=now_iso(), playbook=pb, summary=summary, case=case)
 
 
 @app.post("/periods/<period_id>/transformers/<tid>/disposition")
@@ -439,7 +473,7 @@ def ai_explain_alert(alert_id):
         flash("The claude command-line tool was not found on this computer.", "error")
     else:
         rec = ai_explain.explain_alert_record(store, alert, force=True)
-        flash("Claude's explanation is ready." if rec else "Claude could not produce a usable explanation; the rule-based text stays. See Setup for details.", "info" if rec else "error")
+        flash("A plainer explanation is ready." if rec else "No usable plainer version came back; the fixed-rule text stays. See Setup for details.", "info" if rec else "error")
     return redirect(request.referrer or url_for("alerts"))
 
 
@@ -453,7 +487,13 @@ def setup_ai():
 
 @app.route("/alerts")
 def alerts():
-    return render_template("alerts.html", alerts=store.list_alerts(limit=200))
+    show = request.args.get("show", "open")
+    show = show if show in ("open", "acked", "all") else "open"
+    every = store.list_alerts(limit=200)
+    opened = [a for a in every if not a["acknowledged_at"]]
+    acked = [a for a in every if a["acknowledged_at"]]
+    shown = {"open": opened, "acked": acked, "all": every}[show]
+    return render_template("alerts.html", alerts=shown, show=show, n_open=len(opened), n_acked=len(acked))
 
 
 @app.route("/metrics")

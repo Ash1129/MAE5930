@@ -1,75 +1,290 @@
-{% extends "base.html" %}
-{% block content %}
-<p><a href="{{ url_for('period_detail', period_id=period.period_id) }}">&larr; Period {{ period.period_id }}</a></p>
-<div class="card">
-<h1>{{ r.transformer_id }} <span class="muted">{{ r.name }}</span> <span class="tag {{ 'bad' if r.status == 'review_needed' else 'ok' }}">{{ r.status.replace('_',' ') }}</span></h1>
-<div class="summary" id="summary">
-  <p id="summary-text">{{ summary.ai.text if summary.ai else summary.rule }}</p>
-  <span class="summary-src{{ ' ai' if summary.ai else '' }}" id="summary-src">{% if summary.ai %}Written by Claude Haiku · check the chart{% elif summary.ai_on %}<span class="spin"></span>Writing a summary with Claude Haiku{% else %}Rule-based summary{% endif %}</span>
-</div>
+{% extends "light_base.html" %}
+{% block title %}{{ r.transformer_id }} · Transformer Capacity Monitor{% endblock %}
+{% block head %}
 <style>
-  .summary{margin:4px 0 22px;padding:14px 18px;border-left:2px solid var(--accent);background:rgba(201,150,74,.07);border-radius:0 8px 8px 0;max-width:820px}
-  .summary p{margin:0;font-size:17px;line-height:1.55;color:var(--text);text-wrap:pretty}
-  .summary-src{display:inline-flex;align-items:center;gap:7px;margin-top:8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-  .summary-src.ai{color:var(--accent-700)}
-  .summary-src .spin{width:10px;height:10px;border:1.5px solid rgba(201,150,74,.3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
+  .wrap{max-width:1040px;margin:0 auto;padding:28px 24px 80px;display:flex;flex-direction:column;gap:36px}
+  .crumbs{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--ink-60)}
+  .crumbs a{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+  .crumbs .pn{margin-left:auto;display:flex;gap:14px}
+  .crumbs .off{color:var(--ink-50)}
+  .title{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 20px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-top:14px}
+  .title .t{flex:1;min-width:260px}
+  .title h1{font-family:var(--font-heading);font-weight:400;font-size:44px;line-height:1;margin:0;letter-spacing:-.01em}
+  .title h1 span{color:var(--ink-55)}
+  .title .sub{font-size:14px;color:var(--ink-60);margin-top:8px}
+  .title .chip{font-size:12px;padding:4px 12px;gap:7px} .title .chip .d{width:8px;height:8px}
+  .c-review{color:var(--review)} .c-ok{color:var(--ok)} .c-info{color:var(--info)}
+
+  .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:32px 48px}
+  .label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-60)}
+  .why h2{font-family:var(--font-heading);font-weight:600;font-size:28px;line-height:1.15;margin:8px 0 16px;letter-spacing:-.01em}
+  .rows{display:grid;grid-template-columns:104px 1fr;gap:12px 14px;font-size:15px}
+  .rows .micro{padding-top:5px}
+  .rows .rule{font-size:13px;color:rgba(29,36,48,.7)}
+
+  .load{display:flex;flex-direction:column;gap:14px;padding-top:4px}
+  .bars{display:flex;flex-direction:column;gap:16px}
+  .bar{display:grid;gap:6px}
+  .bar .lab{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px;font-size:13px}
+  .bar .lab b{font-weight:600} .bar .lab .p{color:var(--ink-60)} .bar .lab>span{white-space:nowrap}
+  .estimate{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--estimate);margin-left:4px}
+  .track{position:relative;height:10px;border-radius:5px;background:rgba(29,36,48,.08)}
+  .fill{position:absolute;inset:0 auto 0 0;border-radius:5px}
+  .fill.ok{background:var(--ok)} .fill.review{background:var(--review)}
+  .fill.est.review{background:repeating-linear-gradient(135deg,#D7263D 0 6px,#e5596b 6px 12px)}
+  .tick{position:absolute;top:-4px;bottom:-4px;width:1px;background:rgba(29,36,48,.45)}
+  .scale{position:relative;height:16px;font-size:11px;color:var(--ink-55);margin-top:-8px}
+  .scale span{position:absolute;white-space:nowrap}
+  .na{font-size:12px;color:var(--ink-60)}
+  .stats{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);margin-top:4px}
+  .stats>div{padding:12px 12px 0 0} .stats>div+div{padding:12px 0 0 14px;border-left:1px solid var(--line)}
+  .stats .k{font-size:11px;color:var(--ink-60)}
+  .stats .v{font-family:var(--font-heading);font-weight:600;font-size:20px}
+  .stats .v span{font-family:var(--font-body);font-size:14px;font-weight:400;color:var(--ink-60)}
+  .stats .s{font-size:12px;color:var(--ink-60)}
+
+  .chart{display:flex;flex-direction:column;gap:10px}
+  .chart .hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px}
+  h3{font-family:var(--font-heading);font-weight:600;font-size:22px;margin:0}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:rgba(29,36,48,.65)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .panel{border:1px solid var(--line);border-radius:4px;padding:12px 8px 4px;background:var(--panel)}
+  .caption{font-size:12px;color:var(--ink-60)}
+
+  .checks{display:flex;flex-direction:column;margin-top:10px}
+  .check{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid rgba(29,36,48,.1);font-size:14px;align-items:start}
+  .check .ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;border:1px solid currentColor;margin-top:1px}
+  .check .ic.ok{color:var(--ok)} .check .ic.flag{color:var(--review);font-size:12px;font-weight:600;line-height:1}
+  .check .txt.flag{color:var(--review-text)}
+  .check .note{display:block;font-size:12px;color:var(--ink-60)}
+
+  .decide .lead{font-size:13px;color:var(--ink-60);margin:4px 0 12px}
+  .opts{display:flex;flex-direction:column;gap:8px;border:0;margin:0;padding:0;min-width:0}
+  .opt{display:grid;grid-template-columns:18px 1fr;gap:12px;padding:12px 14px;border-radius:4px;border:1px solid var(--line-16);cursor:pointer;transition:background .15s,border-color .15s}
+  .opt:hover{border-color:rgba(29,36,48,.4)}
+  .opt input{position:absolute;opacity:0;pointer-events:none}
+  .opt .dot{width:16px;height:16px;border-radius:50%;border:1.5px solid rgba(29,36,48,.3);box-shadow:inset 0 0 0 3px var(--ground);margin-top:2px}
+  .opt:has(input:checked){border-color:var(--accent);background:rgba(182,130,53,.08)}
+  .opt:has(input:checked) .dot{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 3px #f6efe5}
+  .opt:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+  .opt b{display:block;font-family:var(--font-heading);font-weight:600;font-size:17px;line-height:1.2}
+  .opt small{display:block;font-size:13px;color:rgba(29,36,48,.65);margin-top:2px}
+  .fields{display:grid;gap:12px;margin-top:14px}
+  .fields label{display:grid;gap:5px;font-size:12px;color:rgba(29,36,48,.7)}
+  .save{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .save .hint{font-size:12px;color:var(--ink-60)}
+  .current{font-size:13px;color:var(--ink-75);margin:0 0 12px;padding:10px 12px;border-left:2px solid var(--info);background:rgba(31,95,168,.05)}
+  .final{font-size:14px;color:var(--ink-75);padding:14px 16px;border:1px solid var(--line);border-radius:4px}
+  .hist{margin-top:14px;font-size:12px}
+  .hist summary{color:var(--ink-60);display:inline-flex;align-items:center;gap:6px}
+
+  .more{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+  .more>details{border-bottom:1px solid var(--line)}
+  .more>details>summary{padding:14px 0;display:flex;align-items:center;gap:8px;font-size:14px}
+  .more>details>summary .n{color:var(--ink-55)}
+  .more .in{font-size:13px;padding:0 0 16px 20px}
+  .kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 24px}
+  .kv dt{color:var(--ink-60)} .kv dd{margin:0}
+  table{border-collapse:collapse;font-size:13px;width:100%}
+  th,td{text-align:left;padding:5px 12px 5px 0;border-bottom:1px solid rgba(29,36,48,.08)}
+  th{font-weight:400;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
+  .scroll{max-height:360px;overflow:auto}
+  .asset-note{font-size:13px;color:var(--ink-60);padding:14px 0}
+  @media (max-width:600px){
+    .wrap{padding:22px 16px 64px;gap:30px}
+    .title h1{font-size:36px}
+    .rows{grid-template-columns:1fr;gap:2px} .rows .micro{padding-top:10px}
+    .kv{grid-template-columns:1fr;gap:0} .kv dd{margin-bottom:8px}
+    .more .in{padding-left:0}
+  }
 </style>
-{% if summary.ai_on and not summary.ai %}
-<script>
-fetch({{ summary.url|tojson }}).then(r => r.ok ? r.json() : null).then(j => {
-  const src = document.getElementById('summary-src');
-  if (j && j.text) { document.getElementById('summary-text').textContent = j.text; src.className = 'summary-src ai'; src.textContent = 'Written by Claude Haiku · check the chart'; }
-  else { src.className = 'summary-src'; src.textContent = 'Rule-based summary'; }
-}).catch(() => { const src = document.getElementById('summary-src'); src.className = 'summary-src'; src.textContent = 'Rule-based summary'; });
-</script>
-{% endif %}
-<div class="grid">
-<div>
-<h3>Checklist (playbook {{ playbook.version }})</h3>
-<table>{% for item, flagged in checklist %}<tr><td>{% if flagged %}<span class="tag bad">check</span>{% else %}<span class="tag ok">ok</span>{% endif %}</td><td class="small">{{ item }}</td></tr>{% endfor %}</table>
-<p class="small"><b>Why flagged:</b> rule {{ r.decision.rule }} ({{ r.decision.condition }}): {{ r.decision.reason }}</p>
-</div>
-<div>
-<h3>Results</h3>
-<dl class="kv">
-<dt>Rated maximum</dt><dd>{{ r.rated_max|num(1) }} {{ r.unit }} (asset record)</dd>
-<dt>Stability</dt><dd>{{ r.stability.replace('_',' ') }} ({{ r.chart.n_baseline }} baseline days, minimum {{ r.chart.min_history_points }})</dd>
-<dt>Chart limits</dt><dd>{% if r.chart.center is not none %}CL {{ r.chart.center|num(1) }}, UCL {{ r.chart.ucl|num(1) }}, LCL {{ r.chart.lcl|num(1) }} (from history, not the rating){% else %}not computed{% endif %}</dd>
-<dt>Period peak</dt><dd>{{ r.capacity.period_peak|num(1) }} {{ r.unit }} = {{ r.capacity.period_peak_ratio|pct }} of rating</dd>
-<dt>Cpk vs rating</dt><dd>{% if r.capacity.cpk is not none %}{{ r.capacity.cpk|num }} (95% interval {{ r.capacity.cpk_ci_low|num }} to {{ r.capacity.cpk_ci_high|num }}, n={{ r.capacity.n }}){% else %}not calculated: {{ r.capacity.note }}{% endif %}</dd>
-<dt>Capability assumptions</dt><dd>{% if r.capacity.assumptions %}{% if r.capacity.assumption_flags %}<span class="tag bad">not met</span> {{ r.capacity.assumption_flags|join('; ') }}{% else %}<span class="tag ok">met</span> lag-1 autocorrelation {{ r.capacity.assumptions.lag1_autocorrelation|num }} (band &plusmn;{{ r.capacity.assumptions.autocorrelation_band|num }}), normality p={{ r.capacity.assumptions.jarque_bera.p_value|num(3) }}{% endif %}{% else %}not checked (no capability result){% endif %}</dd>
-<dt>Projected peak</dt><dd>{% if r.capacity.projected_peak is not none %}{{ r.capacity.projected_peak|num(1) }} {{ r.unit }} = {{ r.capacity.forecast_ratio|pct }} of rating (margin {{ r.capacity.forecast_margin|num(1) }}){% else %}not projected: {{ r.projection.assumptions.reason_not_projected }}{% endif %}</dd>
-</dl>
-</div>
-</div>
-{% if r.chart.signals %}<h3>Chart signals</h3><table><tr><th>Rule</th><th>Date</th><th>Value</th><th>In period</th></tr>{% for s in r.chart.signals %}<tr><td>{{ s.rule }}</td><td>{{ s.date }}</td><td>{{ s.value|num(1) }}</td><td>{{ 'yes' if s.in_period else 'no (history)' }}</td></tr>{% endfor %}</table>{% endif %}
-<h3>Control chart (shaded = this period; black line = rated maximum)</h3>
-<div class="paper">{{ svg|safe }}</div>
-<details><summary>Forecast assumptions</summary><pre>{{ r.projection.assumptions|tojson(indent=1) }}</pre></details>
-<details><summary>Source readings in the period (last {{ period_readings|length }} of {{ r.period_readings|length }})</summary>
-<table><tr><th>Timestamp</th><th>Load</th><th>Unit</th></tr>{% for x in period_readings %}<tr><td>{{ x.timestamp }}</td><td>{{ x.load|num(2) }}</td><td>{{ x.unit }}</td></tr>{% endfor %}</table></details>
-<details><summary>Source feeds used for this period</summary><pre>{{ period.sources|tojson(indent=1) }}</pre></details>
-{% if r.notes %}<p class="small"><b>Asset note:</b> {{ r.notes }}</p>{% endif %}
+{% endblock %}
+{% block content %}
+{% set chev %}<svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>{% endset %}
+{% set cap = r.capacity %}{% set near = playbook.forecast.near_rating_ratio %}{% set cpk_line = playbook.capability.cpk_review_below %}
+<div class="wrap">
+  <div>
+    <div class="crumbs">
+      <a href="{{ url_for('period_detail', period_id=period.period_id) }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Week ending {{ period.period_id }}</a>
+      {% if case %}<span>Case {{ case.n }} of {{ case.of }} needing review</span>
+      <span class="pn">{% if case.prev %}<a href="{{ url_for('transformer_detail', period_id=period.period_id, tid=case.prev) }}">Previous</a>{% else %}<span class="off">Previous</span>{% endif %}{% if case.next %}<a href="{{ url_for('transformer_detail', period_id=period.period_id, tid=case.next) }}">Next case</a>{% else %}<span class="off">Next case</span>{% endif %}</span>{% endif %}
+    </div>
+    <div class="title">
+      <div class="t">
+        <h1>{{ r.transformer_id }} <span>{{ r.name }}</span></h1>
+        <div class="sub">{{ r.area_name }} · {{ r.customer_class }} · {{ r.rated_max|num(0) }} {{ r.unit }}</div>
+      </div>
+      {% if r.status == 'review_needed' %}<span class="chip c-review"><span class="d"></span>Review needed</span>{% else %}<span class="chip c-ok"><span class="d"></span>Within limits</span>{% endif %}
+      {% if r.disposition %}<span class="chip c-info">{{ decision_chips[r.disposition.decision] }} by {{ r.disposition.reviewer }}</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="why" id="summary">
+      <div class="label">{{ "Why it's on the list" if r.status == 'review_needed' else "Why it isn't on the list" }}</div>
+      <h2>{{ why.headline }}</h2>
+      <div class="rows">
+        <span class="micro">What happened</span><span id="summary-text">{{ summary.ai.text if summary.ai else why.meaning }}</span>
+        <span class="micro">What to do</span><span>{{ why.action }}</span>
+        <span class="micro">Rule</span><span class="rule">Rule {{ r.decision.rule }} · {{ r.decision.reason[:1]|lower }}{{ r.decision.reason[1:] }}</span>
+      </div>
+    </div>
+
+    <div class="load">
+      <div class="label">Load against the {{ r.rated_max|num(0) }} {{ r.unit }} rating</div>
+      <div class="bars">
+        <div class="bar">
+          <div class="lab"><span>This week's peak</span>{% if cap.period_peak is not none %}<span><b>{{ cap.period_peak|num(1) }} {{ r.unit }}</b> <span class="p">{{ cap.period_peak_ratio|pct }} of rating</span></span>{% endif %}</div>
+          <div class="track">{% if cap.period_peak_ratio is not none %}<div class="fill {{ 'review' if cap.period_peak_ratio >= near else 'ok' }}" style="width:{{ [cap.period_peak_ratio * 100, 100]|min }}%"></div>{% endif %}<div class="tick" style="left:{{ near * 100 }}%"></div></div>
+        </div>
+        <div class="bar">
+          <div class="lab"><span style="white-space:nowrap">Projected winter peak <span class="estimate">estimate</span></span>{% if cap.projected_peak is not none %}<span><b>{{ cap.projected_peak|num(1) }} {{ r.unit }}</b> <span class="p">{{ cap.forecast_ratio|pct }} of rating</span></span>{% endif %}</div>
+          <div class="track">{% if cap.forecast_ratio is not none %}<div class="fill est {{ 'review' if cap.forecast_ratio >= near else 'ok' }}" style="width:{{ [cap.forecast_ratio * 100, 100]|min }}%"></div>{% endif %}<div class="tick" style="left:{{ near * 100 }}%"></div></div>
+          {% if cap.projected_peak is none %}<div class="na">Not projected: {{ r.projection.assumptions.reason_not_projected or 'no forecast for its area' }}</div>{% endif %}
+        </div>
+        <div class="scale"><span style="left:0">0 {{ r.unit }}</span><span style="left:{{ near * 100 }}%;transform:translateX(-100%);padding-right:6px">review line {{ (near * 100)|round|int }}% ↑</span></div>
+      </div>
+      <div class="stats">
+        <div>
+          <div class="k">Load pattern</div>
+          {% if r.stability == 'stable' %}<div class="v">Steady</div><div class="s">{{ r.chart.n_baseline }} days of history, no changes spotted</div>
+          {% elif r.stability == 'signal' %}<div class="v">Changed</div><div class="s">{{ r.chart.signals|length }} {{ 'point' if r.chart.signals|length == 1 else 'points' }} outside the normal range</div>
+          {% elif r.stability == 'insufficient_history' %}<div class="v">Not enough history</div><div class="s">{{ r.chart.n_baseline }} of {{ r.chart.min_history_points }} days needed</div>
+          {% else %}<div class="v">No variation</div><div class="s">the readings never change</div>{% endif %}
+        </div>
+        <div>
+          <div class="k">Headroom today (Cpk)</div>
+          {% if cap.cpk is not none %}<div class="v">{{ cap.cpk|num }} <span>{{ 'comfortable' if cap.cpk >= cpk_line else 'tight' }}</span></div><div class="s">likely between {{ cap.cpk_ci_low|num }} and {{ cap.cpk_ci_high|num }}; review below {{ cpk_line }}</div>
+          {% else %}<div class="v">—</div><div class="s">not calculated: {{ (cap.note or 'not enough data').replace('Capability not calculated: ', '') }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart">
+    <div class="hd">
+      <h3>Daily peak load, last {{ r.chart.dates|length }} days</h3>
+      <span class="legend">
+        <span><span style="width:14px;height:2px;background:rgba(29,36,48,.85)"></span>Rating {{ r.rated_max|num(0) }} {{ r.unit }}</span>
+        {% if r.chart.ucl is not none %}<span><span style="width:14px;height:0;border-top:1.5px dashed #1F5FA8"></span>Normal range from history</span>{% endif %}
+        <span><span style="width:12px;height:10px;background:rgba(182,130,53,.18)"></span>This week</span>
+        {% if r.chart.signals %}<span><span style="width:8px;height:8px;border-radius:50%;background:#D7263D"></span>Outside the normal range</span>{% endif %}
+      </span>
+    </div>
+    <div class="panel">{{ chart_svg|safe }}</div>
+    <div class="caption">{{ chart_caption }}</div>
+  </div>
+
+  <div class="two">
+    <div>
+      <h3>What the tool checked</h3>
+      <div class="checks">
+        {% for item, flagged in checklist %}
+        <div class="check">
+          {% if flagged %}<span class="ic flag">!</span>{% else %}<span class="ic ok"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>{% endif %}
+          <span><span class="txt{{ ' flag' if flagged else '' }}">{{ item }}</span>{% if flagged and loop.index0 == cause %}<span class="note">This is the one that put it on the list.</span>{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="decide">
+      <h3>Your decision</h3>
+      <div class="lead">Recorded in the weekly report. Nothing here changes equipment or settings.</div>
+      {% if r.disposition %}<div class="current">Recorded: <b>{{ decision_chips[r.disposition.decision] }}</b> by {{ r.disposition.reviewer }}, {{ r.disposition.recorded_at|day }} {{ r.disposition.recorded_at|clock }}{% if r.disposition.notes %}: “{{ r.disposition.notes }}”{% endif %}</div>{% endif %}
+      {% if period.status == 'final' %}
+      <div class="final">The report for this period is final. Rerun the period to review again.</div>
+      {% else %}
+      <form method="post" action="{{ url_for('record_disposition', period_id=period.period_id, tid=r.transformer_id) }}" id="decide">
+        <input type="hidden" name="review_started_at" value="{{ review_started_at }}">
+        <fieldset class="opts">
+          <legend class="micro" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Decision</legend>
+          <label class="opt"><input type="radio" name="decision" value="approve" required><span class="dot"></span><span><b>Agree, keep it flagged</b><small>The finding is right. It goes in the report as reviewed, e.g. “plan upgrade” or “watch”.</small></span></label>
+          <label class="opt"><input type="radio" name="decision" value="request_changes"><span class="dot"></span><span><b>Something needs fixing first</b><small>An input or number looks wrong. The report waits until it's corrected.</small></span></label>
+          <label class="opt"><input type="radio" name="decision" value="reject"><span class="dot"></span><span><b>Disagree with the finding</b><small>The flag is wrong for this transformer. Your note goes in the report.</small></span></label>
+        </fieldset>
+        <div class="fields">
+          {% if not reviewer_name %}<label>Your name<input class="input" type="text" name="reviewer" required maxlength="120" autocomplete="name"></label>
+          {% else %}<input type="hidden" name="reviewer" value="{{ reviewer_name }}">{% endif %}
+          <label><span id="notes-label">Note (optional)</span><textarea class="input" id="notes" name="notes" maxlength="{{ playbook.review.max_text_length }}" placeholder="e.g. Add to 2027 upgrade list"></textarea></label>
+          <div class="save"><button class="btn" id="save" disabled>Record decision</button><span class="hint" id="hint">Pick one of the three above.</span></div>
+        </div>
+      </form>
+      {% endif %}
+      {% if r.disposition_history %}
+      <details class="hist"><summary>{{ chev }}Decision history ({{ r.disposition_history|length }})</summary>
+        <table style="margin-top:8px"><tr><th>When</th><th>Decision</th><th>By</th><th>Note</th><th>Inputs</th></tr>
+        {% for d in r.disposition_history %}<tr><td>{{ d.recorded_at|day }} {{ d.recorded_at|clock }}</td><td>{{ decision_chips.get(d.decision, d.decision) }}</td><td>{{ d.reviewer }}</td><td>{{ d.notes }}</td><td style="color:var(--ink-60)">{{ 'current' if d.input_hash == r.input_hash else 'earlier (stale)' }}</td></tr>{% endfor %}
+        </table></details>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="more">
+    <details>
+      <summary>{{ chev }}The statistics behind this</summary>
+      <div class="in">
+        <dl class="kv">
+          <dt>Rated maximum</dt><dd>{{ r.rated_max|num(1) }} {{ r.unit }} (asset record)</dd>
+          <dt>Stability</dt><dd>{{ r.stability.replace('_',' ') }} · {{ r.chart.n_baseline }} baseline days (minimum {{ r.chart.min_history_points }})</dd>
+          <dt>Control limits</dt><dd>{% if r.chart.center is not none %}centre {{ r.chart.center|num(1) }} · upper {{ r.chart.ucl|num(1) }} · lower {{ r.chart.lcl|num(1) }} {{ r.unit }} (from history, not the rating){% else %}not computed{% endif %}</dd>
+          <dt>Period peak</dt><dd>{{ cap.period_peak|num(1) }} {{ r.unit }} = {{ cap.period_peak_ratio|pct }} of rating</dd>
+          <dt>Cpk vs rating</dt><dd>{% if cap.cpk is not none %}{{ cap.cpk|num }} (95% interval {{ cap.cpk_ci_low|num }} to {{ cap.cpk_ci_high|num }}, n = {{ cap.n }}){% else %}not calculated: {{ cap.note }}{% endif %}</dd>
+          <dt>Assumptions</dt><dd>{% if cap.assumptions %}{% if cap.assumption_flags %}not met · {{ cap.assumption_flags|join('; ') }}{% else %}met · lag-1 autocorrelation {{ cap.assumptions.lag1_autocorrelation|num }} (band ±{{ cap.assumptions.autocorrelation_band|num }}) · normality p = {{ cap.assumptions.jarque_bera.p_value|num(3) }}{% endif %}{% else %}not checked (no capability result){% endif %}</dd>
+          <dt>Projected peak</dt><dd>{% if cap.projected_peak is not none %}{{ cap.projected_peak|num(1) }} {{ r.unit }} = {{ cap.forecast_ratio|pct }} of rating (margin {{ cap.forecast_margin|num(1) }} {{ r.unit }}) · estimate{% else %}not projected: {{ r.projection.assumptions.reason_not_projected }}{% endif %}</dd>
+          <dt>Playbook</dt><dd>{{ playbook.version }}</dd>
+        </dl>
+        {% if r.chart.signals %}
+        <table style="margin-top:14px"><tr><th>Chart rule</th><th>Date</th><th>Value</th><th>In this week</th></tr>{% for s in r.chart.signals %}<tr><td>{{ s.rule.replace('_',' ') }}</td><td>{{ s.date }}</td><td>{{ s.value|num(1) }} {{ r.unit }}</td><td>{{ 'yes' if s.in_period else 'no (history)' }}</td></tr>{% endfor %}</table>
+        {% endif %}
+      </div>
+    </details>
+    <details>
+      <summary>{{ chev }}How the winter estimate was made</summary>
+      {% set a = r.projection.assumptions %}
+      <div class="in" style="display:grid;gap:4px;color:var(--ink-80)">
+        {% if cap.projected_peak is not none %}
+        <span>This week's peak {{ cap.period_peak|num(1) }} {{ r.unit }}, plus {{ a.customers_served }} customers × (heat-pump share {{ a.hp_share_forecast|pct }} − {{ a.hp_share_base|pct }} today) × {{ a.kw_per_heat_pump|num(1) }} kW per heat pump ÷ {{ a.power_factor }} power factor = {{ cap.projected_peak|num(1) }} {{ r.unit }}.</span>
+        <span style="color:var(--ink-60)">Forecast {{ a.forecast_version }} for {{ a.area_name }}, target {{ a.horizon }}.{% if a.allocation_flagged %} Its location overlaps more than one area; the area on its asset record was used.{% endif %}</span>
+        {% else %}<span>No estimate was made: {{ a.reason_not_projected }}.</span>{% endif %}
+      </div>
+    </details>
+    <details>
+      <summary>{{ chev }}Hourly readings this week <span class="n">{{ r.period_readings|length }} rows</span></summary>
+      <div class="in scroll"><table><tr><th>Time</th><th>Load</th><th>Unit</th></tr>{% for x in r.period_readings|reverse %}<tr><td>{{ x.timestamp[:16].replace('T', ' ') }}</td><td>{{ x.load|num(2) }}</td><td>{{ x.unit }}</td></tr>{% endfor %}</table></div>
+    </details>
+    <details>
+      <summary>{{ chev }}Input files used</summary>
+      <div class="in"><table><tr><th>Feed</th><th>File</th><th>Rows</th><th>Modified</th></tr>{% for name, f in period.sources.items() %}<tr><td>{{ name }}</td><td>{{ (f.path or '').split('/')[-1] }}</td><td>{{ f.rows if f.rows is not none else '' }}</td><td>{{ (f.modified or '')[:16].replace('T', ' ') }}</td></tr>{% endfor %}</table></div>
+    </details>
+  </div>
+  {% if r.notes %}<div class="asset-note" style="margin-top:-24px">Asset note: {{ r.notes }}</div>{% endif %}
 </div>
 
-<div class="card">
-<h2>Disposition</h2>
-{% if r.disposition %}<p>Current: <span class="tag {{ {'approve':'ok','request_changes':'warn','reject':'bad'}[r.disposition.decision] }}">{{ decisions[r.disposition.decision] }}</span> by {{ r.disposition.reviewer }} at {{ r.disposition.recorded_at }}{% if r.disposition.notes %}: {{ r.disposition.notes }}{% endif %}</p>{% endif %}
-{% if period.status == 'final' %}<p class="muted">The report for this period is final. Rerun the period to review again.</p>
-{% else %}
-<form method="post" action="{{ url_for('record_disposition', period_id=period.period_id, tid=r.transformer_id) }}">
-<input type="hidden" name="review_started_at" value="{{ review_started_at }}">
-<label for="reviewer">Reviewer name</label><input type="text" id="reviewer" name="reviewer" value="{{ reviewer_name }}" style="max-width:320px" required>
-<label for="notes">Notes (required for Request changes and Reject)</label><textarea id="notes" name="notes" maxlength="{{ playbook.review.max_text_length }}"></textarea>
-<p>
-<button class="btn primary" name="decision" value="approve">Approve conclusion</button>
-<button class="btn warn" name="decision" value="request_changes">Request changes</button>
-<button class="btn danger" name="decision" value="reject">Reject</button>
-</p>
-<p class="small muted">Approve = the flagged conclusion is correct and should appear in the report as reviewed. Request changes = inputs or calculation need correction before the report can be finalized. Reject = the conclusion is wrong; your note is recorded in the report. Nothing here changes equipment or operating settings.</p>
-</form>
+{% if period.status != 'final' %}
+<script>
+(() => {
+  const form = document.getElementById('decide'), save = document.getElementById('save'), hint = document.getElementById('hint');
+  const notes = document.getElementById('notes'), label = document.getElementById('notes-label'), who = {{ (reviewer_name or '')|tojson }};
+  const name = form.querySelector('input[name="reviewer"][type="text"]');
+  function update() {
+    const pick = (form.querySelector('input[name="decision"]:checked') || {}).value;
+    const needs = pick && pick !== 'approve', hasNote = notes.value.trim().length > 0, hasName = !name || name.value.trim().length > 0;
+    label.textContent = needs ? 'Note (needed for this choice)' : 'Note (optional)';
+    notes.placeholder = needs ? 'Say what looks wrong' : 'e.g. Add to 2027 upgrade list';
+    notes.required = !!needs;
+    save.disabled = !pick || (needs && !hasNote) || !hasName;
+    hint.textContent = !pick ? 'Pick one of the three above.' : needs && !hasNote ? 'Add a short note to record this.' : !hasName ? 'Add your name to record this.' : 'Recording as ' + (who || name.value.trim()) + '.';
+  }
+  form.addEventListener('input', update); form.addEventListener('change', update); update();
+})();
+</script>
 {% endif %}
-{% if r.disposition_history|length > 1 %}<details><summary>History ({{ r.disposition_history|length }})</summary><table>{% for d in r.disposition_history %}<tr><td>{{ d.recorded_at }}</td><td>{{ d.decision }}</td><td>{{ d.reviewer }}</td><td class="small">{{ d.notes }}</td><td class="small muted">{{ 'current inputs' if d.input_hash == r.input_hash else 'earlier inputs (stale)' }}</td></tr>{% endfor %}</table></details>{% endif %}
-</div>
+{% if summary.ai_on and not summary.ai and r.status == 'review_needed' %}
+<script>
+fetch({{ summary.url|tojson }}).then(r => r.ok ? r.json() : null).then(j => {
+  if (j && j.text) document.getElementById('summary-text').textContent = j.text;
+}).catch(() => {});
+</script>
+{% endif %}
 {% endblock %}

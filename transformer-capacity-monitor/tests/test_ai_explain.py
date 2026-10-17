@@ -50,12 +50,12 @@ def test_alert_page_uses_ai_only_when_enabled(sandbox, tmp_path, monkeypatch):
     msg = "Run r9 failed at step 2: Transformer readings feed is missing: readings.csv not found in /x"
     webapp.store.add_alert("error", msg, run_id="r9", period_id="2026-10-15", step=2)
     page = client.get("/alerts").data.decode()
-    assert "Plain words from Claude" not in page and "Explain with Claude" not in page  # off by default
+    assert "Plain words from Claude" not in page and "Ask for a plainer version" not in page  # off by default
     client.post("/setup/ai", data={"ai_explanations": "on"})
     assert ai_explain.enabled(webapp.store)
     alert_id = webapp.store.list_alerts(limit=1)[0]["id"]
     assert client.post(f"/alerts/{alert_id}/explain").status_code == 302
     page = client.get("/alerts").data.decode()
-    assert "Plain words from Claude" in page and "written by Claude" in page and "Rule-based explanation" in page
+    assert "Plain words from Claude" in page and "Reworded in plain language" in page and "written by Claude" not in page
     client.post("/setup/ai", data={})
     assert "written by Claude" not in client.get("/alerts").data.decode()
