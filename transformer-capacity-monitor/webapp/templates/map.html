@@ -244,6 +244,22 @@
   body.narrow .site-header__inner{padding:0 14px;gap:10px}
   body.phone #status-line{display:none}
   body.phone #legend{max-width:calc(100% - 150px);padding:8px 10px} body.phone #legend .row{flex-wrap:wrap;gap:4px 10px}
+
+  /* districts: a column of small standalone pills on the left, no panel behind them; the legend sits below */
+  html body:not(.narrow) #map-rail{display:flex;flex-direction:column;justify-content:space-between;gap:12px;max-width:290px;overflow:visible}
+  html body:not(.narrow) #map-rail #districts{display:flex;flex-direction:column;gap:6px;width:max-content;max-width:290px;min-height:0;pointer-events:auto}
+  html body:not(.narrow) #map-rail #districts .dtitle{margin:0 0 2px 0;font-size:15px;padding:3px 10px}
+  html body:not(.narrow) #map-rail #district-list{display:flex;flex-direction:column;gap:5px;padding:0;margin:0;border:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;overflow:visible;scrollbar-width:none}
+  html body:not(.narrow) #map-rail #districts .drow{min-height:0;height:auto;width:max-content;max-width:290px;padding:4px 10px;gap:6px;border-radius:999px;font-size:11.5px;line-height:1.2;color:var(--ink-90);background:rgba(var(--paper-rgb),.9);border:1px solid rgba(var(--ink-rgb),.12);box-shadow:0 2px 8px rgba(0,0,0,.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:background .15s,box-shadow .15s}
+  html body:not(.narrow) #map-rail #districts .drow:hover{background:rgba(var(--paper-rgb),1)}
+  html body:not(.narrow) #map-rail #districts .drow .dash{display:none}
+  html body:not(.narrow) #map-rail #districts .drow .txt{opacity:1;max-width:none;overflow:visible;gap:5px}
+  html body:not(.narrow) #map-rail #districts .drow .nm{font-size:12px}
+  html body:not(.narrow) #map-rail #districts .drow .sub{font-size:10.5px}
+  html body:not(.narrow) #map-rail #districts .drow .red,html body:not(.narrow) #map-rail #districts .drow .amb{font-size:10.5px}
+  html body:not(.narrow) #map-rail #districts .drow.on{border-color:var(--color-accent);box-shadow:0 0 0 1px var(--color-accent),0 2px 8px rgba(0,0,0,.2)}
+  html body:not(.narrow) #map-rail #districts .drow.on .nm{font-weight:600}
+  html body.wide #heat{left:316px}
 </style>
 <link rel="stylesheet" href="{{ url_for('static', filename='ui-polish.css') }}">
 </head>
@@ -441,7 +457,9 @@ map.on('dblclick', () => { if (S.district) selectDistrict(''); });
 // maxZoom is the map zoom where a point reaches full strength. A dedicated pane keeps the
 // canvas in CSS pixels, so Windows display scaling and Chrome zoom do not shift it off the map.
 const heat = L.heatLayer([], { pane: 'heat', radius: 28, blur: 20, maxZoom: 10, minOpacity: 0.45, max: 1, gradient: { .15: '#1a237e', .35: GREEN, .6: AMBER, .8: '#ff6d00', 1: RED } });
-heat.addTo(map);
+// leaflet.heat draws through getImageData, which throws if the canvas measures 0x0 (a pane or tab that has no size yet)
+const heatRedraw = heat._redraw.bind(heat);
+heat._redraw = function () { if (!this._canvas || !this._canvas.width || !this._canvas.height) { this._frame = null; return; } return heatRedraw(); };
 function settleHeat() {
   if (!map.hasLayer(heat) || !heat._canvas) return;
   L.DomUtil.removeClass(heat._canvas, 'leaflet-zoom-animated');
@@ -462,7 +480,7 @@ POINTS.forEach(p => {
 const bPts = BOUNDARIES ? (BOUNDARIES.features || []).flatMap(f => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).flatMap(p => p[0]).map(c => [c[1], c[0]])) : [];
 const countyBounds = POINTS.length ? L.latLngBounds(POINTS.map(p => [p.lat, p.lon])).pad(.08) : (bPts.length ? L.latLngBounds(bPts) : null);
 const fitPad = () => wide()
-  ? { paddingTopLeft: [280, S.district ? 220 : 120], paddingBottomRight: [S.sideOpen ? 332 : 16, 80] }
+  ? { paddingTopLeft: [316, S.district ? 220 : 120], paddingBottomRight: [S.sideOpen ? 332 : 16, 80] }
   : { paddingTopLeft: [16, S.district ? 220 : 130], paddingBottomRight: [16, 170] };
 if (countyBounds) map.fitBounds(countyBounds, fitPad());
 map.on('move zoom', positionPopup);
@@ -510,9 +528,10 @@ function selectDistrict(id) {
   S.district = id; closePopup(); setSide(!!id);
   POINTS.forEach(p => markers[p.id].setStyle({ fillOpacity: !id || p.area === id ? .95 : .25, opacity: !id || p.area === id ? 1 : .3 }));
   Object.entries(boundaryLayers).forEach(([k, l]) => l.setStyle({ opacity: !id || k === id ? .85 : .3, weight: k === id ? 2.5 : 1.5 }));
-  // the heat layer stays attached (removing it mid-zoom breaks leaflet.heat); it is simply emptied for the county view
-  if (d) { map.fitBounds(d.bbox, fitPad()); settleHeat(); }
-  else { heat.setLatLngs([]); if (countyBounds) map.fitBounds(countyBounds, fitPad()); }
+  // the heat layer is attached on the first town pick and then stays (removing it mid-zoom breaks leaflet.heat);
+  // the county view simply empties it. Attaching lazily also avoids drawing before the map has a size.
+  if (d) { if (!map.hasLayer(heat)) heat.addTo(map); map.fitBounds(d.bbox, fitPad()); settleHeat(); }
+  else { if (map.hasLayer(heat)) heat.setLatLngs([]); else heat._latlngs = []; if (countyBounds) map.fitBounds(countyBounds, fitPad()); }
   $('heat').hidden = !d || S.firstLaunch;
   if (d) $('heat-name').textContent = d.fullName;
   renderDistricts(); renderSidebar();
@@ -546,13 +565,13 @@ function labels() {
 }
 function renderHeat() {
   labels();
-  if (!S.district) { heat.setLatLngs([]); renderHotspots([]); return; }
+  if (!S.district) { if (map.hasLayer(heat)) heat.setLatLngs([]); else heat._latlngs = []; renderHotspots([]); return; }
   const inView = POINTS.filter(p => p.area === S.district && visible(p));
   const vals = inView.map(p => [p, S.metric === 'temp' ? hotAt(p, S.hour) : loadAt(p, S.hour)]).filter(x => x[1] !== null);
   const maxLoad = Math.max(1, ...vals.map(x => x[1]));
   // temperature: 20 °C is cold, the hot-spot limit is full strength (same ramp as the review page)
   const pts = vals.map(([p, v]) => [p.lat, p.lon, S.metric === 'temp' ? Math.min(Math.max((v - 20) / (TEMP_LIMIT - 20), 0.02), 1.2) : S.metric === 'util' ? Math.min(v / p.rating, 1.2) : v / maxLoad]);
-  heat.setLatLngs(pts);
+  if (map.hasLayer(heat)) heat.setLatLngs(pts); else heat._latlngs = pts;
   renderHotspots(vals, maxLoad);
 }
 function renderHotspots(vals, maxLoad) {

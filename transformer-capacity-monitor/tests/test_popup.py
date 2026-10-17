@@ -103,7 +103,7 @@ def test_review_page_shows_summary_on_top(sandbox, tmp_path, monkeypatch):
     client = _run(webapp)
     webapp.store.set_setting(ai_explain.SETTING_KEY, "off")
     page = client.get("/periods/2026-10-15/transformers/T-CAR-006").data.decode()
-    assert "Why it&#39;s on the list" in page and page.index('id="summary"') < page.index("What the tool checked")
+    assert 'id="summary"' in page and page.index('id="summary"') < page.index("Your decision")  # the reason comes before the decision
     assert "transformers/T-CAR-006/summary" not in page  # off: rule text only, no fetch
     webapp.store.set_setting(ai_explain.SETTING_KEY, "on")
     page = client.get("/periods/2026-10-15/transformers/T-CAR-006").data.decode()
