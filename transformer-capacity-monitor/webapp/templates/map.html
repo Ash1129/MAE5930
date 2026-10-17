@@ -155,10 +155,14 @@
   /* sidebar / sheet */
   #side{position:absolute;z-index:25;display:flex;flex-direction:column;top:80px;right:16px;bottom:16px;width:300px;box-sizing:border-box;transition:height .25s ease,background .2s}
   #side .handle{all:unset;cursor:pointer;display:grid;place-items:center;height:18px;width:100%} #side .handle span{width:40px;height:4px;border-radius:2px;background:rgba(var(--ink-rgb),.25)}
-  #side .head{padding:14px 18px 10px;display:flex;align-items:baseline;gap:10px;flex:none}
+  #side .head{padding:14px 18px 10px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;flex:none}
   #side .head .t{font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.1}
   #side .head .n{font-family:var(--font-heading);font-weight:600;font-size:21px;color:#D7263D}
   #side .head .scope{font-size:12px;color:var(--ink-60);margin-left:auto;white-space:nowrap}
+  #side .head .tier{flex-basis:100%;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-60)} #side .head .tier .sr{flex:none}
+  #tier-select{font:inherit;font-size:12px;color:var(--ink-90);background:transparent;border:1px solid rgba(var(--ink-rgb),.18);border-radius:8px;padding:4px 8px;cursor:pointer}
+  #tier-select:hover{border-color:rgba(var(--ink-rgb),.4)} #tier-select option{color:#1D2430;background:#f3f2f2}
+  #side .none{padding:18px;font-size:13px;color:var(--ink-60);text-align:center}
   #side .scroll{flex:1;overflow:auto;min-height:0;display:flex;flex-direction:column}
   #hot{padding:4px 18px 12px;border-bottom:1px solid var(--ink-line)}
   #hot .hh{display:flex;align-items:baseline;gap:8px}
@@ -320,7 +324,8 @@
       </form>
     </div>
     {% else %}
-    <div class="head" id="side-head"><span class="t" id="side-title">Review needed</span><span class="n" id="red-count">0</span><span class="scope" id="side-scope" hidden></span></div>
+    <div class="head" id="side-head"><span class="t" id="side-title">Needs a person</span><span class="n" id="red-count">0</span><span class="scope" id="side-scope" hidden></span>
+      <label id="tier-filter" class="tier"><span class="sr">Show</span><select id="tier-select" aria-label="Show which cases"><option value="all">All flagged</option><option value="inspect_now">Inspect now</option><option value="review_needed">Review needed</option></select></label></div>
     <div class="scroll">
       <div id="hot" hidden>
         <div class="hh"><span class="micro">Highest at</span><span style="font-size:11px;color:var(--ink-60)" id="hot-clock"></span><span class="badge-modeled" id="hot-modeled" style="font-size:9px;padding:1px 6px" hidden>Modeled</span></div>
@@ -377,7 +382,7 @@ const showId = id => String(id ?? '').replace(/^T-/, '');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 
 const DISTRICTS = DISTRICTS_RAW.map(d => ({ ...d, fullName: d.name, name: shortName(d.name) })).sort((a, b) => a.name.localeCompare(b.name));
-const S = { district: '', popup: null, alertsOpen: false, mode: 'recorded', metric: 'util',
+const S = { district: '', popup: null, alertsOpen: false, mode: 'recorded', metric: 'util', tier: 'all',
   dateIdx: +$('date-slider').value || 0, month: 1, hour: 18, playing: false, sheetOpen: false, firstLaunch: !PERIOD, loads: {}, modeled: false, factor: 1 };
 const wide = () => window.innerWidth >= 1000;
 const phone = () => window.innerWidth < 600;
@@ -528,12 +533,16 @@ function renderSidebar() {
   const inArea = S.district ? POINTS.filter(p => p.area === S.district) : POINTS;
   const redsIn = S.district ? reds.filter(p => p.area === S.district) : reds;
   const sel = DISTRICTS.find(d => d.id === S.district);
+  // the dropdown narrows the list to one tier; counts in the legend and the finalize gate stay on every flagged case
+  const listed = S.tier === 'all' ? redsIn : redsIn.filter(p => p.status === S.tier);
+  $('tier-filter').hidden = !!sel;
   // district selected: the sidebar shows hotspots only; whole county: the review list only
   $('side-title').textContent = sel ? 'Hotspots now' : 'Needs a person';
-  $('red-count').textContent = redsIn.length; $('red-count').hidden = !!sel;
+  $('red-count').textContent = listed.length; $('red-count').hidden = !!sel;
+  $('red-count').style.color = S.tier === 'review_needed' ? ORANGE : RED;
   $('side-scope').hidden = !sel; if (sel) $('side-scope').textContent = 'in ' + sel.fullName;
   $('review-rows').hidden = !!sel;
-  $('review-rows').innerHTML = (sel ? [] : redsIn).map(p => `<div class="rrow${S.popup && S.popup.id === p.id ? ' on' : ''}" data-id="${esc(p.id)}"><button class="main" data-id="${esc(p.id)}"><span class="l1"><span class="dot" style="background:${tier(p).color}" title="${tier(p).label}"></span><span class="id">${esc(showId(p.id))}</span><span class="nm">${esc(p.name)} · ${esc(shortName(p.area_name) || p.area)}</span></span><span class="why">${esc(p.reason)}</span>${p.disposition ? `<span class="disp">${esc(p.disposition)}</span>` : ''}</button><a class="go" href="${esc(p.url)}" aria-label="Open full review"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>`).join('');
+  $('review-rows').innerHTML = (!sel && !listed.length ? `<div class="none">No ${S.tier === 'inspect_now' ? 'inspect-now' : 'review-needed'} cases this period.</div>` : '') + (sel ? [] : listed).map(p => `<div class="rrow${S.popup && S.popup.id === p.id ? ' on' : ''}" data-id="${esc(p.id)}"><button class="main" data-id="${esc(p.id)}"><span class="l1"><span class="dot" style="background:${tier(p).color}" title="${tier(p).label}"></span><span class="id">${esc(showId(p.id))}</span><span class="nm">${esc(p.name)} · ${esc(shortName(p.area_name) || p.area)}</span></span><span class="why">${esc(p.reason)}</span>${p.disposition ? `<span class="disp">${esc(p.disposition)}</span>` : ''}</button><a class="go" href="${esc(p.url)}" aria-label="Open full review"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>`).join('');
   document.querySelectorAll('.rrow .main').forEach(b => b.onclick = () => { const p = POINTS.find(x => x.id === b.dataset.id); if (!visible(p)) { $(p.status === 'inspect_now' ? 'f-red' : 'f-amber').checked = true; applyFilter(); } map.setView([p.lat, p.lon], Math.max(map.getZoom(), 13), { animate: false }); S.sheetOpen = false; applySheet(); openPopup(p); });
   const inspectsIn = redsIn.filter(p => p.status === 'inspect_now').length;
   $('green-total').textContent = inArea.length - redsIn.length; $('amber-total').textContent = redsIn.length - inspectsIn; $('red-total').textContent = inspectsIn;
@@ -542,6 +551,8 @@ function renderSidebar() {
   if (PERIOD_STATUS === 'final') { fin.disabled = true; $('finalize-why').textContent = 'Finalized; rerun the period to review again'; }
   else { fin.disabled = undecided > 0 || !REVIEWER; $('finalize-why').textContent = undecided > 0 ? undecided + ' flagged cases still need a decision before the report can be finalized' : (REVIEWER ? 'Every flagged case has a decision' : 'Set the reviewer name in Setup to finalize'); }
 }
+$('tier-select').onchange = e => { S.tier = e.target.value; renderSidebar(); };
+$('tier-select').onclick = e => e.stopPropagation();
 function applySheet() { $('side').classList.toggle('open', S.sheetOpen && !wide()); }
 $('sheet-handle').onclick = () => { S.sheetOpen = !S.sheetOpen; applySheet(); };
 const sideHead = $('side-head'); if (sideHead) sideHead.onclick = () => { if (!wide()) { S.sheetOpen = !S.sheetOpen; applySheet(); } };
