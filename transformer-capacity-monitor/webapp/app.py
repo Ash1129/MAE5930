@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
 from flask import Flask, abort, flash, redirect, render_template, request, send_from_directory, url_for  # noqa: E402
 
 from capacity_monitor import ai_explain, airflow_client, config, explain, heat, thermal  # noqa: E402
-from capacity_monitor.charts import mini_imr_svg, review_chart_caption, review_chart_svg, review_headroom_caption, review_headroom_svg  # noqa: E402
+from capacity_monitor.charts import mini_imr_svg, review_chart_caption, review_chart_svg, review_moving_range_caption, review_moving_range_svg  # noqa: E402
 from capacity_monitor.guards import check_text  # noqa: E402
 from capacity_monitor.report import write_report  # noqa: E402
 from capacity_monitor.run import execute_run, new_run_id  # noqa: E402
@@ -362,7 +362,7 @@ def transformer_detail(period_id, tid):
         (f"Room left today is healthy (Cpk {pb['capability']['cpk_review_below']} or more)", cap["cpk"] is not None and (cap["cpk"] < pb["capability"]["cpk_review_below"] or cap["cpk_ci_low"] < pb["capability"]["cpk_ci_low_review_below"])),
         (f"Winter estimate stays under {int(fc * 100)}% of the rating", cap["forecast_ratio"] is not None and cap["forecast_ratio"] >= fc),
         ("No reading this week reached the rating", cap["period_peak_ratio"] is not None and cap["period_peak_ratio"] >= 1.0),
-        ("Daily peaks behave well enough for the headroom figure", bool(cap.get("assumption_flags"))),
+        ("Daily peaks meet the capability assumptions", bool(cap.get("assumption_flags"))),
         ("Numbers match the chart and the raw readings", False),
     ]
     cause = {"2": 0, "3": 0, "4": 0, "5": 1, "9": 2, "10": 2, "11": 3, "1": 4, "8": 5}.get(str(r["decision"]["rule"])) if r["status"] != "within_limits" else None
@@ -383,11 +383,10 @@ def transformer_detail(period_id, tid):
                      "samples": len(readings), "above": sum(x["load"] >= r["rated_max"] for x in readings),
                      "latest": max((x["timestamp"] for x in readings), default=None)}
     return render_template("transformer.html", period=period, r=r, peak_evidence=peak_evidence, followup_statuses=FOLLOWUP_STATUSES, chart_svg=review_chart_svg(r["chart"], period["period"]["start"], r["unit"], r["rated_max"]),
+                           moving_range_svg=review_moving_range_svg(r["chart"], period["period"]["start"], r["unit"]), moving_range_caption=review_moving_range_caption(r["chart"], r["unit"]),
                            chart_caption=review_chart_caption(r["chart"], r["unit"]), checklist=checklist, cause=cause, why=explain.why_flagged(r, pb),
                            decisions=DECISIONS, decision_chips=DECISION_CHIPS, review_started_at=now_iso(), playbook=pb, summary=summary, case=case,
-                           back=url_for("period_map", period_id=period_id) if request.args.get("from") == "map" else None,
-                           headroom_svg=review_headroom_svg(r["chart"], period["period"]["start"], r["rated_max"], pb["forecast"]["near_rating_ratio"]),
-                           headroom_caption=review_headroom_caption(r["chart"], period["period"]["start"], r["rated_max"], pb["forecast"]["near_rating_ratio"]))
+                           back=url_for("period_map", period_id=period_id) if request.args.get("from") == "map" else None)
 
 
 @app.post("/periods/<period_id>/transformers/<tid>/followup")

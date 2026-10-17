@@ -272,6 +272,71 @@ def review_chart_caption(chart: dict, unit: str = "kVA") -> str:
     return f"No configured I-MR signal was detected. Historical control range{rng}." + caution
 
 
+def review_moving_range_svg(chart: dict, period_start: str, unit: str = "kVA") -> str:
+    """Moving-range panel for the individual transformer review page."""
+    dates = chart.get("dates") or []
+    values = chart.get("moving_ranges") or []
+    W, H, L, R, TOP, BOT = 900, 260, 52, 886, 10, 230
+    if not dates:
+        return f'<svg viewBox="0 0 {W} 60" role="img" aria-label="No moving-range readings" style="width:100%;height:auto;display:block"><text x="{L}" y="34" font-size="12" fill="rgba(29,36,48,.6)">No readings to chart</text></svg>'
+    lines = [v for v in (chart.get("mr_ucl"), chart.get("mr_bar"), 0) if v is not None]
+    ys = [v for v in values if v is not None] + lines
+    lo, hi = min(ys), max(ys)
+    if lo == hi:
+        hi = lo + 1
+    pad = (hi - lo) * 0.06
+    lo, hi = max(0, lo - pad), hi + pad
+    step = _nice_step(hi - lo)
+    n = max(len(dates) - 1, 1)
+    x = lambda i: L + (R - L) * i / n  # noqa: E731
+    y = lambda v: TOP + (hi - v) / (hi - lo) * (BOT - TOP)  # noqa: E731
+    ink = "rgba(29,36,48,"
+    out = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="Moving range chart" style="width:100%;height:auto;display:block;font-family:Lora,Georgia,serif">']
+    first = next((i for i, d in enumerate(dates) if d >= period_start), None)
+    if first is not None:
+        x0 = x(first) - (6 if first else 0)
+        out.append(f'<rect x="{x0:.1f}" y="{TOP}" width="{max(x(len(dates) - 1) - x0 + 6, 4):.1f}" height="{BOT - TOP}" fill="rgba(182,130,53,.16)"/>')
+    t = (lo // step + 1) * step
+    while t < hi:
+        out.append(f'<line x1="{L - 4}" x2="{L}" y1="{y(t):.1f}" y2="{y(t):.1f}" stroke="{ink}.25)"/>')
+        out.append(f'<text x="{L - 8}" y="{y(t) + 4:.1f}" text-anchor="end" font-size="11" fill="{ink}.55)">{t:g}</text>')
+        t += step
+    for key, label, dash, opacity in (("mr_ucl", "UCL", "5 4", 1), ("mr_bar", "MR-bar", "", .65)):
+        val = chart.get(key)
+        if val is not None:
+            da = f' stroke-dasharray="{dash}"' if dash else ""
+            out.append(f'<line x1="{L - 4}" x2="{R + 4}" y1="{y(val):.1f}" y2="{y(val):.1f}" stroke="#1F5FA8" stroke-width="1.2" opacity="{opacity}"{da}/>')
+            label_y = y(val) - 6 if y(val) > TOP + 12 else y(val) + 14
+            out.append(f'<text x="{L + 8}" y="{label_y:.1f}" text-anchor="start" font-size="11" stroke="#f8f7f6" stroke-width="4" stroke-linejoin="round" paint-order="stroke" data-annotation="{key}" fill="#1F5FA8">{label} {val:,.1f} {escape(unit)}</text>')
+    pts = [(i, val) for i, val in enumerate(values) if val is not None]
+    if pts:
+        out.append('<path d="' + " ".join(("M" if k == 0 else "L") + f"{x(i):.1f} {y(val):.1f}" for k, (i, val) in enumerate(pts)) + '" fill="none" stroke="rgba(29,36,48,.7)" stroke-width="1.4"/>')
+    signals = {s["date"] for s in chart.get("signals") or [] if s.get("rule") == "moving_range_beyond_ucl"}
+    for i, val in pts:
+        is_signal = dates[i] in signals
+        fill = "#D7263D" if is_signal else ("#7d5411" if first is not None and i >= first else "rgba(29,36,48,.6)")
+        out.append(f'<circle cx="{x(i):.1f}" cy="{y(val):.1f}" r="{3.8 if is_signal else 2.5}" fill="{fill}"><title>{escape(dates[i])}: {val:,.1f} {escape(unit)}{", moving-range signal" if is_signal else ""}</title></circle>')
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    k = min(5, len(dates))
+    idx = sorted({round(j * n / (k - 1)) for j in range(k)}) if k > 1 else [0]
+    for j, i in enumerate(idx):
+        d = dates[i]
+        label = f"{months[int(d[5:7]) - 1]} {int(d[8:10])}"
+        anchor = "start" if j == 0 else "end" if j == len(idx) - 1 else "middle"
+        out.append(f'<text x="{x(i):.1f}" y="250" text-anchor="{anchor}" font-size="11" fill="{ink}.55)">{label}</text>')
+    out.append("</svg>")
+    return "".join(out)
+
+
+def review_moving_range_caption(chart: dict, unit: str = "kVA") -> str:
+    if chart.get("mr_ucl") is None:
+        return "Not enough history to calculate a moving-range limit."
+    n = sum(v is not None for v in chart.get("moving_ranges") or [])
+    signals = sum(s.get("rule") == "moving_range_beyond_ucl" and s.get("in_period") for s in chart.get("signals") or [])
+    suffix = f" {signals} moving-range signal{'s' if signals != 1 else ''} occurred this week." if signals else " No moving-range limit signal occurred this week."
+    return f"Each point is the absolute day-to-day change in peak load ({unit}); MR-bar is {chart['mr_bar']:,.1f} and the upper limit is {chart['mr_ucl']:,.1f} across {n} changes.{suffix}"
+
+
 def review_headroom_svg(chart: dict, period_start: str, rating: float | None, review_ratio: float = 0.9) -> str:
     """Daily peak as a percent of the rated maximum, in the review page's style (light ground, inline attributes).
 

@@ -98,3 +98,21 @@ def test_review_annotations_are_just_inside_the_y_axis():
         assert all(n.get('paint-order') == 'stroke' for n in annotations)
         elements = list(root)
         assert min(elements.index(n) for n in annotations) > max(elements.index(n) for n in root.iter('circle'))
+
+
+def test_individual_moving_range_chart_shows_limit_and_period_signal():
+    from xml.etree import ElementTree as ET
+    from capacity_monitor.charts import review_moving_range_caption, review_moving_range_svg
+    chart = {
+        'dates': ['2026-10-08', '2026-10-09', '2026-10-10'],
+        'moving_ranges': [None, 2.0, 12.0],
+        'mr_bar': 2.0,
+        'mr_ucl': 6.534,
+        'signals': [{'rule': 'moving_range_beyond_ucl', 'date': '2026-10-10', 'in_period': True}],
+    }
+    svg = review_moving_range_svg(chart, '2026-10-10', 'kVA')
+    root = ET.fromstring(svg)
+    assert root.get('aria-label') == 'Moving range chart'
+    assert 'data-annotation="mr_ucl"' in svg
+    assert '12.0 kVA, moving-range signal' in svg
+    assert '1 moving-range signal occurred this week' in review_moving_range_caption(chart, 'kVA')

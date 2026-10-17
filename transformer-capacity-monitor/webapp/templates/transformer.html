@@ -3,8 +3,15 @@
 {% block head %}
 <style>
   .peak-evidence{padding-left:20px;font-size:14px;line-height:1.5}.peak-evidence li{margin:5px 0}.followup-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+  .followup{border-top:1px solid var(--line);margin-top:22px;padding-top:18px;display:flex;flex-direction:column;gap:10px}
+  .followup h4{font-family:var(--font-heading);font-weight:600;font-size:19px;margin:0}
+  .followup .current-plan{font-size:14px;margin:0;padding:10px 12px;background:rgba(var(--ink-rgb),.035);border-left:2px solid var(--accent)}
+  .followup details>summary{font-size:14px;cursor:pointer}
+  .followup form{display:grid;gap:12px;margin-top:12px}
 
-  .wrap{max-width:1040px;margin:0 auto;padding:28px 24px 80px;display:flex;flex-direction:column;gap:36px}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 80px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"title title" "why checked" "peak peak" "mr mr" "details model" "followup decision" "more more";align-items:start;gap:28px 40px}
+  .title-block{grid-area:title;min-width:0}
+  .two,.left,.decide{display:contents}
   .crumbs{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--ink-60)}
   .crumbs a{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
   .crumbs .pn{margin-left:auto;display:flex;gap:14px}
@@ -17,14 +24,23 @@
   .title .chip{font-size:12px;padding:4px 12px;gap:7px} .title .chip .d{width:8px;height:8px}
   .c-review{color:var(--amber)} .c-inspect{color:var(--review)} .c-ok{color:var(--ok)} .c-info{color:var(--info)}
 
-  .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:32px 48px}
+  .two{min-width:0}
+  .why{grid-area:why;min-width:0}
+  #checked{grid-area:checked;min-width:0}
+  .load{grid-area:details;min-width:0}
+  .inside{grid-area:model;min-width:0}
+  .chart.peak{grid-area:peak;min-width:0}
+  .chart.mr{grid-area:mr;min-width:0}
+  #followup{grid-area:followup;min-width:0}
+  .decision-panel{grid-area:decision;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .more{grid-area:more;min-width:0}
   .label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-60)}
   .why h2{font-family:var(--font-heading);font-weight:600;font-size:28px;line-height:1.15;margin:8px 0 16px;letter-spacing:-.01em}
   .rows{display:grid;grid-template-columns:104px 1fr;gap:12px 14px;font-size:15px}
   .rows .micro{padding-top:5px}
   .rows .rule{font-size:13px;color:rgba(var(--ink-rgb),.7)}
 
-  .left{display:flex;flex-direction:column;gap:22px;min-width:0}
+  .left{min-width:0}
   .load{display:flex;flex-direction:column;gap:14px;padding-top:4px}
   .bars{display:flex;flex-direction:column;gap:16px}
   .bar{display:grid;gap:6px}
@@ -125,8 +141,10 @@
   .inside .foot{font-size:12px;color:var(--ink-60)}
   @media (max-width:600px){.stage{height:240px}.read{grid-template-columns:1fr 1fr}}
   .asset-note{font-size:13px;color:var(--ink-60);padding:14px 0}
+  @media (max-width:760px){
+    .wrap{padding:22px 16px 64px;grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "why" "checked" "peak" "mr" "details" "model" "followup" "decision" "more";gap:24px}
+  }
   @media (max-width:600px){
-    .wrap{padding:22px 16px 64px;gap:30px}
     .title h1{font-size:36px}
     .rows{grid-template-columns:1fr;gap:2px} .rows .micro{padding-top:10px}
     .kv{grid-template-columns:1fr;gap:0} .kv dd{margin-bottom:8px}
@@ -138,7 +156,7 @@
 {% set chev %}<svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>{% endset %}
 {% set cap = r.capacity %}{% set near = playbook.forecast.near_rating_ratio %}{% set cpk_line = playbook.capability.cpk_review_below %}
 <main id="main-content" class="wrap" tabindex="-1">
-  <div>
+  <div class="title-block">
     <div class="crumbs">
       {% if back %}<a href="{{ back }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back to the map</a>{% endif %}
       <a href="{{ url_for('period_detail', period_id=period.period_id) }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Week ending {{ period.period_id }}</a>
@@ -158,7 +176,7 @@
   <div class="two">
     <div class="left">
     <div class="why" id="summary">
-      <div class="label">{{ "Why it needs an inspection" if r.status == 'inspect_now' else ("Why it's on the list" if r.status == 'review_needed' else "Why it isn't on the list") }}</div>
+      <div class="label">Why</div>
       <h2>{{ why.headline }}</h2>
       <div class="rows">
         <span class="micro">What happened</span><span id="summary-text">{{ summary.ai.text if summary.ai else why.meaning }}</span>
@@ -167,29 +185,8 @@
       </div>
     </div>
 
-    <section class="load" id="followup" aria-labelledby="followup-title">
-      <h2 id="followup-title">Follow-up</h2>
-      <p class="small muted">Track the work separately from agreeing with the finding. Follow-ups remain editable after report sign-off.</p>
-      {% set f = r.followup or {} %}
-      {% if f and f.input_hash != r.input_hash %}<p class="warn">This follow-up was recorded against earlier inputs. Recheck the plan against this analysis.</p>{% endif %}
-      {% if f %}<p><b>{{ followup_statuses[f.status] }}</b> · {{ f.owner }} · due {{ f.due_date }}<br>{{ f.action }}</p>{% endif %}
-      <details><summary><strong><u>{{ 'Edit follow-up' if f else 'Add a follow-up plan' }}</u></strong></summary>
-      <form method="post" action="{{ url_for('save_followup', period_id=period.period_id, tid=r.transformer_id) }}">
-        <label>Next action<input class="input" name="action" required maxlength="300" value="{{ f.action or '' }}" placeholder="e.g. Investigate repeated overload"></label>
-        <div class="followup-fields">
-          <label>Owner<input class="input" name="owner" required maxlength="120" value="{{ f.owner or reviewer_name }}"></label>
-          <label>Due / recheck date<input class="input" name="due_date" type="date" required value="{{ f.due_date or '' }}"></label>
-          <label>Status<select class="input" name="status">{% for key, label in followup_statuses.items() %}<option value="{{ key }}" {% if f.status == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-        </div>
-        <label>Progress notes<textarea class="input" name="notes" maxlength="2000">{{ f.notes or '' }}</textarea></label>
-        <button class="btn" type="submit">Save follow-up</button>
-      </form>
-      </details>
-      {% if r.followup_history %}<details><summary>Follow-up history ({{ r.followup_history|length }})</summary><ul>{% for entry in r.followup_history %}<li>{{ entry.updated_at }} · {{ entry.owner }} · {{ followup_statuses[entry.status] }} · due {{ entry.due_date }}: {{ entry.action }}{% if entry.notes %} — {{ entry.notes }}{% endif %}</li>{% endfor %}</ul></details>{% endif %}
-    </section>
-
     <div class="load">
-      <div class="label">Load against the {{ r.rated_max|num(0) }} {{ r.unit }} rating</div>
+      <div class="label">Details · load against the {{ r.rated_max|num(0) }} {{ r.unit }} rating</div>
       <ul class="peak-evidence">
         <li><b>Peak:</b> {{ cap.period_peak|num(1) }} {{ r.unit }} · {{ cap.period_peak_ratio|pct }} of the {{ r.rated_max|num(0) }} {{ r.unit }} rating.</li>
         {% if peak_evidence.peak %}<li><b>When:</b> {{ peak_evidence.peak.timestamp }} (timestamp as supplied).</li>{% endif %}
@@ -227,7 +224,7 @@
     </div>
     </div>
     <div class="inside" id="inside">
-      <div class="label">Inside the transformer <span class="badge-modeled">Modeled</span></div>
+      <div class="label">Model transformer <span class="badge-modeled">Modeled</span></div>
       <div class="stage" id="stage"><span class="hint">drag to rotate · wheel to zoom</span><span class="lbl" id="lbl-wind" hidden><i></i>winding <b></b></span><span class="lbl" id="lbl-oil" hidden><i></i>oil <b></b></span><span class="lbl" id="lbl-air" hidden><i style="background:var(--ink-60)"></i>air <b></b></span></div>
       <div class="scrub"><button class="btn" id="th-play" type="button">Play</button><input type="range" id="th-slider" min="0" max="0" value="0" aria-label="Hour of the week"></div>
       <div class="when" id="th-when">Loading the week's readings…</div>
@@ -244,9 +241,9 @@
     </div>
   </div>
 
-  <div class="chart">
+  <div class="chart peak">
     <div class="hd">
-      <h3>Daily peak load, last {{ r.chart.dates|length }} days</h3>
+      <h3>Peak load control chart · last {{ r.chart.dates|length }} days</h3>
       <span class="legend">
         <span><span style="width:14px;height:2px;background:rgba(var(--ink-rgb),.85)"></span>Rating {{ r.rated_max|num(0) }} {{ r.unit }}</span>
         {% if r.chart.ucl is not none %}<span><span style="width:14px;height:0;border-top:1.5px dashed #1F5FA8"></span>Normal range from history</span>{% endif %}
@@ -258,24 +255,23 @@
     <div class="caption">{{ chart_caption }}</div>
   </div>
 
-  <div class="chart">
+  <div class="chart mr">
     <div class="hd">
-      <h3>Daily peak against the {{ r.rated_max|num(0) }} {{ r.unit }} rating</h3>
+      <h3>Moving range control chart</h3>
       <span class="legend">
-        <span><span style="width:14px;height:2px;background:rgba(var(--ink-rgb),.85)"></span>Rating = 100%</span>
-        <span><span style="width:14px;height:0;border-top:1.5px dashed #D7263D"></span>Review line {{ (near * 100)|round|int }}%</span>
-        <span><span style="width:14px;height:0;border-top:1.5px dashed #b68235"></span>70%</span>
+        <span><span style="width:14px;height:0;border-top:1.5px dashed #1F5FA8"></span>Upper moving-range limit</span>
+        <span><span style="width:14px;height:0;border-top:1.5px solid #1F5FA8;opacity:.65"></span>Average moving range</span>
         <span><span style="width:12px;height:10px;background:rgba(182,130,53,.18)"></span>This week</span>
-        <span><span style="width:8px;height:8px;border-radius:50%;background:#D7263D"></span>At or above the review line</span>
+        <span><span style="width:8px;height:8px;border-radius:50%;background:#D7263D"></span>Moving-range signal</span>
       </span>
     </div>
-    <div class="panel">{{ headroom_svg|safe }}</div>
-    <div class="caption">{{ headroom_caption }} The reference lines mark the nameplate and the review threshold; they are not control limits.</div>
+    <div class="panel">{{ moving_range_svg|safe }}</div>
+    <div class="caption">{{ moving_range_caption }} The moving-range limit measures short-term variation; it is not a transformer rating.</div>
   </div>
 
   <div class="two">
-    <div>
-      <h3>What the tool checked</h3>
+    <div id="checked">
+      <h3>What checked</h3>
       <div class="checks">
         {% for item, flagged in checklist %}
         <div class="check">
@@ -287,6 +283,7 @@
     </div>
 
     <div class="decide">
+      <div class="decision-panel">
       <h3>Your decision</h3>
       <div class="lead">Recorded in the weekly report. Nothing here changes equipment or settings.</div>
       {% if r.disposition %}<div class="current">Recorded: <b>{{ decision_chips[r.disposition.decision] }}</b> by {{ r.disposition.reviewer }}, {{ r.disposition.recorded_at|day }} {{ r.disposition.recorded_at|clock }}{% if r.disposition.notes %}: “{{ r.disposition.notes }}”{% endif %}</div>{% endif %}
@@ -316,6 +313,28 @@
         {% for d in r.disposition_history %}<tr><td>{{ d.recorded_at|day }} {{ d.recorded_at|clock }}</td><td>{{ decision_chips.get(d.decision, d.decision) }}</td><td>{{ d.reviewer }}</td><td>{{ d.notes }}</td><td style="color:var(--ink-60)">{{ 'current' if d.input_hash == r.input_hash else 'earlier (stale)' }}</td></tr>{% endfor %}
         </table></details>
       {% endif %}
+      </div>
+
+      <section class="followup" id="followup" aria-labelledby="followup-title">
+        <h4 id="followup-title">Follow-up plan</h4>
+        <p class="small muted" style="margin:0">Record the next action alongside this review. Follow-ups remain editable after report sign-off.</p>
+        {% set f = r.followup or {} %}
+        {% if f and f.input_hash != r.input_hash %}<p class="warn">This follow-up was recorded against earlier inputs. Recheck the plan against this analysis.</p>{% endif %}
+        {% if f %}<p class="current-plan"><b>{{ followup_statuses[f.status] }}</b> · {{ f.owner }} · due {{ f.due_date }}<br>{{ f.action }}{% if f.notes %}<br><span class="small muted">{{ f.notes }}</span>{% endif %}</p>{% endif %}
+        <details><summary><strong><u>{{ 'Edit follow-up' if f else 'Add a follow-up plan' }}</u></strong></summary>
+          <form method="post" action="{{ url_for('save_followup', period_id=period.period_id, tid=r.transformer_id) }}">
+            <label>Next action<input class="input" name="action" required maxlength="300" value="{{ f.action or '' }}" placeholder="e.g. Investigate repeated overload"></label>
+            <div class="followup-fields">
+              <label>Owner<input class="input" name="owner" required maxlength="120" value="{{ f.owner or reviewer_name }}"></label>
+              <label>Due / recheck date<input class="input" name="due_date" type="date" required value="{{ f.due_date or '' }}"></label>
+              <label>Status<select class="input" name="status">{% for key, label in followup_statuses.items() %}<option value="{{ key }}" {% if f.status == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+            </div>
+            <label>Progress notes<textarea class="input" name="notes" maxlength="2000">{{ f.notes or '' }}</textarea></label>
+            <button class="btn" type="submit">Save follow-up</button>
+          </form>
+        </details>
+        {% if r.followup_history %}<details><summary>Follow-up history ({{ r.followup_history|length }})</summary><ul>{% for entry in r.followup_history %}<li>{{ entry.updated_at }} · {{ entry.owner }} · {{ followup_statuses[entry.status] }} · due {{ entry.due_date }}: {{ entry.action }}{% if entry.notes %} — {{ entry.notes }}{% endif %}</li>{% endfor %}</ul></details>{% endif %}
+      </section>
     </div>
   </div>
 

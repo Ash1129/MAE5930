@@ -170,6 +170,8 @@ def test_followup_history_validation_and_queue_filters(sandbox):
     detail = client.get(path).data.decode()
     assert 'Margin at peak' in detail and 'Sample counts do not establish overload duration' in detail
     assert 'Follow-up history (2)' in detail
+    assert 'aria-label="Moving range chart"' in detail
+    assert 'grid-template-areas:"title title" "why checked"' in detail
     # Work can continue after report sign-off without modifying the report decision.
     webapp.store.finalize_period('2026-10-15', 'Tester')
     assert client.post(path + '/followup', data=fields).status_code == 302
