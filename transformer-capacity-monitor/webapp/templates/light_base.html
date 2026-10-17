@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Transformer Capacity Monitor{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Lora:wght@400;600&display=swap">
+<style>
+  /* Light-ground chrome for the Alerts and Transformer review pages (design_handoff_landing_page/PAGES.md). */
+  :root{
+    --ground:#f3f2f2;--panel:#f8f7f6;
+    --ink:#1D2430;--ink-90:rgba(29,36,48,.9);--ink-80:rgba(29,36,48,.8);--ink-75:rgba(29,36,48,.75);--ink-60:rgba(29,36,48,.6);--ink-55:rgba(29,36,48,.55);--ink-50:rgba(29,36,48,.5);
+    --line:rgba(29,36,48,.12);--line-16:rgba(29,36,48,.16);
+    --accent:#b68235;--accent-700:#7d5411;--accent-800:#5a3b0a;
+    --ok:#1B7F4B;--review:#D7263D;--review-text:#9e1428;--warn:#9a5b00;--info:#1F5FA8;--estimate:#8a6200;
+    --font-heading:"Cormorant Garamond",Georgia,serif;--font-body:"Lora",Georgia,serif;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink-90);font:14px/1.5 var(--font-body);font-variant-numeric:tabular-nums}
+  a{color:var(--accent-700)} a:hover{color:var(--accent-800)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  [hidden]{display:none!important}
+  h1,h2,h3{text-wrap:pretty}
+
+  .topbar{height:56px;display:flex;align-items:center;gap:18px;padding:0 24px;border-bottom:1px solid var(--line);background:var(--ground);position:sticky;top:0;z-index:5}
+  .topbar .brand{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;white-space:nowrap;flex:none}
+  .topbar .brand b{font-family:var(--font-heading);font-weight:600;font-size:21px;letter-spacing:-.01em}
+  .topbar .brand .seal{display:block;width:32px;height:32px;flex:none}
+  .topbar .grow{flex:1}
+  .topbar nav{display:flex;gap:4px;font-size:13px}
+  .topbar nav a{text-decoration:none;color:var(--ink-80);padding:6px 10px;border-radius:8px;transition:background .15s}
+  .topbar nav a:hover{background:rgba(29,36,48,.06);color:var(--ink-90)}
+  .topbar nav a[aria-current="page"]{color:var(--accent-700);box-shadow:inset 0 -1px 0 var(--accent)}
+  .topbar nav a[aria-current="page"]:hover{background:transparent}
+  .topbar .count{font-size:11px;color:var(--review);margin-left:3px}
+  .tools{display:flex;align-items:center;gap:14px}
+  .tools .divider{width:1px;height:24px;background:var(--line)}
+  .icon-btn{all:unset;cursor:pointer;position:relative;box-sizing:border-box;width:34px;height:34px;border-radius:8px;color:var(--ink-80);display:grid;place-items:center;transition:background-color .15s}
+  .icon-btn:hover{background:rgba(29,36,48,.06)}
+  #bell .count{position:absolute;top:-3px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--review);color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;border:2px solid var(--ground);box-sizing:border-box}
+  .bell-wrap{position:relative}
+  #alerts-card{position:absolute;top:46px;right:0;width:320px;padding:16px;z-index:50;box-sizing:border-box;background:rgba(243,242,242,.97);border:1px solid var(--line);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.18);backdrop-filter:blur(28px) saturate(1.5);-webkit-backdrop-filter:blur(28px) saturate(1.5)}
+  #alerts-card .hd{display:flex;align-items:baseline;justify-content:space-between}
+  #alerts-card .hd b{font-family:var(--font-heading);font-weight:600;font-size:20px}
+  #alerts-card .hd span{font-size:11px;color:var(--ink-60)}
+  #alerts-card .head{font-size:14px;margin-top:8px}
+  #alerts-card .rows{display:grid;grid-template-columns:96px 1fr;gap:6px 10px;font-size:13px;margin-top:10px}
+  #alerts-card .rows .micro{padding-top:3px;letter-spacing:.1em}
+  #alerts-card .ft{display:flex;justify-content:flex-end;margin-top:12px}
+  #alerts-card .ft a{font-family:var(--font-heading);font-weight:600;font-size:13px;text-decoration:none;color:var(--accent);padding:6px 8px;border-radius:4px} #alerts-card .ft a:hover{background:rgba(182,130,53,.1)}
+  .bar-switch{all:unset;cursor:pointer;box-sizing:border-box;position:relative;width:52px;height:30px;border:1px solid rgba(29,36,48,.25);border-radius:999px;color:var(--accent-700);transition:background-color .15s,border-color .15s;flex:none}
+  .bar-switch:hover{background:rgba(182,130,53,.12);border-color:var(--accent)}
+  .bar-switch span{position:absolute;top:50%;left:calc(100% - 24px);transform:translateY(-50%);display:grid}
+  .topbar{transition:transform .25s}
+  .topbar.hidden-bar{position:fixed;left:0;right:0;transform:translateY(-100%)}
+  #bar-show{all:unset;cursor:pointer;box-sizing:border-box;position:fixed;top:12px;left:16px;z-index:6;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--ground);color:var(--accent-700);border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,.18)}
+  #bar-show:hover{background:#eae7e2}
+  .reviewer{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-60);white-space:nowrap}
+  .reviewer .initials{width:26px;height:26px;border-radius:50%;border:1px solid var(--accent);color:var(--accent-700);font-family:var(--font-heading);font-weight:600;font-size:12px;display:grid;place-items:center}
+  @media (max-width:980px){.reviewer .name{display:none}}
+  @media (max-width:760px){.topbar{gap:10px;padding:0 14px}.topbar nav a{padding:6px 7px}}
+  @media (max-width:640px){.topbar{height:auto;flex-wrap:wrap;row-gap:4px;padding:10px 14px 6px}.topbar .brand b{font-size:18px}.topbar nav{order:5;flex-basis:100%;margin-left:-7px}.reviewer,.tools .divider{display:none}.tools{gap:8px}#alerts-card{width:min(320px,calc(100vw - 28px))}}
+
+  .flash{max-width:1040px;margin:16px auto 0;padding:10px 14px;border-radius:4px;border:1px solid currentColor;font-size:13px}
+  .flash.error{color:var(--review-text);background:rgba(215,38,61,.06)} .flash.info{color:var(--accent-700);background:rgba(182,130,53,.08)}
+  .flashes{padding:0 24px}
+
+  .micro{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.02em;padding:3px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+  .chip .d{width:7px;height:7px;border-radius:50%;background:currentColor}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;text-decoration:none;font-family:var(--font-heading);font-weight:600;font-size:14px;line-height:1.2;color:var(--accent);background:transparent;border:1px solid var(--accent);padding:9.2px 16.5px;border-radius:4px;transition:background .15s}
+  .btn:hover{background:rgba(182,130,53,.12);color:var(--accent)} .btn:active{background:rgba(182,130,53,.22)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;background:transparent}
+  .input{width:100%;min-height:36px;padding:6px 10px;font:inherit;font-size:14px;color:var(--ink-90);caret-color:var(--accent);background:transparent;border:1px solid var(--line-16);border-radius:4px}
+  .input:hover{border-color:rgba(29,36,48,.45)} .input:focus-visible{border-color:var(--accent);outline-offset:0}
+  textarea.input{min-height:84px;resize:vertical}
+
+  details>summary{list-style:none;cursor:pointer} details>summary::-webkit-details-marker{display:none}
+  details>summary .chev{transition:transform .15s;flex:none} details[open]>summary .chev{transform:rotate(90deg)}
+  details>summary:hover{color:var(--accent-700)}
+  pre.tech{margin:8px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:4px;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word;color:var(--ink-80);background:rgba(29,36,48,.03)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+{% set initials = (reviewer_name or '').replace('.', ' ').split()|map('first')|join('')|upper %}
+<header class="topbar">
+  <a class="brand" href="{{ url_for('map_latest') }}"><b>Transformer Capacity Monitor</b><img class="seal" src="{{ url_for('static', filename='tompkins-county.png') }}" alt="Tompkins County"></a>
+  <div class="grow"></div>
+  {% set ep = request.endpoint %}
+  <nav aria-label="Main">
+    <a href="{{ url_for('map_latest') }}"{% if ep in ('map_latest', 'period_map') %} aria-current="page"{% endif %}>Map</a>
+    <a href="{{ url_for('dashboard') }}"{% if ep in ('dashboard', 'period_detail', 'run_detail') %} aria-current="page"{% endif %}>Dashboard</a>
+    <a href="{{ url_for('alerts') }}"{% if ep == 'alerts' %} aria-current="page"{% endif %}>Alerts</a>
+    <a href="{{ url_for('metrics') }}"{% if ep == 'metrics' %} aria-current="page"{% endif %}>Review metrics</a>
+    <a href="{{ url_for('setup') }}"{% if ep == 'setup' %} aria-current="page"{% endif %}>Setup</a>
+  </nav>
+  <div class="tools">
+    {% if reviewer_name %}<span class="reviewer" title="Reviewer: {{ reviewer_name }}"><span class="initials">{{ initials[:2] }}</span><span class="name">{{ reviewer_name }}</span></span>
+    <span class="divider" aria-hidden="true"></span>{% endif %}
+    <div class="bell-wrap">
+      <button id="bell" class="icon-btn" type="button" aria-label="Alerts" aria-expanded="false" aria-controls="alerts-card">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        {% if unacked_alerts %}<span class="count">{{ unacked_alerts }}</span>{% endif %}
+      </button>
+      <div id="alerts-card" hidden>
+        <div class="hd"><b>Latest alert</b>{% if latest_alert %}<span>{{ latest_alert.when|day }} {{ latest_alert.when|clock }}</span>{% endif %}</div>
+        <div class="head">{{ latest_alert.headline if latest_alert else 'No unacknowledged alerts.' }}</div>
+        {% if latest_alert %}<div class="rows"><span class="micro">What happened</span><span>{{ latest_alert.happened }}</span><span class="micro">What to do</span><span>{{ latest_alert.todo }}</span></div>{% endif %}
+        <div class="ft"><a href="{{ url_for('alerts') }}">All alerts ({{ unacked_alerts }})</a></div>
+      </div>
+    </div>
+    <span class="divider" aria-hidden="true"></span>
+    <button id="bar-toggle" class="bar-switch" type="button" role="switch" aria-checked="true" aria-label="Hide header" title="Hide header"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg></span></button>
+  </div>
+</header>
+<button id="bar-show" type="button" aria-label="Show header" title="Show header" hidden><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+<script>
+(() => {
+  // same behaviour and remembered state (capmon.barHidden) as the map's header
+  const bar = document.querySelector('.topbar'), show = document.getElementById('bar-show'), toggle = document.getElementById('bar-toggle');
+  const bell = document.getElementById('bell'), card = document.getElementById('alerts-card');
+  const setAlerts = on => { card.hidden = !on; bell.setAttribute('aria-expanded', String(on)); };
+  bell.onclick = e => { e.stopPropagation(); setAlerts(card.hidden); };
+  card.onclick = e => e.stopPropagation();
+  document.addEventListener('click', () => setAlerts(false));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setAlerts(false); });
+  function setCollapsed(on, remember = true) {
+    bar.classList.toggle('hidden-bar', on); show.hidden = !on; toggle.setAttribute('aria-checked', String(!on));
+    if (on) setAlerts(false);
+    if (remember) { try { localStorage.setItem('capmon.barHidden', on ? '1' : '0'); } catch (e) {} }
+  }
+  toggle.onclick = () => setCollapsed(true);
+  show.onclick = () => setCollapsed(false);
+  try { if (localStorage.getItem('capmon.barHidden') === '1') setCollapsed(true, false); } catch (e) {}
+})();
+</script>
+{% block body %}
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flashes">{% for cat, m in messages %}<div class="flash {{ cat }}">{{ m }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+{% block content %}{% endblock %}
+{% endblock %}
+</body>
+</html>

@@ -176,3 +176,93 @@ def mini_imr_svg(chart: dict, period_start: str, unit: str = "", rating: float |
     foot = f"{dates[0][5:]} to {dates[-1][5:]}" + (f" · {note}" if note else "") + ("" if chart.get("center") is not None else " · not enough history for limits")
     body += f'<text x="{left}" y="{height - 3}" font-size="8.5" fill="#5d6675">{escape(foot)}</text>'
     return f'<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 {width} {height}" role="img" aria-label="Control chart of daily peak load">{body}</svg>'
+
+
+def _nice_step(span: float, target: int = 5) -> float:
+    raw = span / max(target, 1)
+    mag = 10 ** len(str(int(raw))) / 10 if raw >= 1 else 1
+    for m in (1, 2, 2.5, 5, 10):
+        if raw <= m * mag:
+            return m * mag
+    return 10 * mag
+
+
+def review_chart_svg(chart: dict, period_start: str, unit: str = "kVA", rating: float | None = None) -> str:
+    """Daily peak chart for the review page (light ground). Inline attributes only, literal text in every <text>.
+
+    Rating as a 2px ink line labeled at its right end; UCL/LCL dashed blue; centre line blue at 50%;
+    this period shaded accent with its points in accent-700; history points small grey; signal points red.
+    """
+    dates, vals = chart.get("dates") or [], chart.get("values") or []
+    W, H, L, R, TOP, BOT = 900, 260, 52, 886, 10, 230
+    if not dates:
+        return f'<svg viewBox="0 0 {W} 60" role="img" aria-label="No readings" style="width:100%;height:auto;display:block"><text x="{L}" y="34" font-size="12" fill="rgba(29,36,48,.6)">No readings to chart</text></svg>'
+    lines = [v for v in (chart.get("ucl"), chart.get("lcl"), chart.get("center"), rating) if v is not None]
+    ys = [v for v in vals if v is not None] + lines
+    lo, hi = min(ys), max(ys)
+    if lo == hi:
+        lo, hi = lo - 1, hi + 1
+    pad = (hi - lo) * 0.06
+    lo, hi = lo - pad, hi + pad
+    step = _nice_step(hi - lo)
+    n = max(len(dates) - 1, 1)
+    x = lambda i: L + (R - L) * i / n  # noqa: E731
+    y = lambda v: TOP + (hi - v) / (hi - lo) * (BOT - TOP)  # noqa: E731
+    ink, blue = "rgba(29,36,48,", "#1F5FA8"
+    out = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="Daily peak load chart" style="width:100%;height:auto;display:block;font-family:Lora,Georgia,serif">']
+    first = next((i for i, d in enumerate(dates) if d >= period_start), None)
+    if first is not None:
+        x0 = x(first) - (6 if first else 0)
+        out.append(f'<rect x="{x0:.1f}" y="{TOP}" width="{max(x(len(dates) - 1) - x0 + 6, 4):.1f}" height="{BOT - TOP}" fill="rgba(182,130,53,.16)"/>')
+    t = (lo // step + 1) * step
+    while t < hi:
+        out.append(f'<line x1="{L - 4}" x2="{L}" y1="{y(t):.1f}" y2="{y(t):.1f}" stroke="{ink}.25)"/>')
+        out.append(f'<text x="40" y="{y(t) + 4:.1f}" text-anchor="end" font-size="11" fill="{ink}.55)">{t:g}</text>')
+        t += step
+    for key, dash, w, op in (("ucl", "5 4", 1.2, 1), ("lcl", "5 4", 1.2, 1), ("center", "", 1, .5)):
+        v = chart.get(key)
+        if v is not None:
+            da = f' stroke-dasharray="{dash}"' if dash else ""
+            out.append(f'<line x1="{L - 4}" x2="{R + 4}" y1="{y(v):.1f}" y2="{y(v):.1f}" stroke="{blue}" stroke-width="{w}" opacity="{op}"{da}/>')
+    if rating is not None:
+        out.append(f'<line x1="{L - 4}" x2="{R + 4}" y1="{y(rating):.1f}" y2="{y(rating):.1f}" stroke="{ink}.85)" stroke-width="2"/>')
+        ly = y(rating) - 6 if y(rating) - 6 > TOP + 8 else y(rating) + 14
+        out.append(f'<text x="{R}" y="{ly:.1f}" text-anchor="end" font-size="11" fill="{ink}.75)">rating {rating:,.0f} {escape(unit)}</text>')
+    pts = [(i, v) for i, v in enumerate(vals) if v is not None]
+    if pts:
+        out.append('<path d="' + " ".join(("M" if k == 0 else "L") + f"{x(i):.1f} {y(v):.1f}" for k, (i, v) in enumerate(pts)) + f'" fill="none" stroke="{ink}.7)" stroke-width="1.4"/>')
+    sig = {s["date"] for s in chart.get("signals") or [] if s.get("rule") != "moving_range_beyond_ucl"}
+    for i, v in pts:
+        d = dates[i]
+        if d in sig:
+            out.append(f'<circle cx="{x(i):.1f}" cy="{y(v):.1f}" r="3.8" fill="#D7263D"><title>{escape(d)}: {v:,.1f} {escape(unit)}, outside the normal range</title></circle>')
+        elif first is not None and i >= first:
+            out.append(f'<circle cx="{x(i):.1f}" cy="{y(v):.1f}" r="3.5" fill="#7d5411"><title>{escape(d)}: {v:,.1f} {escape(unit)}</title></circle>')
+        else:
+            out.append(f'<circle cx="{x(i):.1f}" cy="{y(v):.1f}" r="2.4" fill="{ink}.6)"><title>{escape(d)}: {v:,.1f} {escape(unit)}</title></circle>')
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    k = min(5, len(dates))
+    idx = sorted({round(j * n / (k - 1)) for j in range(k)}) if k > 1 else [0]
+    for j, i in enumerate(idx):
+        d = dates[i]
+        label = f"{months[int(d[5:7]) - 1]} {int(d[8:10])}"
+        anchor = "start" if j == 0 else "end" if j == len(idx) - 1 else "middle"
+        out.append(f'<text x="{x(i):.1f}" y="250" text-anchor="{anchor}" font-size="11" fill="{ink}.55)">{label}</text>')
+    out.append("</svg>")
+    return "".join(out)
+
+
+def review_chart_caption(chart: dict, unit: str = "kVA") -> str:
+    """One plain sentence under the review chart."""
+    status = chart.get("status")
+    lcl, ucl = chart.get("lcl"), chart.get("ucl")
+    rng = f" ({lcl:,.1f} to {ucl:,.1f} {unit})" if lcl is not None and ucl is not None else ""
+    if status == "signal":
+        k = len({s["date"] for s in chart.get("signals") or []})
+        return (f"The red point{'s' if k != 1 else ''} fell outside the normal range{rng}, so the pattern has changed and the room left today "
+                "is not worked out until someone checks why. The gap up to the black line is the room left on the rating.")
+    if status == "insufficient_history":
+        return "There isn't enough steady history yet to draw a reliable normal range. The gap up to the black line is the room left today."
+    if status == "zero_variation":
+        return "Every daily peak is the same value, so no normal range can be drawn; check the meter or the feed."
+    return f"Every day this week sat inside the normal range{rng}, so the pattern hasn't changed. The gap up to the black line is the room left today."

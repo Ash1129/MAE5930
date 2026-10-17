@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
-{% block head %}
+{% block page_head %}
 <style>
   body:has(#board){height:100dvh;overflow:hidden;display:flex;flex-direction:column}
-  body:has(#board) .site-header{flex:none}
+  body:has(#board) .topbar{flex:none}
+  body:has(#board) .flashes{flex:none}
   body:has(#board) main{flex:1;min-height:0;max-width:none;width:100%;margin:0;padding:6px 10px 8px;overflow:hidden}
   #board{height:100%;min-height:0;display:grid;grid-template-rows:minmax(0,.85fr) minmax(0,1.35fr) minmax(0,1.15fr);gap:6px}
   .controls{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 10px 8px}
@@ -26,14 +27,14 @@
   .pie h3{font-size:13px;line-height:1.2;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pie ul{list-style:none;margin:0;padding:0;display:grid;gap:1px}
   .pie a{color:var(--text);text-decoration:none;display:flex;align-items:center;gap:6px;font-size:12px;line-height:1.25;border-radius:6px;padding:0 4px;white-space:nowrap;overflow:hidden}
-  .pie a:hover,.pie a.on{background:rgba(243,241,232,.08);color:var(--text)}
+  .pie a:hover,.pie a.on{background:rgba(29,36,48,.06);color:var(--text)}
   .pie a.on{box-shadow:inset 0 0 0 1px var(--accent)}
   .pie i{width:9px;height:9px;border-radius:50%;flex:none}
   .pie b{margin-left:6px;font-weight:600}
   .feed-head{flex:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 12px}
   .feed-head h2{font-size:18px;margin:0}
   .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--accent);color:var(--accent-700);border-radius:999px;padding:2px 10px;font-size:12px;text-decoration:none}
-  .chip:hover{background:rgba(201,150,74,.12);color:var(--accent-800)}
+  .chip:hover{background:rgba(182,130,53,.12);color:var(--accent-800)}
   .scroll{flex:1;min-height:0;overflow:auto}
   .scroll table{width:100%}
   .scroll th{position:sticky;top:0;background:var(--surface);z-index:1}
@@ -41,18 +42,18 @@
   .why,.who{max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .num{text-align:right;font-variant-numeric:tabular-nums}
   td.bad{color:var(--bad)} td.warn{color:var(--warn)}
-  select.period,select.period option{width:auto;max-width:220px;padding:3px 8px;margin:0;background:#2f2e2d;color:#f3f1e8}
+  select.period,select.period option{width:auto;max-width:220px;padding:3px 8px;margin:0;background:transparent;color:var(--ink-90)}
   .switchers{margin-left:auto;display:flex;align-items:center;gap:10px;min-width:0}
   .switchers label{margin:0;display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:12px}
   .area-pick{display:flex;align-items:center;gap:6px;flex:none}
   .area-pick span{font-size:12px;letter-spacing:0;text-transform:none;color:var(--muted)}
-  .area-btn{appearance:none;position:relative;min-width:168px;padding:4px 28px 4px 10px;border:1px solid rgba(243,241,232,.45);border-radius:8px;background:#2f2e2d;color:#f3f1e8;font:inherit;font-size:14px;line-height:1.3;text-align:left;cursor:pointer}
-  .area-btn::after{content:"";position:absolute;right:10px;top:50%;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #f3f1e8;transform:translateY(-30%)}
+  .area-btn{appearance:none;position:relative;min-width:168px;padding:4px 28px 4px 10px;border:1px solid var(--line-16);border-radius:8px;background:transparent;color:var(--ink-90);font:inherit;font-size:14px;line-height:1.3;text-align:left;cursor:pointer}
+  .area-btn::after{content:"";position:absolute;right:10px;top:50%;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--ink-60);transform:translateY(-30%)}
   .area-btn[aria-expanded="true"]{border-color:var(--accent)}
-  .area-list{position:fixed;z-index:40;margin:0;padding:4px;list-style:none;background:#2a2928;color:#f3f1e8;border:1px solid rgba(243,241,232,.4);border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,.55);max-height:min(360px,60vh);overflow:auto}
-  .area-list a{display:block;padding:7px 10px;border-radius:6px;color:#f3f1e8;text-decoration:none;font-size:14px;line-height:1.35}
-  .area-list a:hover{background:rgba(243,241,232,.12)}
-  .area-list a[aria-selected="true"]{background:rgba(201,150,74,.28)}
+  .area-list{position:fixed;z-index:40;margin:0;padding:4px;list-style:none;background:#f8f7f6;color:var(--ink-90);border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,.18);max-height:min(360px,60vh);overflow:auto}
+  .area-list a{display:block;padding:7px 10px;border-radius:6px;color:var(--ink-90);text-decoration:none;font-size:14px;line-height:1.35}
+  .area-list a:hover{background:rgba(29,36,48,.06)}
+  .area-list a[aria-selected="true"]{background:rgba(182,130,53,.18)}
   @media (max-width:640px){
     body:has(#board){height:auto;overflow:auto;display:block}
     body:has(#board) main{height:auto;overflow:visible}

@@ -221,13 +221,13 @@ def pie_svg(slices: list[dict], active_key: str | None = None) -> str:
     parts = ['<svg viewBox="0 0 220 220" width="220" height="220" role="img">']
     if len(slices) == 1:
         s = slices[0]
-        stroke = ' stroke="#f3f1e8" stroke-width="3"' if s["key"] == active_key else ""
+        stroke = ' stroke="#1D2430" stroke-width="3"' if s["key"] == active_key else ""
         parts.append(f'<a href="{escape(s["href"], quote=True)}"><circle cx="{cx}" cy="{cy}" r="{radius}" fill="{s["color"]}"{stroke}><title>{escape(s["label"])}: {s["count"]}</title></circle></a>')
     else:
         angle = 0.0
         for s in slices:
             sweep = 2 * math.pi * s["count"] / total
-            stroke = ' stroke="#f3f1e8" stroke-width="3"' if s["key"] == active_key else ' stroke="#1a1919" stroke-width="1"'
+            stroke = ' stroke="#1D2430" stroke-width="3"' if s["key"] == active_key else ' stroke="#f3f2f2" stroke-width="1"'
             path = _arc(cx, cy, radius, angle, angle + sweep)
             parts.append(f'<a href="{escape(s["href"], quote=True)}"><path d="{path}" fill="{s["color"]}"{stroke}><title>{escape(s["label"])}: {s["count"]}</title></path></a>')
             angle += sweep
@@ -297,7 +297,7 @@ def _shewhart_panel(points: list[dict], center: float | None, period_start: str,
     if center is not None:
         limits.append(center)
     if not values:
-        return [f'<text x="{x + 8}" y="{y + 28}" fill="#aeaba3" font-size="12">{escape(title)}: no points</text>']
+        return [f'<text x="{x + 8}" y="{y + 28}" fill="#5d6675" font-size="12">{escape(title)}: no points</text>']
     lo = min(values + limits)
     hi = max(values + limits)
     if lo == hi:
@@ -316,39 +316,39 @@ def _shewhart_panel(points: list[dict], center: float | None, period_start: str,
     def py(v: float) -> float:
         return y + top + plot_h * (1 - (v - lo) / (hi - lo))
 
-    parts = [f'<text x="{x + left}" y="{y + 11}" fill="#f3f1e8" font-size="11">{escape(title)}</text>']
+    parts = [f'<text x="{x + left}" y="{y + 11}" fill="#1D2430" font-size="11">{escape(title)}</text>']
     first_period = next((i for i, p in enumerate(points) if p["date"] >= period_start), None)
     if first_period is not None and plot_h > 0:
         parts.append(
-            f'<rect x="{px(first_period):.1f}" y="{y + top:.1f}" width="{max(px(len(points) - 1) - px(first_period), 0):.1f}" height="{plot_h:.1f}" fill="rgba(201,150,74,.14)"/>'
+            f'<rect x="{px(first_period):.1f}" y="{y + top:.1f}" width="{max(px(len(points) - 1) - px(first_period), 0):.1f}" height="{plot_h:.1f}" fill="rgba(182,130,53,.16)"/>'
         )
     def tick(v: float) -> str:
         return f"{v:.1f}" if abs(v) >= 10 else f"{v:.2f}"
 
     if center is not None:
-        parts.append(f'<line x1="{x + left}" x2="{x + width - right}" y1="{py(center):.1f}" y2="{py(center):.1f}" stroke="#57b57f" stroke-dasharray="4 3" stroke-width="1"/>')
-        parts.append(f'<text x="{x + left - 4}" y="{py(center) + 3:.1f}" fill="#57b57f" font-size="10" text-anchor="end">{tick(center)}</text>')
+        parts.append(f'<line x1="{x + left}" x2="{x + width - right}" y1="{py(center):.1f}" y2="{py(center):.1f}" stroke="#1B7F4B" stroke-dasharray="4 3" stroke-width="1"/>')
+        parts.append(f'<text x="{x + left - 4}" y="{py(center) + 3:.1f}" fill="#1B7F4B" font-size="10" text-anchor="end">{tick(center)}</text>')
     labeled_ucl = next((p["ucl"] for p in reversed(points) if p.get("ucl") is not None), None)
     if labeled_ucl is not None:
-        parts.append(f'<text x="{x + left - 4}" y="{py(labeled_ucl) + 3:.1f}" fill="#ff6b7a" font-size="10" text-anchor="end">{tick(labeled_ucl)}</text>')
+        parts.append(f'<text x="{x + left - 4}" y="{py(labeled_ucl) + 3:.1f}" fill="#D7263D" font-size="10" text-anchor="end">{tick(labeled_ucl)}</text>')
     for key in ("ucl", "lcl"):
         pts = [(px(i), py(p[key])) for i, p in enumerate(points) if p.get(key) is not None]
         if len(pts) > 1:
-            parts.append('<polyline fill="none" stroke="#ff6b7a" stroke-width="1" stroke-dasharray="3 3" points="' + " ".join(f"{a:.1f},{b:.1f}" for a, b in pts) + '"/>')
+            parts.append('<polyline fill="none" stroke="#D7263D" stroke-width="1" stroke-dasharray="3 3" points="' + " ".join(f"{a:.1f},{b:.1f}" for a, b in pts) + '"/>')
     series = [(px(i), py(p["value"])) for i, p in enumerate(points) if p["value"] is not None]
     if len(series) > 1:
-        parts.append('<polyline fill="none" stroke="#8ab4f8" stroke-width="1.4" points="' + " ".join(f"{a:.1f},{b:.1f}" for a, b in series) + '"/>')
+        parts.append('<polyline fill="none" stroke="#1F5FA8" stroke-width="1.4" points="' + " ".join(f"{a:.1f},{b:.1f}" for a, b in series) + '"/>')
     for i, p in enumerate(points):
         if p["value"] is None:
             continue
-        color = "#ff6b7a" if p.get("out") else "#8ab4f8"
+        color = "#D7263D" if p.get("out") else "#1F5FA8"
         radius = 3.2 if p.get("out") else 2.1
         parts.append(f'<circle cx="{px(i):.1f}" cy="{py(p["value"]):.1f}" r="{radius}" fill="{color}"><title>{escape(p["date"])}: {p["value"]:.2f}</title></circle>')
-    parts.append(f'<line x1="{x + left}" x2="{x + left}" y1="{y + top}" y2="{y + top + plot_h}" stroke="rgba(243,241,232,.35)"/>')
-    parts.append(f'<line x1="{x + left}" x2="{x + width - right}" y1="{y + top + plot_h}" y2="{y + top + plot_h}" stroke="rgba(243,241,232,.35)"/>')
+    parts.append(f'<line x1="{x + left}" x2="{x + left}" y1="{y + top}" y2="{y + top + plot_h}" stroke="rgba(29,36,48,.3)"/>')
+    parts.append(f'<line x1="{x + left}" x2="{x + width - right}" y1="{y + top + plot_h}" y2="{y + top + plot_h}" stroke="rgba(29,36,48,.3)"/>')
     for i in {0, len(points) // 2, len(points) - 1}:
         if 0 <= i < len(points):
-            parts.append(f'<text x="{px(i):.1f}" y="{y + height - 4}" fill="#aeaba3" font-size="10" text-anchor="middle">{escape(points[i]["date"][5:])}</text>')
+            parts.append(f'<text x="{px(i):.1f}" y="{y + height - 4}" fill="#5d6675" font-size="10" text-anchor="middle">{escape(points[i]["date"][5:])}</text>')
     return parts
 
 
