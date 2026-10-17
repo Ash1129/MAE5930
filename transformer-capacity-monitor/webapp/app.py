@@ -164,7 +164,10 @@ def transformer_detail(period_id, tid):
         ("Capability assumptions met (independent, roughly normal daily peaks)", bool(r["capacity"].get("assumption_flags"))),
         ("Numbers shown agree with the chart and source readings", False),
     ]
-    return render_template("transformer.html", period=period, r=r, svg=svg, checklist=checklist, decisions=DECISIONS, review_started_at=now_iso(), playbook=pb, period_readings=r["period_readings"][-48:])
+    ai_on = ai_explain.enabled(store) and ai_explain.cli_path() is not None
+    summary = {"rule": explain.summarize_transformer(r), "ai": ai_explain.cached_summary(store, period_id, r) if ai_on else None, "ai_on": ai_on,
+               "url": url_for("api_transformer_summary", period_id=period_id, tid=tid)}
+    return render_template("transformer.html", period=period, r=r, svg=svg, checklist=checklist, decisions=DECISIONS, review_started_at=now_iso(), playbook=pb, period_readings=r["period_readings"][-48:], summary=summary)
 
 
 @app.post("/periods/<period_id>/transformers/<tid>/disposition")

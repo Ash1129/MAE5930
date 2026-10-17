@@ -85,3 +85,23 @@ def test_popup_summary_refuses_unsafe_answer_and_respects_toggle(sandbox, tmp_pa
     webapp.store.set_setting(ai_explain.SETTING_KEY, "off")
     assert client.get("/api/periods/2026-10-15/transformers/T-DAN-010/summary").status_code == 409
     assert client.get("/api/periods/2026-10-15/transformers/T-DAN-010/mini").get_json()["ai_on"] is False
+
+
+def test_review_page_shows_summary_on_top(sandbox, tmp_path, monkeypatch):
+    from capacity_monitor import ai_explain
+    from webapp import app as webapp
+
+    webapp.app.config["TESTING"] = True
+    cli, log = _fake_cli(tmp_path, "Review needed: projected peak is 135% of the 100 kVA rating by 2030.")
+    monkeypatch.setenv("CAPMON_CLAUDE_CLI", cli)
+    client = _run(webapp)
+    webapp.store.set_setting(ai_explain.SETTING_KEY, "off")
+    page = client.get("/periods/2026-10-15/transformers/T-CAR-006").data.decode()
+    assert "Rule-based summary" in page and page.index('id="summary"') < page.index("Checklist")
+    webapp.store.set_setting(ai_explain.SETTING_KEY, "on")
+    page = client.get("/periods/2026-10-15/transformers/T-CAR-006").data.decode()
+    assert "Writing a summary with Claude Haiku" in page  # not cached yet: the page fetches it
+    client.get("/api/periods/2026-10-15/transformers/T-CAR-006/summary")
+    page = client.get("/periods/2026-10-15/transformers/T-CAR-006").data.decode()
+    assert "projected peak is 135%" in page and "Written by Claude Haiku" in page  # cached: rendered server-side
+    assert len(log.read_text().strip().splitlines()) == 1
