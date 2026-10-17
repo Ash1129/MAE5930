@@ -73,6 +73,8 @@ def load_playbook() -> dict:
                 data[key] = merged
             else:
                 data[key] = value
+    if data["capability"]["confidence_level"] != 0.95:
+        raise ValueError("Only 95% capability confidence intervals are supported (confidence_level must be 0.95)")
     return data
 
 

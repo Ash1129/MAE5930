@@ -6,6 +6,42 @@ Per-transformer I-MR, capability, forecast and decision methods are in [SPEC.md]
 [README.md](README.md), and `capacity_monitor/pipeline.py`. The additional views below do not
 change the per-transformer decision-table outcome.
 
+## Individual-chart corrections (new analyses)
+
+`history_days` now means the number of calendar days before the review period. A seven-day period
+ending 2026-10-15 has baseline 2026-08-10 through 2026-10-08 (60 days), then review 2026-10-09
+through 2026-10-15. Previously the lookback began at period_end minus 60 days, yielding 54 baseline
+days and 61 total. Saved reports are historical snapshots and are not automatically recomputed.
+
+`imr_chart` records `baseline_dependence` before checking chart stability, so the baseline screen is
+available even when capability is withheld. With at least 20 baseline points and nonzero variance,
+it calculates autocorrelation at lags 1 through 7 using the common denominator sum((x-mean)^2).
+Each lag is compared with the approximate pointwise band +/-2/sqrt(n). These are exploratory,
+unadjusted multiple screens, not a joint test or proof of independence. Weekly weather/day-type
+structure still needs engineering interpretation. Missing baseline calendar dates are flagged because
+adjacent observations no longer represent consistent daily lags. Short and constant baselines have
+explicit diagnostic statuses. Flags are carried into capability output and route stable-chart cases
+to decision rule 8; any displayed Cpk is interpreted cautiously.
+
+The existing full-window lag-1 and Jarque-Bera capability checks are unchanged. In particular, the
+normality method has not been revised. UI text says “no issue detected” rather than asserting that
+assumptions are established. Older saved results without baseline diagnostics are identified as legacy
+results rather than presented as screened by the new method.
+
+The eight-in-a-row rule now records every subsequent day on the same side once the run reaches eight.
+A run starting before the review week therefore remains a current-period signal if it continues.
+Chart captions distinguish control-limit exceedances from run-pattern signals, which may lie inside
+individual limits. Absence of a configured signal does not establish an unchanged process.
+
+Only confidence_level=0.95 is supported: both playbook loading and direct capability calls reject
+other values. The existing approximate interval formula and normal quantile are unchanged. Numerical
+Cpk values with flagged assumptions are explicitly marked for cautious interpretation, rather than
+being labeled comfortable. No newly calculated results overwrite the saved demo during this work.
+
+Regression tests in `tests/test_pipeline.py` cover exact baseline dates, weekly dependence, missing
+baseline dates, dependence diagnostics with withheld capability, continuing cross-period runs,
+non-95% configuration rejection, review routing and qualified chart captions.
+
 ## Descriptive dashboard trends
 
 `capacity_monitor/aggregate.py:county_trend_statistics(results)` accepts plain transformer result

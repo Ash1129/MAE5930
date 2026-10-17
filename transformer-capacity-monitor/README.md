@@ -48,7 +48,8 @@ later; see [DEPLOY.md](DEPLOY.md). See [TEMPLATE-AUDIT.md](TEMPLATE-AUDIT.md) fo
 remaining template and rubric checks.
 
 The committed 2026-10-15 analysis opens without **Run now**: **22 Inspect now, 97 Review needed,
-381 Within limits** (500 total). Do not regenerate feeds to view it. The demo command above
+381 Within limits** (500 total). These saved results predate the individual-chart corrections
+documented in [METHODS.md](METHODS.md); future runs may produce different results. Do not regenerate feeds to view it. The demo command above
 uses a temporary folder and leaves this saved analysis unchanged.
 
 ## Inputs
@@ -82,6 +83,7 @@ until the utility approves its own.
 | `capability.cpk_review_below` | 1.33 | Cpk below this needs review |
 | `capability.cpk_ci_low_review_below` | 1.33 | a lower 95% bound below this needs review |
 | `capability.mr_effective_df_factor` | 0.62 | effective degrees of freedom of the MR-bar sigma, as a share of n − 1 |
+| `capability.confidence_level` | 0.95 only | approximate 95% interval; other levels are rejected |
 | `capability.normality_alpha` | 0.05 | Jarque-Bera significance level |
 | `forecast.version` | TC-HP-2026-v1 | the only forecast release used |
 | `forecast.near_rating_ratio` | 0.9 | a projected peak at this share of rating or more needs review |
@@ -96,7 +98,7 @@ The statistics are plain functions in `capacity_monitor/pipeline.py` that use th
 | Function | Input | Output |
 |---|---|---|
 | `imr_chart(daily_peaks, period, playbook)` | daily peak in kVA by date | centre, UCL and LCL as mean ± 2.66 × MR-bar from baseline days only; MR UCL as 3.267 × MR-bar; signals; status `stable`, `signal`, `insufficient_history` or `zero_variation` |
-| `check_capability_assumptions(values, playbook)` | daily peaks | lag-1 autocorrelation against ±2/√n, Jarque-Bera p-value, list of flags |
+| `check_capability_assumptions(values, playbook)` | daily peaks | existing full-window lag-1 screen and Jarque-Bera p-value; baseline lags 1–7 are recorded separately by imr_chart |
 | `capacity_headroom(chart, rating, projection, playbook)` | chart, nameplate rating, projection | Cpk = (rating − mean)/(3 × MR-bar/1.128) with a Bissell 95% interval, plus period and projected peaks as shares of rating; withheld unless the chart is stable |
 | `project_demand(transformer, period, playbook)` | period peak, customers, area forecast | period peak + customers × (forecast share − base share) × kW per heat pump ÷ power factor |
 | `needs_review(facts, table)` | the results above | the first matching decision-table row: outcome, rule number, reason |

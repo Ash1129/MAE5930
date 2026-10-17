@@ -30,7 +30,7 @@ dag-processor and triggerer, credentials in a secrets backend); re-test with tha
 
 A run covers `period_days` (7) days ending on `period_end`. Scheduled runs use the day before the run's
 `data_interval_end` in America/New_York. Manual runs take `period_end` from the app form or the DAG run conf.
-Control-chart history is `history_days` (60) before the period end. `period_id == period_end`.
+Control-chart baseline starts `history_days` (60) before the period start. `period_id == period_end`.
 
 ## Idempotency and audit
 
@@ -92,3 +92,10 @@ Replace the file reads in `capacity_monitor/sources.py` (`_read_csv`, `_read_geo
 and keep the returned row shape. Keep the validity metadata (boundary `valid_from/valid_to`, forecast
 `forecast_version`) so step 7 can refuse mismatched partitions. When upstream imports are Airflow DAGs, swap the
 readiness sensor for `ExternalTaskSensor` (template at the bottom of the DAG file).
+
+## Individual-chart review corrections
+
+For new analyses, baseline lags 1–7 are screened independently of capability, continuing eight-point
+runs remain signals during the review week, and history_days denotes baseline days. Only 95%
+capability confidence intervals are accepted. The normality method is unchanged. METHODS.md records
+the screens, limitations and legacy saved-result behavior; tests/test_pipeline.py covers the fixes.

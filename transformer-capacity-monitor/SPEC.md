@@ -62,12 +62,15 @@ it is a candidate for removal.
   Capability is only meaningful once the chart shows the pattern is stable.
 - **Assumptions and how the tool checks them:**
   - *Stability:* checked by the I-MR chart. An unstable chart withholds Cpk and sends the case to review.
-  - *Independence:* lag-1 autocorrelation must fall inside ±2/√n. Otherwise the case is flagged and Cpk is shown for information only.
+  - *Dependence screen:* baseline autocorrelations at lags 1–7 are compared with pointwise ±2/√n
+    bands; missing calendar dates are flagged. This exploratory screen also runs when capability is
+    withheld. Flags route the case to review. The existing full-window lag-1 check remains; passing
+    these screens does not prove independence. See METHODS.md.
   - *Normality:* a Jarque-Bera test at α = 0.05 checks the daily peaks. Otherwise the case is flagged the same way.
   - *Enough data:* the chart needs at least 20 baseline days and Cpk needs at least 20 points. Otherwise the result is "insufficient history".
   - *Zero variation:* if MR-bar is 0, the result is "zero variation" and goes to review as a likely meter or feed fault.
   - *Units:* readings and ratings must share a unit. Forecast kW becomes kVA with the playbook power factor.
-  - *Seasonality:* a 60-day window limits weather drift but does not remove it. The report says so.
+  - *Seasonality:* a 60-day baseline does not remove weather or weekday effects. The report says so.
 - **Known-answer check:** take 61 daily peaks alternating 59.5 and 60.5 kVA, starting at 59.5. Then
   MR-bar = 1.000, σ = 1/1.128 = 0.8865, centre = 60.00, UCL = 62.66, LCL = 57.34 and MR UCL = 3.267.
   Against a 100 kVA rating, mean = 59.992 and Cpk = (100 − 59.992)/(3 × 0.8865) = 15.04. This series

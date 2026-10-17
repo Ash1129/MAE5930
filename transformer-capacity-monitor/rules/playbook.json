@@ -1,5 +1,5 @@
 {
-  "version": "default-2026-10-17",
+  "version": "default-2026-10-17-individual-review",
   "_note": "Reversible defaults chosen by the builder. Replace with the approved grid-planning playbook values and record who approved them.",
   "timezone": "America/New_York",
   "schedule": {
@@ -37,7 +37,7 @@
     "uncertainty_note": "Uncertain = the estimate is at or above the threshold but the lower 95% bound is below it.",
     "mr_effective_df_factor": 0.62,
     "normality_alpha": 0.05,
-    "assumption_note": "Cpk is reported only when daily peaks pass a lag-1 autocorrelation check (+/- 2/sqrt(n)) and a Jarque-Bera normality test; otherwise the case goes to review."
+    "assumption_note": "Cpk is withheld for chart signals. Baseline lags 1-7 are screened independently; baseline dependence or existing full-window capability flags route the case to review. A clear screen is not proof of independence or normality. Only approximate 95% intervals are supported."
   },
   "forecast": {
     "version": "TC-HP-2026-v1",

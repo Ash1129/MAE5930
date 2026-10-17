@@ -35,7 +35,7 @@
       "checksum": "ead23ffb035a8ca27def77e714202198"
     },
     "CONTRACT.yaml": {
-      "checksum": "e7b4509aa072cc18c844df06a27a8bc5"
+      "checksum": "b390c675c009383289acc1a6896b61c3"
     },
     "DELIVERY-REPORT.md": {
       "checksum": "2556acf328293309880a885b7d5abc5f"
@@ -47,13 +47,13 @@
       "checksum": "1d3dceaa751b71cad10fefad173eba1f"
     },
     "README-DEVELOPER.md": {
-      "checksum": "bd6f19aed8395086c313ec42b1418761"
+      "checksum": "f57ff62848184deaa2a184e50307f9b6"
     },
     "README.md": {
-      "checksum": "a3de009d678dd6e0d13b055f37518fd9"
+      "checksum": "6f3c03940cb5fd304ad7764fbdfe98cb"
     },
     "SPEC.md": {
-      "checksum": "f3241a9291e1ce8d5af8ef591dee5f73"
+      "checksum": "5fd66b6310d3287ce28c3594bbeddf2b"
     },
     "START-HERE.md": {
       "checksum": "a7a5ba9efc50aae7161ebaa934a960b8"
@@ -89,10 +89,10 @@
       "checksum": "cb28aa6894c9ba2e4891452fff552188"
     },
     "capacity_monitor/charts.py": {
-      "checksum": "6203bf1a68fdb902801335d79eb76621"
+      "checksum": "75934cc83663c68663abb6bc4f160eed"
     },
     "capacity_monitor/config.py": {
-      "checksum": "c821f456ec55231eccb0b87792ac867d"
+      "checksum": "37254fdcccea5b06bbe8240016a4c641"
     },
     "capacity_monitor/explain.py": {
       "checksum": "90f7dbb80dbdf7be3d2ea8dfbfa95492"
@@ -107,7 +107,7 @@
       "checksum": "672585df8720a6d1373972bf7ce3d526"
     },
     "capacity_monitor/pipeline.py": {
-      "checksum": "e187b97392ddd59972015b168e310c01"
+      "checksum": "21eefb01ff033c50f1f854679f7860d6"
     },
     "capacity_monitor/report.py": {
       "checksum": "051407068f60facabec68c81ae22bc1a"
@@ -116,7 +116,7 @@
       "checksum": "05e912822330ced8019d9ccb88caea6c"
     },
     "capacity_monitor/sources.py": {
-      "checksum": "9cbec557d040add75b3add61e32f216c"
+      "checksum": "90b6528e54f088660d51eed51995fa85"
     },
     "capacity_monitor/store.py": {
       "checksum": "ee11e4276912e6f9dc7ad3c69234ce68"
@@ -200,7 +200,7 @@
       "checksum": "0561e39c9a9a39930b7efd249f454f16"
     },
     "rules/playbook.json": {
-      "checksum": "4b4ee6c238e136d9e7519871a0de4c0f"
+      "checksum": "95c2e4dbf74e921117911845ceca6a10"
     },
     "scripts/env.sh": {
       "checksum": "d710f00147ea819e3d64a7c924e86236"
@@ -245,7 +245,7 @@
       "checksum": "bb5879d726ea5f681ea730ffbf38dac5"
     },
     "tests/test_pipeline.py": {
-      "checksum": "5747a44542f8266d602fa55fcb458b11"
+      "checksum": "2e3c046a0858a587a516fba90a7ba050"
     },
     "tests/test_popup.py": {
       "checksum": "ad721c2c2014c1027a667d9a71f5286f"
@@ -302,7 +302,7 @@
       "checksum": "764a60374a8579472a6fff366a4e035b"
     },
     "webapp/templates/transformer.html": {
-      "checksum": "27f221637dbc55196324e52e99abb343"
+      "checksum": "09dc28a1040e76230e53ba93d35289e9"
     },
     "webapp/viz.py": {
       "checksum": "b1d84a8186bb98604ebe64ad6408fbac"
@@ -314,10 +314,10 @@
       "checksum": "fb4ff9277eee95641332566f50cfe277"
     },
     "METHODS.md": {
-      "checksum": "8e3ad45b443e8cf245c892e3e52a29b9"
+      "checksum": "7ad9529f3e1f71b13d4fdb9c3f3f52a0"
     },
     "TEMPLATE-AUDIT.md": {
-      "checksum": "d3f87939fd8b738e5c93f1dd1e46cda9"
+      "checksum": "1481af21bb45f1ea67b685ceb18029b6"
     }
   }
 }

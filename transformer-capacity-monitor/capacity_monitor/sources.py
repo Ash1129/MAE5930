@@ -36,7 +36,7 @@ class Period:
 
     @property
     def history_start(self) -> date:
-        return self.end - timedelta(days=self.history_days)
+        return self.start - timedelta(days=self.history_days)
 
     @property
     def period_id(self) -> str:

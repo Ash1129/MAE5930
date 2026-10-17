@@ -210,7 +210,7 @@ def imr_chart(daily_peaks: dict, period: Period, playbook: dict) -> dict:
     pts = sorted((d, float(v)) for d, v in daily_peaks.items() if v is not None and math.isfinite(float(v)))
     dates = [d for d, _ in pts]
     vals = [v for _, v in pts]
-    baseline_idx = [i for i, d in enumerate(dates) if d < period.start.isoformat()]
+    baseline_idx = [i for i, d in enumerate(dates) if period.history_start.isoformat() <= d < period.start.isoformat()]
     n_base = len(baseline_idx)
     out = {
         "dates": dates,
@@ -219,6 +219,9 @@ def imr_chart(daily_peaks: dict, period: Period, playbook: dict) -> dict:
         "n_baseline": n_base,
         "min_history_points": int(cp["min_history_points"]),
         "signals": [],
+        "baseline_dependence": check_baseline_dependence(
+            [vals[i] for i in baseline_idx], [dates[i] for i in baseline_idx]
+        ),
         "moving_ranges": [None] + [abs(vals[i] - vals[i - 1]) for i in range(1, len(vals))],
     }
     if n_base < int(cp["min_history_points"]):
@@ -256,7 +259,7 @@ def imr_chart(daily_peaks: dict, period: Period, playbook: dict) -> dict:
             run_len += 1
         else:
             run_side, run_len = side, (1 if side else 0)
-        if run_len == 8:
+        if run_len >= 8:
             signals.append({"rule": "eight_in_a_row_one_side", "date": dates[i], "value": v, "in_period": dates[i] >= period.start.isoformat()})
     for i, mr in enumerate(out["moving_ranges"]):
         if mr is not None and mr > mr_ucl:
@@ -376,6 +379,34 @@ def _normality_jarque_bera(vals: list) -> dict:
     return {"statistic": jb, "p_value": math.exp(-jb / 2.0), "skewness": skew, "excess_kurtosis": kurt}
 
 
+def check_baseline_dependence(vals: list, dates: list[str]) -> dict:
+    """Exploratory baseline ACF screen at lags 1..7, not proof of independence.
+
+    Pointwise +/-2/sqrt(n) bands are not adjusted for multiple comparisons.
+    Missing calendar days invalidate the daily-lag interpretation and are flagged.
+    """
+    n = len(vals)
+    band = 2 / math.sqrt(n) if n else None
+    out = {"n": n, "lags": {}, "band": band, "flags": [], "status": "insufficient_history"}
+    if any((date.fromisoformat(b) - date.fromisoformat(a)).days != 1
+           for a, b in zip(dates, dates[1:])):
+        out["flags"].append("baseline dependence screen: missing calendar days; daily lags are unreliable")
+    if n < 20:
+        return out
+    mean = sum(vals) / n
+    denom = sum((v - mean) ** 2 for v in vals)
+    if denom <= 0:
+        out["status"] = "zero_variation"
+        return out
+    for lag in range(1, 8):
+        acf = sum((vals[i] - mean) * (vals[i-lag] - mean) for i in range(lag, n)) / denom
+        out["lags"][str(lag)] = acf
+        if abs(acf) > band:
+            out["flags"].append(f"baseline serial correlation: lag-{lag} autocorrelation {acf:.2f} exceeds +/-{band:.2f}")
+    out["status"] = "issues_detected" if out["flags"] else "no_issue_detected"
+    return out
+
+
 def _lag1_autocorrelation(vals: list) -> float | None:
     n = len(vals)
     if n < 3:
@@ -412,6 +443,8 @@ def capacity_headroom(chart: dict, rating: float, projection: dict, playbook: di
     in tests/test_pipeline.py shows gives about 95% coverage; n-1 would give about 88%.
     """
     cap = playbook["capability"]
+    if cap["confidence_level"] != 0.95:
+        raise ValueError("Only 95% capability confidence intervals are supported (confidence_level must be 0.95)")
     vals = [v for v in chart["values"] if v is not None and math.isfinite(v)]
     n = len(vals)
     out = {
@@ -423,7 +456,8 @@ def capacity_headroom(chart: dict, rating: float, projection: dict, playbook: di
         "mean": None,
         "sigma_within": None,
         "insufficient_data": False,
-        "assumption_flags": [],
+        "assumption_flags": list((chart.get("baseline_dependence") or {}).get("flags", [])),
+        "baseline_dependence": chart.get("baseline_dependence"),
         "assumptions": None,
         "period_peak": projection.get("period_peak"),
         "period_peak_ratio": (projection["period_peak"] / rating) if projection.get("period_peak") is not None else None,
@@ -459,8 +493,8 @@ def capacity_headroom(chart: dict, rating: float, projection: dict, playbook: di
             "mean": mean,
             "sigma_within": sigma,
             "effective_df": df_eff,
-            "confidence_level": cap["confidence_level"],
-            "assumption_flags": checks["flags"],
+            "confidence_level": 0.95,
+            "assumption_flags": out["assumption_flags"] + checks["flags"],
             "assumptions": checks,
         }
     )

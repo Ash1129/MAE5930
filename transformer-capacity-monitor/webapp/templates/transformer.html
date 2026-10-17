@@ -182,14 +182,14 @@
       <div class="stats">
         <div>
           <div class="k">Load pattern</div>
-          {% if r.stability == 'stable' %}<div class="v">Steady</div><div class="s">{{ r.chart.n_baseline }} days of history, no changes spotted</div>
-          {% elif r.stability == 'signal' %}<div class="v">Changed</div><div class="s">{{ r.chart.signals|length }} {{ 'point' if r.chart.signals|length == 1 else 'points' }} outside the normal range</div>
+          {% if r.stability == 'stable' %}<div class="v">No signal</div><div class="s">{{ r.chart.n_baseline }} baseline days; no configured signal detected</div>
+          {% elif r.stability == 'signal' %}<div class="v">Signal detected</div><div class="s">{{ r.chart.signals|length }} {{ 'rule detection' if r.chart.signals|length == 1 else 'rule detections' }} (limit or pattern)</div>
           {% elif r.stability == 'insufficient_history' %}<div class="v">Not enough history</div><div class="s">{{ r.chart.n_baseline }} of {{ r.chart.min_history_points }} days needed</div>
           {% else %}<div class="v">No variation</div><div class="s">the readings never change</div>{% endif %}
         </div>
         <div>
           <div class="k">Headroom today (Cpk)</div>
-          {% if cap.cpk is not none %}<div class="v">{{ cap.cpk|num }} <span>{{ 'comfortable' if cap.cpk >= cpk_line else 'tight' }}</span></div><div class="s">likely between {{ cap.cpk_ci_low|num }} and {{ cap.cpk_ci_high|num }}; review below {{ cpk_line }}</div>
+          {% if cap.cpk is not none %}<div class="v">{{ cap.cpk|num }} <span>{{ 'interpret cautiously' if cap.assumption_flags else ('above threshold' if cap.cpk >= cpk_line else 'below threshold') }}</span></div><div class="s">approximate 95% interval {{ cap.cpk_ci_low|num }} to {{ cap.cpk_ci_high|num }}; review below {{ cpk_line }}</div>
           {% else %}<div class="v">—</div><div class="s">not calculated: {{ (cap.note or 'not enough data').replace('Capability not calculated: ', '') }}</div>{% endif %}
         </div>
       </div>
@@ -220,7 +220,7 @@
         <span><span style="width:14px;height:2px;background:rgba(var(--ink-rgb),.85)"></span>Rating {{ r.rated_max|num(0) }} {{ r.unit }}</span>
         {% if r.chart.ucl is not none %}<span><span style="width:14px;height:0;border-top:1.5px dashed #1F5FA8"></span>Normal range from history</span>{% endif %}
         <span><span style="width:12px;height:10px;background:rgba(182,130,53,.18)"></span>This week</span>
-        {% if r.chart.signals %}<span><span style="width:8px;height:8px;border-radius:50%;background:#D7263D"></span>Outside the normal range</span>{% endif %}
+        {% if r.chart.signals %}<span><span style="width:8px;height:8px;border-radius:50%;background:#D7263D"></span>I-MR signal (limit or pattern)</span>{% endif %}
       </span>
     </div>
     <div class="panel">{{ chart_svg|safe }}</div>
@@ -298,7 +298,8 @@
           <dt>Control limits</dt><dd>{% if r.chart.center is not none %}centre {{ r.chart.center|num(1) }} · upper {{ r.chart.ucl|num(1) }} · lower {{ r.chart.lcl|num(1) }} {{ r.unit }} (from history, not the rating){% else %}not computed{% endif %}</dd>
           <dt>Period peak</dt><dd>{{ cap.period_peak|num(1) }} {{ r.unit }} = {{ cap.period_peak_ratio|pct }} of rating</dd>
           <dt>Cpk vs rating</dt><dd>{% if cap.cpk is not none %}{{ cap.cpk|num }} (95% interval {{ cap.cpk_ci_low|num }} to {{ cap.cpk_ci_high|num }}, n = {{ cap.n }}){% else %}not calculated: {{ cap.note }}{% endif %}</dd>
-          <dt>Assumptions</dt><dd>{% if cap.assumptions %}{% if cap.assumption_flags %}not met · {{ cap.assumption_flags|join('; ') }}{% else %}met · lag-1 autocorrelation {{ cap.assumptions.lag1_autocorrelation|num }} (band ±{{ cap.assumptions.autocorrelation_band|num }}) · normality p = {{ cap.assumptions.jarque_bera.p_value|num(3) }}{% endif %}{% else %}not checked (no capability result){% endif %}</dd>
+          <dt>Baseline dependence</dt><dd>{% if r.chart.baseline_dependence is defined %}{{ r.chart.baseline_dependence.status.replace('_', ' ') }} · lags 1–7, pointwise screening only{% if r.chart.baseline_dependence.flags %} · {{ r.chart.baseline_dependence.flags|join('; ') }}{% endif %}{% else %}not recorded in this saved analysis; legacy result{% endif %}</dd>
+          <dt>Assumptions</dt><dd>{% if cap.assumptions %}{% if cap.assumption_flags %}issues detected · {{ cap.assumption_flags|join('; ') }}{% else %}no issue detected by current capability checks · lag-1 autocorrelation {{ cap.assumptions.lag1_autocorrelation|num }} (band ±{{ cap.assumptions.autocorrelation_band|num }}) · normality p = {{ cap.assumptions.jarque_bera.p_value|num(3) }}{% endif %}{% else %}not checked (no capability result){% endif %}</dd>
           <dt>Projected peak</dt><dd>{% if cap.projected_peak is not none %}{{ cap.projected_peak|num(1) }} {{ r.unit }} = {{ cap.forecast_ratio|pct }} of rating (margin {{ cap.forecast_margin|num(1) }} {{ r.unit }}) · estimate{% else %}not projected: {{ r.projection.assumptions.reason_not_projected }}{% endif %}</dd>
           <dt>Playbook</dt><dd>{{ playbook.version }}</dd>
         </dl>

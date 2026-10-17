@@ -235,7 +235,7 @@ def review_chart_svg(chart: dict, period_start: str, unit: str = "kVA", rating: 
     for i, v in pts:
         d = dates[i]
         if d in sig:
-            out.append(f'<circle cx="{x(i):.1f}" cy="{y(v):.1f}" r="3.8" fill="#D7263D"><title>{escape(d)}: {v:,.1f} {escape(unit)}, outside the normal range</title></circle>')
+            out.append(f'<circle cx="{x(i):.1f}" cy="{y(v):.1f}" r="3.8" fill="#D7263D"><title>{escape(d)}: {v:,.1f} {escape(unit)}, I-MR signal</title></circle>')
         elif first is not None and i >= first:
             out.append(f'<circle cx="{x(i):.1f}" cy="{y(v):.1f}" r="3.5" fill="#7d5411"><title>{escape(d)}: {v:,.1f} {escape(unit)}</title></circle>')
         else:
@@ -258,14 +258,16 @@ def review_chart_caption(chart: dict, unit: str = "kVA") -> str:
     lcl, ucl = chart.get("lcl"), chart.get("ucl")
     rng = f" ({lcl:,.1f} to {ucl:,.1f} {unit})" if lcl is not None and ucl is not None else ""
     if status == "signal":
-        k = len({s["date"] for s in chart.get("signals") or []})
-        return (f"The red point{'s' if k != 1 else ''} fell outside the normal range{rng}, so the pattern has changed and the room left today "
-                "is not worked out until someone checks why. The gap up to the black line is the room left on the rating.")
+        return (f"Configured I-MR signals were detected: a limit exceedance or a run-pattern rule. "
+                f"The historical control range is{rng}; a pattern signal can occur inside these limits. "
+                "Investigate the cause before interpreting capability. The black line is the nameplate rating.")
     if status == "insufficient_history":
-        return "There isn't enough steady history yet to draw a reliable normal range. The gap up to the black line is the room left today."
+        return "There is insufficient baseline history for control limits. The black line is the nameplate rating."
     if status == "zero_variation":
-        return "Every daily peak is the same value, so no normal range can be drawn; check the meter or the feed."
-    return f"Every day this week sat inside the normal range{rng}, so the pattern hasn't changed. The gap up to the black line is the room left today."
+        return "The baseline has no variation; check the meter or feed before interpreting the chart."
+    flags = (chart.get("baseline_dependence") or {}).get("flags", [])
+    caution = " Baseline dependence issues were detected; interpret limits cautiously." if flags else " This does not establish that the load pattern is unchanged."
+    return f"No configured I-MR signal was detected. Historical control range{rng}." + caution
 
 
 def review_headroom_svg(chart: dict, period_start: str, rating: float | None, review_ratio: float = 0.9) -> str:

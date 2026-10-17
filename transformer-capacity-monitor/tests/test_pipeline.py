@@ -271,3 +271,110 @@ def test_thresholds_have_one_source_of_truth(sandbox):
 
 from pathlib import Path as _P
 ROOT_DIR = _P(__file__).resolve().parent.parent
+
+
+# ---- Individual-chart review fixes -------------------------------------------------------
+
+def test_history_days_means_exact_baseline_length():
+    from datetime import timedelta
+    from capacity_monitor.sources import Period
+    period = Period(date(2026, 10, 15), days=7, history_days=60)
+    assert period.start == date(2026, 10, 9)
+    assert period.history_start == date(2026, 8, 10)
+    assert (period.start - period.history_start).days == 60
+    assert period.history_start + timedelta(days=66) == period.end
+
+
+def test_baseline_dependence_detects_weekly_structure_and_gaps():
+    from datetime import timedelta
+    from capacity_monitor.pipeline import check_baseline_dependence
+    dates = [(date(2026, 8, 1) + timedelta(days=i)).isoformat() for i in range(60)]
+    # Weekly repeated pattern; no requirement that lag 1 alone detect it.
+    values = [50 + [3, -2, 1, -3, 2, 0, -1][i % 7] for i in range(60)]
+    checks = check_baseline_dependence(values, dates)
+    assert checks['lags']['7'] > checks['band']
+    assert any('lag-7' in flag for flag in checks['flags'])
+    assert check_baseline_dependence([], [])['status'] == 'insufficient_history'
+    assert check_baseline_dependence([50] * 60, dates)['status'] == 'zero_variation'
+    gap = check_baseline_dependence(values[:20] + values[21:], dates[:20] + dates[21:])
+    assert any('missing calendar days' in flag for flag in gap['flags'])
+
+
+def test_baseline_diagnostics_available_when_capability_is_withheld(sandbox):
+    from datetime import timedelta
+    from capacity_monitor.pipeline import imr_chart, capacity_headroom
+    period = _period()
+    peaks = {(period.history_start + timedelta(days=i)).isoformat():
+             60 + [3, -2, 1, -3, 2, 0, -1][i % 7] for i in range(67)}
+    peaks[period.end.isoformat()] = 120
+    chart = imr_chart(peaks, period, _playbook())
+    assert chart['status'] == 'signal'
+    assert any('lag-7' in f for f in chart['baseline_dependence']['flags'])
+    cap = capacity_headroom(chart, 100, {'period_peak': 120}, _playbook())
+    assert cap['cpk'] is None
+    assert cap['baseline_dependence'] == chart['baseline_dependence']
+    assert any('lag-7' in f for f in cap['assumption_flags'])
+
+
+def test_continuing_eight_point_shift_is_signaled_in_review_week(sandbox):
+    from datetime import timedelta
+    from capacity_monitor.pipeline import imr_chart, signal_counts
+    period = _period()
+    peaks = {(period.history_start + timedelta(days=i)).isoformat(): 60 + (.5 if i % 2 else -.5)
+             for i in range(67)}
+    # Eighth point is Oct 7, before the review week; the shift continues into it.
+    for day in peaks:
+        if day >= '2026-09-30':
+            peaks[day] = 61
+    chart = imr_chart(peaks, period, _playbook())
+    pattern = [s for s in chart['signals'] if s['rule'] == 'eight_in_a_row_one_side']
+    assert any(s['date'] < period.start.isoformat() for s in pattern)
+    assert any(s['in_period'] for s in pattern)
+    assert signal_counts(chart, _playbook())['inspect_signals'] == 7
+
+
+def test_capability_rejects_unsupported_confidence_even_if_no_result(sandbox):
+    from capacity_monitor.pipeline import capacity_headroom
+    from capacity_monitor import config
+    import json
+    pb = _playbook()
+    pb['capability']['confidence_level'] = .99
+    with pytest.raises(ValueError, match='Only 95%'):
+        capacity_headroom({'status': 'signal', 'values': []}, 100, {}, pb)
+    config.PLAYBOOK_PATH.write_text(json.dumps(pb))
+    with pytest.raises(ValueError, match='Only 95%'):
+        config.load_playbook()
+
+
+def test_review_captions_distinguish_patterns_and_do_not_assert_stability():
+    from capacity_monitor.charts import review_chart_caption
+    chart = {'status': 'signal', 'lcl': 50, 'ucl': 70,
+             'signals': [{'date': '2026-10-10', 'rule': 'eight_in_a_row_one_side'}]}
+    text = review_chart_caption(chart)
+    assert 'pattern' in text and 'inside these limits' in text
+    assert 'fell outside' not in text
+    chart['status'] = 'stable'
+    assert 'does not establish' in review_chart_caption(chart)
+    chart['baseline_dependence'] = {'flags': ['lag-7']}
+    assert 'interpret limits cautiously' in review_chart_caption(chart)
+
+
+def test_baseline_warning_routes_otherwise_capable_case_to_review(sandbox):
+    import random
+    from datetime import timedelta
+    from capacity_monitor.pipeline import check_baseline_dependence, capacity_headroom, needs_review, load_decision_table
+    pb = _playbook()
+    vals = [50 + [3, -2, 1, -3, 2, 0, -1][i % 7] for i in range(60)]
+    dates = [(date(2026, 8, 1) + timedelta(days=i)).isoformat() for i in range(60)]
+    diagnostic = check_baseline_dependence(vals, dates)
+    rng = random.Random(3)
+    chart = {'status': 'stable', 'values': [rng.gauss(50, 2) for _ in range(80)],
+             'baseline_dependence': diagnostic}
+    cap = capacity_headroom(chart, 100, {'period_peak': 55, 'projected_peak': 60}, pb)
+    assert cap['cpk'] > pb['capability']['cpk_review_below']
+    assert any('lag-7' in f for f in cap['assumption_flags'])
+    decision = needs_review({'stability': 'stable', 'period_peak_ratio': .55,
+                            'cpk': cap['cpk'], 'cpk_ci_low': cap['cpk_ci_low'],
+                            'assumption_flags': len(cap['assumption_flags']), 'forecast_ratio': .6},
+                           load_decision_table(playbook=pb))
+    assert decision['rule'] == '8' and decision['outcome'] == 'review_needed'

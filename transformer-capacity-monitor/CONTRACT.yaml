@@ -199,3 +199,19 @@ tasks:
       pytest tests -q printed 51 passed in 5.54s. Live dashboard returned HTTP 200 with the three
       descriptive panels and no old control-chart labels. Saved data paths have no Git diff;
       individual I-MR charts, decision rules, pies and saved outcome counts remain unchanged.
+
+  - id: H-12
+    title: Correct individual-chart diagnostics, continuing shifts, history and confidence wording
+    points: "Supports statistical validity and clear interpretation"
+    status: done
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: ["capacity_monitor/pipeline.py", "capacity_monitor/sources.py", "capacity_monitor/config.py", "capacity_monitor/charts.py", "webapp/templates/transformer.html", "tests/test_pipeline.py", "METHODS.md", "SPEC.md", "README.md", "README-DEVELOPER.md", "rules/playbook.json", "TEMPLATE-AUDIT.md", "CONTRACT.yaml", "manifest.json"]
+    definition_of_done: >
+      Tests cover baseline lag diagnostics, continuing shifts across the period boundary, exact baseline
+      dates, rejection of non-95-percent intervals, and chart captions; full tests pass. Saved data unchanged.
+    result: >
+      pytest tests -q printed 58 passed in 6.07s. Regression tests cover baseline lag-7 and gap
+      detection, withheld-capability diagnostics, review routing, continuing cross-period patterns,
+      exact 60-day baseline, 95%-only validation and qualified captions. Saved data paths unchanged.
+      Normality checking was left unchanged at the owner's request.

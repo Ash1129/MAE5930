@@ -93,3 +93,10 @@ the aggregate baseline-fallback and distribution/subgroup concerns above by remo
 it does not validate those discarded limits. Pie summaries, individual I-MR charts, per-transformer
 outcomes and the saved analysis remain unchanged. Current formulas and tests are in METHODS.md.
 The next assumptions review concerns the individual I-MR/capability analysis.
+
+## Individual-chart review follow-up
+
+Findings 2–6 are implemented: baseline dependence screens, continuing runs, 60 baseline days,
+95%-only interval validation, and qualified signal/assumption wording. Normality changes were
+explicitly deferred by the owner. Current semantics and remaining limitations are in METHODS.md.
+Saved demo outputs remain historical; this work does not claim real-data validation.
