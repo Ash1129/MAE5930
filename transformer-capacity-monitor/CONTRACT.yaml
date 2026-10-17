@@ -231,3 +231,49 @@ tasks:
       invalid cases stop at step 7. Current rubric mapping replaces stale findings. Ledger, local
       links, manifest checksums and diff formatting validate; saved data paths unchanged. External
       checks remain deferred per owner. Latest full suite evidence is 58 passed in 6.07s from H-12.
+
+  - id: H-14
+    title: Impeccable-guided interface audit and cleanup
+    points: "Supports usability and presentation; no additional rubric points"
+    status: done
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: ["webapp/templates/", "webapp/static/ui-polish.css", "webapp/static/fonts/", "design/IMPECCABLE-REVIEW.md", "tests/test_webapp.py", "CONTRACT.yaml", "manifest.json"]
+    definition_of_done: >
+      Impeccable detector run and reviewed; pages render with shared local assets, usable responsive
+      hierarchy, keyboard focus and reduced-motion behavior. Tests pass and saved data is unchanged.
+    result: >
+      Official Impeccable 4.6.0 source audit reviewed (57 raw findings, Jinja linkage limitations
+      recorded); desktop and zoomed narrow layouts inspected. Full suite printed 60 passed in 6.27s.
+      Shared focus/contrast/responsive refinements, local fonts and motion handling implemented.
+      Saved analysis unchanged; full physical-touch/dark/screen-reader certification not claimed.
+
+  - id: H-15
+    title: Align map panels and simplify dashboard and chart annotations
+    points: "Supports interface clarity"
+    status: done
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: ["webapp/templates/map.html", "webapp/templates/dashboard.html", "webapp/static/ui-polish.css", "webapp/viz.py", "capacity_monitor/charts.py", "tests/test_webapp.py", "tests/test_viz.py", "CONTRACT.yaml", "manifest.json"]
+    definition_of_done: >
+      Map district/status panels share a non-overlapping vertical layout; requested dashboard text,
+      outcome title and matched colors render; review chart labels occupy a left gutter; tests pass.
+    result: >
+      Full suite printed 62 passed in 6.48s. Rating/review annotations are tested left of all data
+      points; short-history color matches review-needed. Map districts and filters share a grid rail;
+      dashboard captions and Review status title updated. Saved analysis paths unchanged.
+
+  - id: H-16
+    title: Position in-plot annotations and refine dashboard caption/color consistency
+    points: "Supports interface clarity"
+    status: done
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: ["capacity_monitor/charts.py", "webapp/app.py", "webapp/templates/dashboard.html", "webapp/static/ui-polish.css", "tests/test_viz.py", "tests/test_webapp.py", "CONTRACT.yaml", "manifest.json"]
+    definition_of_done: >
+      Review labels sit inside the plot just right of its y axis; dashboard captions stack below
+      titles and the 70-90% band uses the review color. Tests pass and saved data is unchanged.
+    result: >
+      Full suite printed 63 passed in 6.78s. Review labels sit at plot x+8 and paint above data with
+      a paper halo; 70-90%, review-needed and short-history colors match. Both dashboard captions
+      now stack beneath their titles. Saved analysis unchanged.

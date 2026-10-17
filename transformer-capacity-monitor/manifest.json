@@ -35,7 +35,7 @@
       "checksum": "ead23ffb035a8ca27def77e714202198"
     },
     "CONTRACT.yaml": {
-      "checksum": "858c163ed51ea7e325e22cd95e4e0211"
+      "checksum": "f72bddd49953227170057b520f7b35f9"
     },
     "DELIVERY-REPORT.md": {
       "checksum": "ddec9a562e1c18a2271145597b96593b"
@@ -89,7 +89,7 @@
       "checksum": "cb28aa6894c9ba2e4891452fff552188"
     },
     "capacity_monitor/charts.py": {
-      "checksum": "75934cc83663c68663abb6bc4f160eed"
+      "checksum": "336762b1d5e67663f2e4807a4992e33f"
     },
     "capacity_monitor/config.py": {
       "checksum": "37254fdcccea5b06bbe8240016a4c641"
@@ -257,37 +257,37 @@
       "checksum": "b73dbab62a9885633118ac511a799e81"
     },
     "tests/test_viz.py": {
-      "checksum": "7bc4dc0b5d9be23108e317021a3af1d9"
+      "checksum": "b39517b35ac5301447f5932b7fcdd09a"
     },
     "tests/test_webapp.py": {
-      "checksum": "e7d5ecbf64061961b5c15673950eabab"
+      "checksum": "909c2b2d5d873bd79929770422a681dc"
     },
     "webapp/__init__.py": {
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
     },
     "webapp/app.py": {
-      "checksum": "4b229239cbdb87cb964a30046808971a"
+      "checksum": "3a22e294cb5c67a12f4020d2b31bc722"
     },
     "webapp/static/tompkins-county.png": {
       "checksum": "fb6c0bc73339e4f71e4d7484a8fec69f"
     },
     "webapp/templates/alerts.html": {
-      "checksum": "cf6fde669397c5636abc6216e342731e"
+      "checksum": "470e1f66c66aa38238cf6945c5487776"
     },
     "webapp/templates/area.html": {
       "checksum": "9343787baa2beb42885ec457d7ef541e"
     },
     "webapp/templates/base.html": {
-      "checksum": "f208b8c4db9819d5602306b80afefe3a"
+      "checksum": "c681627d423b80f10d10c076a339f6e3"
     },
     "webapp/templates/dashboard.html": {
-      "checksum": "d218b3875b48706d5a04676d49d9e275"
+      "checksum": "494882592a939b6c6b711f5cddeb7390"
     },
     "webapp/templates/light_base.html": {
-      "checksum": "1ef0e93bea3cd2a78d3161fb82859800"
+      "checksum": "be3a80e17c0563ae5c90c3c4541e3017"
     },
     "webapp/templates/map.html": {
-      "checksum": "aec7f61574d5cd4bcb1d5747b667a186"
+      "checksum": "a577b6fd5aa789af1ea20fb644279f59"
     },
     "webapp/templates/metrics.html": {
       "checksum": "a2768ed84b1bde4d2df9bad49bb77702"
@@ -302,10 +302,10 @@
       "checksum": "764a60374a8579472a6fff366a4e035b"
     },
     "webapp/templates/transformer.html": {
-      "checksum": "09dc28a1040e76230e53ba93d35289e9"
+      "checksum": "24e7b42cfc1e47ab14ca47d2d9f2fabb"
     },
     "webapp/viz.py": {
-      "checksum": "b1d84a8186bb98604ebe64ad6408fbac"
+      "checksum": "f1c7fd42ecc326bafcb482576a112bdf"
     },
     "capacity_monitor/aggregate.py": {
       "checksum": "b3234549b312e370c029a0e39fefac91"
@@ -318,6 +318,24 @@
     },
     "TEMPLATE-AUDIT.md": {
       "checksum": "b0cc93918f255303de56ad22b597afdc"
+    },
+    "design/IMPECCABLE-REVIEW.md": {
+      "checksum": "bbfad33ddae64bc88750e078e2863dec"
+    },
+    "webapp/static/ui-polish.css": {
+      "checksum": "ac99915c0d22b014e815bfc02b9b4bbb"
+    },
+    "webapp/static/fonts/CormorantGaramond-OFL.txt": {
+      "checksum": "6085761d4b4b031541e48038b5701c6f"
+    },
+    "webapp/static/fonts/Lora-OFL.txt": {
+      "checksum": "804cefa2a9ec3f1ff5a9af3882c18fab"
+    },
+    "webapp/static/fonts/Lora.ttf": {
+      "checksum": "e71368f221227338edf6af09034a5062"
+    },
+    "webapp/static/fonts/CormorantGaramond.ttf": {
+      "checksum": "618588c6026366f173cd30e38d54cc28"
     }
   }
 }

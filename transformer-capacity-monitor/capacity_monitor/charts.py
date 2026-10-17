@@ -190,7 +190,7 @@ def _nice_step(span: float, target: int = 5) -> float:
 def review_chart_svg(chart: dict, period_start: str, unit: str = "kVA", rating: float | None = None) -> str:
     """Daily peak chart for the review page (light ground). Inline attributes only, literal text in every <text>.
 
-    Rating as a 2px ink line labeled at its right end; UCL/LCL dashed blue; centre line blue at 50%;
+    Rating as a 2px ink line labeled just inside the left edge of the plot; UCL/LCL dashed blue; centre line blue at 50%;
     this period shaded accent with its points in accent-700; history points small grey; signal points red.
     """
     dates, vals = chart.get("dates") or [], chart.get("values") or []
@@ -210,6 +210,7 @@ def review_chart_svg(chart: dict, period_start: str, unit: str = "kVA", rating: 
     y = lambda v: TOP + (hi - v) / (hi - lo) * (BOT - TOP)  # noqa: E731
     ink, blue = "rgba(29,36,48,", "#1F5FA8"
     out = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="Daily peak load chart" style="width:100%;height:auto;display:block;font-family:Lora,Georgia,serif">']
+    annotations = []
     first = next((i for i, d in enumerate(dates) if d >= period_start), None)
     if first is not None:
         x0 = x(first) - (6 if first else 0)
@@ -217,7 +218,7 @@ def review_chart_svg(chart: dict, period_start: str, unit: str = "kVA", rating: 
     t = (lo // step + 1) * step
     while t < hi:
         out.append(f'<line x1="{L - 4}" x2="{L}" y1="{y(t):.1f}" y2="{y(t):.1f}" stroke="{ink}.25)"/>')
-        out.append(f'<text x="40" y="{y(t) + 4:.1f}" text-anchor="end" font-size="11" fill="{ink}.55)">{t:g}</text>')
+        out.append(f'<text x="{L - 8}" y="{y(t) + 4:.1f}" text-anchor="end" font-size="11" fill="{ink}.55)">{t:g}</text>')
         t += step
     for key, dash, w, op in (("ucl", "5 4", 1.2, 1), ("lcl", "5 4", 1.2, 1), ("center", "", 1, .5)):
         v = chart.get(key)
@@ -227,7 +228,7 @@ def review_chart_svg(chart: dict, period_start: str, unit: str = "kVA", rating: 
     if rating is not None:
         out.append(f'<line x1="{L - 4}" x2="{R + 4}" y1="{y(rating):.1f}" y2="{y(rating):.1f}" stroke="{ink}.85)" stroke-width="2"/>')
         ly = y(rating) - 6 if y(rating) - 6 > TOP + 8 else y(rating) + 14
-        out.append(f'<text x="{R}" y="{ly:.1f}" text-anchor="end" font-size="11" fill="{ink}.75)">rating {rating:,.0f} {escape(unit)}</text>')
+        annotations.append(f'<text x="{L + 8}" y="{ly:.1f}" text-anchor="start" font-size="11" stroke="#f8f7f6" stroke-width="4" stroke-linejoin="round" paint-order="stroke" data-annotation="rating" fill="{ink}.75)">rating {rating:,.0f} {escape(unit)}</text>')
     pts = [(i, v) for i, v in enumerate(vals) if v is not None]
     if pts:
         out.append('<path d="' + " ".join(("M" if k == 0 else "L") + f"{x(i):.1f} {y(v):.1f}" for k, (i, v) in enumerate(pts)) + f'" fill="none" stroke="{ink}.7)" stroke-width="1.4"/>')
@@ -248,6 +249,7 @@ def review_chart_svg(chart: dict, period_start: str, unit: str = "kVA", rating: 
         label = f"{months[int(d[5:7]) - 1]} {int(d[8:10])}"
         anchor = "start" if j == 0 else "end" if j == len(idx) - 1 else "middle"
         out.append(f'<text x="{x(i):.1f}" y="250" text-anchor="{anchor}" font-size="11" fill="{ink}.55)">{label}</text>')
+    out.extend(annotations)
     out.append("</svg>")
     return "".join(out)
 
@@ -293,6 +295,7 @@ def review_headroom_svg(chart: dict, period_start: str, rating: float | None, re
     y = lambda v: TOP + (hi - v) / (hi - lo) * (BOT - TOP)  # noqa: E731
     ink = "rgba(29,36,48,"
     out = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="Daily peak as a percent of the rating" style="width:100%;height:auto;display:block;font-family:Lora,Georgia,serif">']
+    annotations = []
     first = next((i for i, d in enumerate(dates) if d >= period_start), None)
     if first is not None:
         x0 = x(first) - (6 if first else 0)
@@ -300,13 +303,13 @@ def review_headroom_svg(chart: dict, period_start: str, rating: float | None, re
     t = (lo // step + 1) * step
     while t < hi:
         out.append(f'<line x1="{L - 4}" x2="{L}" y1="{y(t):.1f}" y2="{y(t):.1f}" stroke="{ink}.25)"/>')
-        out.append(f'<text x="{40}" y="{y(t) + 4:.1f}" text-anchor="end" font-size="11" fill="{ink}.55)">{t:g}%</text>')
+        out.append(f'<text x="{L - 8}" y="{y(t) + 4:.1f}" text-anchor="end" font-size="11" fill="{ink}.55)">{t:g}%</text>')
         t += step
     out.append(f'<line x1="{L - 4}" x2="{R + 4}" y1="{y(70):.1f}" y2="{y(70):.1f}" stroke="#b68235" stroke-width="1" stroke-dasharray="2 3" opacity=".9"/>')
     out.append(f'<line x1="{L - 4}" x2="{R + 4}" y1="{y(review_pct):.1f}" y2="{y(review_pct):.1f}" stroke="#D7263D" stroke-width="1.2" stroke-dasharray="5 4"/>')
-    out.append(f'<text x="{R}" y="{y(review_pct) + 14:.1f}" text-anchor="end" font-size="11" fill="#9e1428">review line {review_pct:g}%</text>')
+    annotations.append(f'<text x="{L + 8}" y="{y(review_pct) + 14:.1f}" text-anchor="start" font-size="11" stroke="#f8f7f6" stroke-width="4" stroke-linejoin="round" paint-order="stroke" data-annotation="review" fill="#9e1428">review line {review_pct:g}%</text>')
     out.append(f'<line x1="{L - 4}" x2="{R + 4}" y1="{y(100):.1f}" y2="{y(100):.1f}" stroke="{ink}.85)" stroke-width="2"/>')
-    out.append(f'<text x="{R}" y="{y(100) - 6:.1f}" text-anchor="end" font-size="11" fill="{ink}.75)">rating {rating:,.0f} = 100%</text>')
+    annotations.append(f'<text x="{L + 8}" y="{y(100) - 6:.1f}" text-anchor="start" font-size="11" stroke="#f8f7f6" stroke-width="4" stroke-linejoin="round" paint-order="stroke" data-annotation="rating" fill="{ink}.75)">rating {rating:,.0f} = 100%</text>')
     pts = [(i, p) for i, p in enumerate(pcts) if p is not None]
     out.append('<path d="' + " ".join(("M" if k == 0 else "L") + f"{x(i):.1f} {y(p):.1f}" for k, (i, p) in enumerate(pts)) + f'" fill="none" stroke="{ink}.7)" stroke-width="1.4"/>')
     for i, p in pts:
@@ -324,6 +327,7 @@ def review_headroom_svg(chart: dict, period_start: str, rating: float | None, re
         d = dates[i]
         anchor = "start" if j == 0 else "end" if j == len(idx) - 1 else "middle"
         out.append(f'<text x="{x(i):.1f}" y="250" text-anchor="{anchor}" font-size="11" fill="{ink}.55)">{months[int(d[5:7]) - 1]} {int(d[8:10])}</text>')
+    out.extend(annotations)
     out.append("</svg>")
     return "".join(out)
 

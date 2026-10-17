@@ -53,8 +53,8 @@
   .area-list{position:fixed;z-index:40;margin:0;padding:4px;list-style:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,.28);max-height:min(360px,60vh);overflow:auto}
   .area-list a{display:block;padding:7px 10px;border-radius:6px;color:var(--ink-90);text-decoration:none;font-size:14px;line-height:1.35}
   .area-list a:hover{background:rgba(var(--ink-rgb),.08)}
-  .area-list a[aria-selected="true"]{background:rgba(182,130,53,.22);color:var(--ink)}
-  :root[data-theme="dark"] .area-list a[aria-selected="true"]{background:rgba(201,150,74,.28)}
+  .area-list a[aria-current="true"]{background:rgba(182,130,53,.22);color:var(--ink)}
+  :root[data-theme="dark"] .area-list a[aria-current="true"]{background:rgba(201,150,74,.28)}
   @media (max-width:640px){
     body:has(#board){height:auto;overflow:auto;display:block}
     body:has(#board) main{height:auto;overflow:visible}
@@ -84,16 +84,18 @@
 <div id="board">
   <section class="band" aria-label="Summary">
     <header>
-      <h2>{% if area %}{{ board.area_name }}{% else %}Whole county{% endif %}</h2>
-      <p class="hint">Week ending {{ period.period_id }} · {{ board.review_n }} need a person · {{ board.total - board.review_n }} within limits</p>
+      <div class="section-heading">
+        <h2>{% if area %}{{ board.area_name }}{% else %}Whole county{% endif %}</h2>
+        <p class="hint">Week ending {{ period.period_id }}</p>
+      </div>
       <div class="switchers">
         <div class="area-pick">
           <span>Area</span>
-          <button type="button" class="area-btn" id="area-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="area-list">{% if area %}{{ board.area_name }}{% else %}Whole county{% endif %}</button>
-          <ul class="area-list" id="area-list" role="listbox" hidden>
-            <li><a role="option" href="{{ url_for('dashboard', period=period.period_id, status=status or none, stability=stability or none, band=band or none) }}" {% if not area %}aria-selected="true"{% endif %}>Whole county</a></li>
+          <button type="button" class="area-btn" id="area-btn" aria-haspopup="true" aria-label="Choose area" aria-expanded="false" aria-controls="area-list">{% if area %}{{ board.area_name }}{% else %}Whole county{% endif %}</button>
+          <ul class="area-list" id="area-list" aria-label="Choose area" hidden>
+            <li><a href="{{ url_for('dashboard', period=period.period_id, status=status or none, stability=stability or none, band=band or none) }}" {% if not area %}aria-current="true"{% endif %}>Whole county</a></li>
             {% for a in board.areas|sort(attribute='area_name') %}
-            <li><a role="option" href="{{ url_for('dashboard', period=period.period_id, area=a.area_id, status=status or none, stability=stability or none, band=band or none) }}" {% if area == a.area_id %}aria-selected="true"{% endif %}>{{ a.area_name }}</a></li>
+            <li><a href="{{ url_for('dashboard', period=period.period_id, area=a.area_id, status=status or none, stability=stability or none, band=band or none) }}" {% if area == a.area_id %}aria-current="true"{% endif %}>{{ a.area_name }}</a></li>
             {% endfor %}
           </ul>
         </div>
@@ -108,7 +110,7 @@
       <figure class="pie">
         <div class="svg">{{ board.status_svg|safe }}</div>
         <figcaption>
-          <h3>Needs a person</h3>
+          <h3>Review status</h3>
           <ul>{% for s in board.status_slices %}<li><a href="{{ s.href }}" {% if status == s.key or (not status and s.key != 'within_limits') %}class="on"{% endif %}><i style="background:{{ s.color }}"></i>{{ s.label }} <b>{{ s.count }}</b></a></li>{% endfor %}</ul>
         </figcaption>
       </figure>
@@ -131,8 +133,10 @@
 
   <section class="band" aria-label="Daily trends">
     <header>
-      <h2>Daily trends</h2>
-      <p class="hint">{% if area %}{{ board.area_name }}{% else %}Whole county{% endif %} · descriptive summaries · shaded dates are this review week · reporting counts may vary by day</p>
+      <div class="section-heading">
+        <h2>Daily trends</h2>
+        <p class="hint">{% if area %}{{ board.area_name }}{% else %}Whole county{% endif %} · reporting counts may vary by day</p>
+      </div>
     </header>
     <div class="controls">
       <figure class="ctrl">
@@ -162,7 +166,7 @@
       {% elif status == 'all' %}<a class="chip" href="{{ url_for('dashboard', period=period.period_id, stability=stability or none, area=area or none, band=band or none) }}">Back to the queue</a>{% endif %}
       {% if alerts %}<a class="chip" href="{{ url_for('alerts') }}">Needs attention {{ alerts|length }}</a>{% endif %}
     </div>
-    <div class="scroll">
+    <div class="scroll" tabindex="0" role="region" aria-label="Transformer review queue">
       <table>
         <tr><th>Transformer</th><th>Town</th><th class="num">Peak</th><th class="num">Forecast</th><th>Pattern</th><th>Why</th></tr>
         {% for r in board.rows %}
@@ -211,8 +215,8 @@
       list.hidden = false;
       btn.setAttribute("aria-expanded", "true");
       place();
-      var on = list.querySelector("[aria-selected='true']");
-      if (on) on.scrollIntoView({block: "nearest"});
+      var on = list.querySelector("[aria-current='true']");
+      if (on) { on.scrollIntoView({block: "nearest"}); on.focus(); }
     } else {
       close();
     }
@@ -222,7 +226,21 @@
     close();
   });
   document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") close();
+    if (event.key === "Escape" && !list.hidden) { close(); btn.focus(); }
+    if (!list.hidden && ["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+      event.preventDefault();
+      const items = [...list.querySelectorAll('a')];
+      let index = items.indexOf(document.activeElement);
+      index = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 :
+        (index + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+      items[index].focus();
+    }
+  });
+  list.addEventListener("focusout", () => {
+    setTimeout(() => { if (!list.contains(document.activeElement) && document.activeElement !== btn) close(); }, 0);
+  });
+  btn.addEventListener("keydown", event => {
+    if (event.key === "ArrowDown" && list.hidden) { event.preventDefault(); btn.click(); }
   });
   window.addEventListener("resize", function () { if (!list.hidden) place(); });
 })();

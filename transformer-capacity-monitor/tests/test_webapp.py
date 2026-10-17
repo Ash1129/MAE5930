@@ -101,7 +101,41 @@ def test_dashboard_descriptive_trends_and_unchanged_pies(sandbox):
     execute_run("2026-10-15", "test", webapp.store)
     html = client.get("/dashboard").get_data(as_text=True)
     for text in ("Daily trends", "Near rating", "Transformers with signals", "middle 50%",
-                 "Needs a person", "Load pattern", "Peak against rating"):
+                 "Review status", "Load pattern", "Peak against rating"):
         assert text in html
     for text in ("p chart", "u chart", "X-S chart", "red is outside the limit"):
         assert text not in html
+
+
+def test_shared_polish_assets_and_keyboard_landmarks(sandbox):
+    client, webapp = _client(sandbox)
+    css = client.get('/static/ui-polish.css')
+    assert css.status_code == 200 and b'@font-face' in css.data
+    for path in ('/dashboard', '/alerts', '/setup', '/metrics'):
+        html = client.get(path).get_data(as_text=True)
+        assert 'ui-polish.css' in html
+        assert 'fonts.googleapis.com' not in html
+        assert 'href="#main-content"' in html
+        assert 'id="main-content"' in html
+    for font in ('Lora.ttf', 'CormorantGaramond.ttf'):
+        assert client.get('/static/fonts/' + font).status_code == 200
+
+
+def test_map_and_review_polish_preserve_reduced_motion_and_actions(sandbox):
+    client, webapp = _client(sandbox)
+    from capacity_monitor.run import execute_run
+    execute_run('2026-10-15', 'test', webapp.store)
+    html = client.get('/periods/2026-10-15/map').get_data(as_text=True)
+    assert 'ui-polish.css' in html and "$('root').inert = true" in html
+    assert 'aria-controls="alerts-card"' in html
+    assert 'prefers-reduced-motion' in html
+    review = client.get('/periods/2026-10-15/transformers/T-DAN-010').get_data(as_text=True)
+    assert 'id="main-content"' in review and '!motionPreference.matches' in review
+    assert "document.hidden) play(false)" in review
+    assert 'name="decision"' in review  # disposition form remains available
+
+
+def test_peak_middle_band_matches_review_color(sandbox):
+    from webapp.app import BAND_COLOR
+    from webapp.viz import STATUS_COLOR, STABILITY_COLOR
+    assert BAND_COLOR['mid'] == STATUS_COLOR['review_needed'] == STABILITY_COLOR['insufficient_history']

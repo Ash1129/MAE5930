@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{if(localStorage.getItem("capmon.theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
 <title>Transformer Capacity Monitor</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Lora:wght@400;600&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
@@ -39,7 +37,7 @@
   a{color:var(--color-accent-700)} a:hover{color:var(--color-accent-800)}
   button{font:inherit}
   .leaflet-container{background:#0b0f14;font-family:var(--font-body)}
-  .leaflet-control-attribution{background:rgba(255,255,255,.55)!important;font-size:10px;color:#1d2430;backdrop-filter:blur(8px)}
+  .leaflet-control-attribution{background:rgba(255,255,255,.55)!important;font-size:11px;color:#1d2430;backdrop-filter:blur(8px)}
   .leaflet-tooltip{font-family:var(--font-body);font-size:12px;border-radius:6px}
   @keyframes cm-spin{to{transform:rotate(360deg)}}
   @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
@@ -88,7 +86,7 @@
   .header-divider{width:1px;height:24px;background:var(--ink-line)}
   .icon-circle{all:unset;cursor:pointer;position:relative;box-sizing:border-box;width:34px;height:34px;border-radius:8px;color:rgba(var(--ink-rgb),.8);display:grid;place-items:center;transition:background-color .15s}
   .icon-circle:hover{background:rgba(var(--ink-rgb),.06)}
-  #bell .count{position:absolute;top:-3px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#D7263D;color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;border:2px solid var(--ground);box-sizing:border-box;font-family:var(--font-body)}
+  #bell .count{position:absolute;top:-3px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#D7263D;color:#fff;font-size:11px;font-weight:600;display:grid;place-items:center;border:2px solid var(--ground);box-sizing:border-box;font-family:var(--font-body)}
   .theme-switch{all:unset;cursor:pointer;box-sizing:border-box;position:relative;width:52px;height:30px;border:1px solid rgba(var(--ink-rgb),.25);border-radius:999px;color:var(--color-accent-700);transition:background-color .15s,border-color .15s}
   .theme-switch:hover{background:var(--accent-tint);border-color:var(--color-accent)}
   .theme-switch__icon{position:absolute;top:50%;left:9px;transform:translateY(-50%);display:grid;transition:left .2s}
@@ -139,8 +137,8 @@
   #heat .dname{font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1;margin-right:4px}
   #heat .clock{margin-left:auto;font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1}
   #heat .air{font-size:12px;color:var(--ink-60);white-space:nowrap} #heat .air b{font-family:var(--font-heading);font-weight:600;font-size:15px;color:var(--ink-90)}
-  .badge-modeled{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:999px;background:#F4B400;color:#1D2430}
-  .badge-recorded{font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid #1B7F4B;color:#1B7F4B}
+  .badge-modeled{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:999px;background:#F4B400;color:#1D2430}
+  .badge-recorded{font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid #1B7F4B;color:#1B7F4B}
   #heat .rows{display:grid;gap:6px;margin-top:10px}
   .srow{display:grid;grid-template-columns:48px minmax(120px,1fr) minmax(0,220px);gap:10px;align-items:center}
   .srow input[type=range]{width:100%;accent-color:var(--color-accent);margin:0}
@@ -201,7 +199,7 @@
   #popup .top,#pp-summary,#pp-link{flex:none}
   #pp-summary{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--panel);border:1px solid rgba(var(--ink-rgb),.08)}
   #pp-summary p{margin:0;font-size:13px;line-height:1.45;color:var(--ink-90);text-wrap:pretty;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-  #pp-summary-src{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-60)}
+  #pp-summary-src{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-60)}
   #pp-summary-src.ai{color:var(--color-accent-700)}
   #pp-summary-src .spin{width:10px;height:10px;border:1.5px solid rgba(182,130,53,.3);border-top-color:var(--color-accent);border-radius:50%;animation:cm-spin .8s linear infinite}
   #pp-chart{margin-top:10px;min-height:0;flex:1 1 auto;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:10px;background:#f8f7f6;border:1px solid rgba(var(--ink-rgb),.08);padding:4px 6px}
@@ -247,6 +245,7 @@
   body.phone #status-line{display:none}
   body.phone #legend{max-width:calc(100% - 150px);padding:8px 10px} body.phone #legend .row{flex-wrap:wrap;gap:4px 10px}
 </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='ui-polish.css') }}">
 </head>
 <body class="wide">
 <div id="root">
@@ -284,7 +283,7 @@
           <svg class="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
         </button>
         <div style="position:relative">
-          <button id="bell" class="icon-circle" aria-label="Alerts">
+          <button id="bell" class="icon-circle" aria-label="Alerts" aria-expanded="false" aria-controls="alerts-card">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
             <span class="count" id="alert-count" {% if not unacked_alerts %}hidden{% endif %}>{{ unacked_alerts }}</span>
           </button>
@@ -292,8 +291,8 @@
             <div style="display:flex;align-items:baseline;justify-content:space-between"><span class="heading" style="font-size:20px">Latest alert</span><span style="font-size:11px;color:var(--ink-60)" id="al-when"></span></div>
             <div style="font-size:14px;margin-top:8px" id="al-head"></div>
             <div style="display:grid;grid-template-columns:96px 1fr;gap:6px 10px;font-size:13px;margin-top:10px" id="al-rows">
-              <span class="micro" style="font-size:10px;letter-spacing:.1em;padding-top:3px">What happened</span><span id="al-happened"></span>
-              <span class="micro" style="font-size:10px;letter-spacing:.1em;padding-top:3px">What to do</span><span id="al-todo"></span>
+              <span class="micro" style="font-size:11px;letter-spacing:.1em;padding-top:3px">What happened</span><span id="al-happened"></span>
+              <span class="micro" style="font-size:11px;letter-spacing:.1em;padding-top:3px">What to do</span><span id="al-todo"></span>
             </div>
             <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:12px"><a href="{{ url_for('alerts') }}" class="btn btn-ghost" style="text-decoration:none;font-size:13px">All alerts (<span id="al-count">{{ unacked_alerts }}</span>)</a></div>
           </div>
@@ -306,7 +305,18 @@
   <button id="bar-show" class="icon-circle" aria-label="Show header" title="Show header" hidden><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
 
   <!-- districts (desktop) -->
+  <aside id="map-rail" aria-label="Map districts and status">
   <nav id="districts" aria-label="Districts"><div class="dtitle">Districts</div><ul id="district-list"></ul></nav>
+  <!-- legend + status -->
+  <div id="legend" class="glass">
+    <div class="row">
+      <label class="f" title="Show transformers within limits"><input type="checkbox" id="f-ok" checked><i class="g"></i>Within limits <span class="muted" id="green-total">0</span></label>
+      <label class="f" title="Show transformers that need a review (a few outliers or a capacity concern)"><input type="checkbox" id="f-amber" checked><i class="a"></i>Review needed <span class="muted" id="amber-total">0</span></label>
+      <label class="f" title="Show transformers that need an inspection now (a sustained shift or a reading at the rating)"><input type="checkbox" id="f-red" checked><i class="r"></i>Inspect now <span class="muted" id="red-total">0</span></label>
+    </div>
+    <div class="muted" id="status-line">Checking the scheduler...</div>
+  </div>
+  </aside>
   <!-- districts (narrow chips) -->
   <div id="chips"></div>
 
@@ -361,15 +371,6 @@
     {% endif %}
   </div>
 
-  <!-- legend + status -->
-  <div id="legend" class="glass">
-    <div class="row">
-      <label class="f" title="Show transformers within limits"><input type="checkbox" id="f-ok" checked><i class="g"></i>Within limits <span class="muted" id="green-total">0</span></label>
-      <label class="f" title="Show transformers that need a review (a few outliers or a capacity concern)"><input type="checkbox" id="f-amber" checked><i class="a"></i>Review needed <span class="muted" id="amber-total">0</span></label>
-      <label class="f" title="Show transformers that need an inspection now (a sustained shift or a reading at the rating)"><input type="checkbox" id="f-red" checked><i class="r"></i>Inspect now <span class="muted" id="red-total">0</span></label>
-    </div>
-    <div class="muted" id="status-line">Checking the scheduler...</div>
-  </div>
   <!-- map controls -->
   <div id="controls">
     <div id="zoom" class="glass"><button class="icon-btn" id="zoom-in" aria-label="Zoom in"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><span class="sep"></span><button class="icon-btn" id="zoom-out" aria-label="Zoom out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button></div>
@@ -423,7 +424,8 @@ const inspects = POINTS.filter(p => p.status === 'inspect_now');
 const reds = flagged;  // every case that needs a person, red first
 
 // ---- map ----
-const map = L.map('map', { zoomControl: false, attributionControl: true, fadeAnimation: false, doubleClickZoom: false }).setView([42.44, -76.5], 10);
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const map = L.map('map', { zoomAnimation: !reducedMotion.matches, markerZoomAnimation: !reducedMotion.matches, zoomControl: false, attributionControl: true, fadeAnimation: false, doubleClickZoom: false }).setView([42.44, -76.5], 10);
 map.createPane('heat');
 const heatPane = map.getPane('heat');
 heatPane.style.zIndex = '350';
@@ -703,7 +705,7 @@ function renderAlert() {
   $('al-when').textContent = a ? fmtWhen(a.when) : ''; $('al-head').textContent = a ? a.headline : 'No unacknowledged alerts.';
   $('al-rows').hidden = !a; if (a) { $('al-happened').textContent = a.happened; $('al-todo').textContent = a.todo; }
 }
-function setAlerts(on) { S.alertsOpen = on; $('alerts-card').hidden = !on; if (on) renderAlert(); }
+function setAlerts(on) { S.alertsOpen = on; $('bell').setAttribute('aria-expanded', String(on)); $('alerts-card').hidden = !on; if (on) renderAlert(); }
 $('bell').onclick = e => { e.stopPropagation(); setAlerts(!S.alertsOpen); };
 $('alerts-card').onclick = e => e.stopPropagation();
 
@@ -742,7 +744,7 @@ $('bar-show').onclick = () => setCollapsed(false);
 try { if (localStorage.getItem('capmon.barHidden') === '1') setCollapsed(true, false); } catch (e) {}
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !$('tutorial').hidden) { closeTutorial(); return; }
-  if (e.key === 'Escape' && !S.alertsOpen && !S.popup) setCollapsed(true);
+  if (e.key === 'Escape') { if (S.alertsOpen) { setAlerts(false); $('bell').focus(); } else if (S.popup) closePopup(); }
 });
 
 // ---- furniture ----
@@ -755,12 +757,22 @@ applyLayout(); renderDistricts(); renderSidebar(); labels(); renderStatus(SCHED,
 
 function closeTutorial() {
   $('tutorial').hidden = true;
+  $('root').inert = false;
+  $('bar-toggle').focus();
   try { localStorage.setItem('capmon.tutorial', '1'); } catch (e) {}
 }
 $('tutorial-ok').onclick = closeTutorial;
+$('tutorial').addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const items = [...$('tutorial').querySelectorAll('button, a[href], input, select, [tabindex="0"]')];
+  const first = items[0], last = items[items.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 try {
   if (!localStorage.getItem('capmon.tutorial')) {
     $('tutorial').hidden = false;
+    $('root').inert = true;
     $('tutorial-ok').focus();
   }
 } catch (e) {}

@@ -57,7 +57,7 @@
 {% endblock %}
 {% block content %}
 {% set chev %}<svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>{% endset %}
-<div class="wrap">
+<main id="main-content" class="wrap" tabindex="-1">
   <div class="head">
     <div class="t">
       <h1>Alerts</h1>
@@ -114,5 +114,5 @@
   {% endfor %}
 
   <div class="foot">Alerts are written by the tool from fixed rules when a run stops or an input looks wrong. Acknowledging does not change any equipment or rerun anything — use Run now on the map for that.</div>
-</div>
+</main>
 {% endblock %}

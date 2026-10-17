@@ -26,7 +26,7 @@ STATUS_COLOR = {"within_limits": "#1b7f4b", "review_needed": "#e8960c", "inspect
 STABILITY_COLOR = {
     "stable": "#1b7f4b",
     "signal": "#d7263d",
-    "insufficient_history": "#9a5b00",
+    "insufficient_history": STATUS_COLOR["review_needed"],
     "zero_variation": "#5d6675",
 }
 

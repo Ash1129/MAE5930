@@ -75,3 +75,26 @@ def test_empty_and_single_day_trends_render():
     rows = [{"transformer_id": "A", "rated_max": 100,
              "chart": {"dates": ["2026-10-09"], "values": [40]}}]
     assert "<svg" in county_trend_charts(rows, "2026-10-09")["loading_svg"]
+
+
+def test_short_history_matches_review_needed_color():
+    from webapp.viz import STABILITY_COLOR, STATUS_COLOR
+    assert STABILITY_COLOR['insufficient_history'] == STATUS_COLOR['review_needed']
+
+
+def test_review_annotations_are_just_inside_the_y_axis():
+    from xml.etree import ElementTree as ET
+    from capacity_monitor.charts import review_chart_svg, review_headroom_svg
+    chart = {'dates': ['2026-10-09', '2026-10-10'], 'values': [90, 110],
+             'ucl': 105, 'lcl': 80, 'center': 92, 'signals': []}
+    for svg in [review_chart_svg(chart, '2026-10-09', 'kVA', 100),
+                review_headroom_svg(chart, '2026-10-09', 100)]:
+        root = ET.fromstring(svg)
+        annotations = [n for n in root.iter('text') if n.get('data-annotation')]
+        assert annotations
+        assert all(float(n.get('x')) == 60 and n.get('text-anchor') == 'start' for n in annotations)
+        # Plot starts at x=52; labels sit eight units inside it and paint above the data.
+        assert all(float(n.get('cx')) >= 52 for n in root.iter('circle'))
+        assert all(n.get('paint-order') == 'stroke' for n in annotations)
+        elements = list(root)
+        assert min(elements.index(n) for n in annotations) > max(elements.index(n) for n in root.iter('circle'))

@@ -28,6 +28,7 @@ from capacity_monitor.store import Store, now_iso  # noqa: E402
 from webapp.viz import (  # noqa: E402
     STATUS_LABEL,
     STATUS_ORDER,
+    STATUS_COLOR,
     STABILITY_LABEL,
     STABILITY_ORDER,
     county_trend_charts,
@@ -124,7 +125,7 @@ def _tid(v):
 
 BAND_ORDER = ("high", "mid", "ok")
 BAND_LABEL = {"high": "90% or more", "mid": "70 to 90%", "ok": "Under 70%"}
-BAND_COLOR = {"high": "#d7263d", "mid": "#e1ad66", "ok": "#1b7f4b"}
+BAND_COLOR = {"high": "#d7263d", "mid": STATUS_COLOR["review_needed"], "ok": "#1b7f4b"}
 
 
 def _area_parts(name: str) -> tuple[str, str]:

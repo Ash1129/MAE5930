@@ -16,7 +16,7 @@
   .c-review{color:var(--amber)} .c-inspect{color:var(--review)} .c-ok{color:var(--ok)} .c-info{color:var(--info)}
 
   .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:32px 48px}
-  .label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-60)}
+  .label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-60)}
   .why h2{font-family:var(--font-heading);font-weight:600;font-size:28px;line-height:1.15;margin:8px 0 16px;letter-spacing:-.01em}
   .rows{display:grid;grid-template-columns:104px 1fr;gap:12px 14px;font-size:15px}
   .rows .micro{padding-top:5px}
@@ -28,7 +28,7 @@
   .bar{display:grid;gap:6px}
   .bar .lab{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px;font-size:13px}
   .bar .lab b{font-weight:600} .bar .lab .p{color:var(--ink-60)} .bar .lab>span{white-space:nowrap}
-  .estimate{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--estimate);margin-left:4px}
+  .estimate{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--estimate);margin-left:4px}
   .track{position:relative;height:10px;border-radius:5px;background:rgba(var(--ink-rgb),.08)}
   .fill{position:absolute;inset:0 auto 0 0;border-radius:5px}
   .fill.ok{background:var(--ok)} .fill.review{background:var(--review)}
@@ -94,12 +94,12 @@
   .kv dt{color:var(--ink-60)} .kv dd{margin:0}
   table{border-collapse:collapse;font-size:13px;width:100%}
   th,td{text-align:left;padding:5px 12px 5px 0;border-bottom:1px solid rgba(var(--ink-rgb),.08)}
-  th{font-weight:400;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
+  th{font-weight:400;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
   .scroll{max-height:360px;overflow:auto}
   /* inside the transformer: a modeled 3D cutaway driven by the week's hourly loads (top-right column) */
   .inside{display:flex;flex-direction:column;gap:8px;padding-top:4px;min-width:0}
   .inside .label{display:flex;align-items:center;gap:10px}
-  .badge-modeled{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:999px;background:#F4B400;color:#1D2430}
+  .badge-modeled{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:999px;background:#F4B400;color:#1D2430}
   .stage{position:relative;height:240px;min-width:0;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,rgba(var(--ink-rgb),.03),rgba(var(--ink-rgb),.12))}
   .stage canvas{display:block;width:100%!important;height:100%!important;outline:none}
   .stage .hint{position:absolute;left:10px;bottom:8px;font-size:11px;color:var(--ink-55);pointer-events:none}
@@ -110,14 +110,14 @@
   .inside .when{font-size:12px;color:var(--ink-60)}
   .read{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 14px;font-size:13px;min-width:0}
   .read .cell{display:grid;gap:2px;padding:5px 0;border-top:1px solid var(--line);min-width:0}
-  .read .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
+  .read .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
   .read .v{font-family:var(--font-heading);font-weight:600;font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .read .v small{font-family:var(--font-body);font-weight:400;font-size:11px;color:var(--ink-60);margin-left:4px;display:block;white-space:normal;line-height:1.3}
   .read .v .sw{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin-right:5px}
   .scrub{display:flex;align-items:center;gap:10px}
   .scrub input[type=range]{flex:1;accent-color:var(--accent);margin:0;min-width:0}
   .scrub .btn{padding:6px 12px;font-size:13px}
-  .tscale{display:grid;gap:4px;font-size:10px;color:var(--ink-60)}
+  .tscale{display:grid;gap:4px;font-size:11px;color:var(--ink-60)}
   .tscale .bar{height:8px;border-radius:4px;background:linear-gradient(90deg,#2b6cb0 0%,#1B7F4B 28.6%,#F4B400 52.4%,#F28C28 71.4%,#D7263D 85.7%,#7a0010 100%)}
   .tscale .ticks{display:flex;justify-content:space-between} .tscale .ticks .lim{color:var(--review-text);font-weight:600}
   .inside .foot{font-size:12px;color:var(--ink-60)}
@@ -135,7 +135,7 @@
 {% block content %}
 {% set chev %}<svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>{% endset %}
 {% set cap = r.capacity %}{% set near = playbook.forecast.near_rating_ratio %}{% set cpk_line = playbook.capability.cpk_review_below %}
-<div class="wrap">
+<main id="main-content" class="wrap" tabindex="-1">
   <div>
     <div class="crumbs">
       {% if back %}<a href="{{ back }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back to the map</a>{% endif %}
@@ -336,7 +336,7 @@
     </details>
   </div>
   {% if r.notes %}<div class="asset-note" style="margin-top:-24px">Asset note: {{ r.notes }}</div>{% endif %}
-</div>
+</main>
 
 
 <script type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
@@ -366,7 +366,8 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
 camera.position.set(3.4, 2.2, 4.2);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 1.1, 0); controls.enableDamping = true; controls.autoRotate = true; controls.autoRotateSpeed = 0.6; controls.minDistance = 3; controls.maxDistance = 12;
+controls.target.set(0, 1.1, 0); controls.enableDamping = true; const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)'); controls.autoRotate = !motionPreference.matches;
+motionPreference.addEventListener('change', e => { if (e.matches) { controls.autoRotate = false; play(false); } }); controls.autoRotateSpeed = 0.6; controls.minDistance = 3; controls.maxDistance = 12;
 controls.addEventListener('start', () => { controls.autoRotate = false; });
 scene.add(new THREE.HemisphereLight(0xffffff, 0x9ca3af, 1.4));
 const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(4, 6, 3); scene.add(key);
@@ -415,7 +416,7 @@ function placeLabels() {
   const w = stage.clientWidth, h = stage.clientHeight;
   for (const k in anchors) { const v = anchors[k].clone().project(camera); const el = labels[k]; if (v.z > 1 || el.hidden) continue; el.style.left = Math.min(Math.max((v.x + 1) / 2 * w, 60), w - 60) + 'px'; el.style.top = Math.min(Math.max((1 - v.y) / 2 * h, 30), h - 8) + 'px'; }
 }
-function frame() { controls.update(); renderer.render(scene, camera); placeLabels(); requestAnimationFrame(frame); }
+function frame() { if (document.hidden) { requestAnimationFrame(frame); return; } controls.update(); renderer.render(scene, camera); placeLabels(); requestAnimationFrame(frame); }
 frame();
 
 // ---- the week's estimates ----
@@ -446,6 +447,7 @@ function play(on) {
   if (on) timer = setInterval(() => { if (i >= data.series.length - 1) { play(false); return; } show(i + 1); }, 180);
 }
 $('th-play').onclick = () => play(!timer);
+document.addEventListener('visibilitychange', () => { if (document.hidden) play(false); });
 $('th-slider').oninput = e => { play(false); show(+e.target.value); $('th-play').textContent = i >= data.series.length - 1 ? 'Replay' : 'Play'; };
 fetch(URL).then(r => r.ok ? r.json() : Promise.reject(r.status)).then(j => {
   data = j; $('th-slider').max = j.series.length - 1;

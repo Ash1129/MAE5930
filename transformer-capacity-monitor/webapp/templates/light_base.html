@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{if(localStorage.getItem("capmon.theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
 <title>{% block title %}Transformer Capacity Monitor{% endblock %}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Lora:wght@400;600&display=swap">
 <style>
   /* Light-ground chrome for the Alerts and Transformer review pages (design_handoff_landing_page/PAGES.md). */
   :root{
@@ -51,7 +49,7 @@
   .tools .divider{width:1px;height:24px;background:var(--line)}
   .icon-btn{all:unset;cursor:pointer;position:relative;box-sizing:border-box;width:34px;height:34px;border-radius:8px;color:var(--ink-80);display:grid;place-items:center;transition:background-color .15s}
   .icon-btn:hover{background:rgba(var(--ink-rgb),.06)}
-  #bell .count{position:absolute;top:-3px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#D7263D;color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;border:2px solid var(--ground);box-sizing:border-box}
+  #bell .count{position:absolute;top:-3px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#D7263D;color:#fff;font-size:11px;font-weight:600;display:grid;place-items:center;border:2px solid var(--ground);box-sizing:border-box}
   .bell-wrap{position:relative}
   #theme-btn .sun{display:none} :root[data-theme="dark"] #theme-btn .sun{display:block} :root[data-theme="dark"] #theme-btn .moon{display:none}
   #alerts-card{position:absolute;top:46px;right:0;width:320px;padding:16px;z-index:50;box-sizing:border-box;background:rgba(var(--paper-rgb),.97);border:1px solid var(--line);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.18);backdrop-filter:blur(28px) saturate(1.5);-webkit-backdrop-filter:blur(28px) saturate(1.5)}
@@ -80,7 +78,7 @@
   .flash.error{color:var(--review-text);background:rgba(215,38,61,.06)} .flash.info{color:var(--accent-700);background:rgba(182,130,53,.08)}
   .flashes{padding:0 24px}
 
-  .micro{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
+  .micro{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
   .chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.02em;padding:3px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
   .chip .d{width:7px;height:7px;border-radius:50%;background:currentColor}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;text-decoration:none;font-family:var(--font-heading);font-weight:600;font-size:14px;line-height:1.2;color:var(--accent);background:transparent;border:1px solid var(--accent);padding:9.2px 16.5px;border-radius:4px;transition:background .15s}
@@ -97,8 +95,10 @@
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 {% block head %}{% endblock %}
+<link rel="stylesheet" href="{{ url_for('static', filename='ui-polish.css') }}">
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 {% set initials = (reviewer_name or '').replace('.', ' ').split()|map('first')|join('')|upper %}
 <header class="topbar">
   <a class="brand" href="{{ url_for('map_latest') }}"><b>Transformer Capacity Monitor</b><img class="seal" src="{{ url_for('static', filename='tompkins-county.png') }}" alt="Tompkins County"></a>
