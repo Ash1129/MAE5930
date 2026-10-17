@@ -98,6 +98,9 @@ The Airflow DAG and the Flask app only call these functions, store the results a
   forecast concern), red for inspect now (a reading at the rating, a sustained shift, or repeated outliers this period).
 - A review page per transformer with the I-MR chart, Cpk and its interval, assumption flags, the
   projection and its assumptions, the matching rule, and the source readings.
+- On that page, a 3D cutaway labeled MODELED: the oil and winding hot-spot temperatures the week's
+  hourly loads would produce under the IEEE C57.91 loading guide (`playbook.thermal_model`). The tool
+  has no sensors inside the unit; this view is for understanding and feeds no rule.
 - A heatmap of hourly load per transformer for a recorded date, plus a seasonal view labeled MODELED.
 - A period report in `data/reports/<period end>/` as HTML, Markdown and JSON. It can be finalized only
   after every flagged transformer has a disposition, and the backend enforces this with HTTP 409.
