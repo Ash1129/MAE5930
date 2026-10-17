@@ -545,7 +545,7 @@ function renderSidebar() {
   $('side-scope').hidden = !sel; if (sel) $('side-scope').textContent = 'in ' + sel.fullName;
   $('review-rows').hidden = !!sel;
   $('review-rows').innerHTML = (sel ? [] : redsIn).map(p => `<div class="rrow${S.popup && S.popup.id === p.id ? ' on' : ''}" data-id="${esc(p.id)}"><button class="main" data-id="${esc(p.id)}"><span class="l1"><span class="dot"></span><span class="id">${esc(p.id)}</span><span class="nm">${esc(p.name)} · ${esc(shortName(p.area_name) || p.area)}</span></span><span class="why">${esc(p.reason)}</span>${p.disposition ? `<span class="disp">${esc(p.disposition)}</span>` : ''}</button><a class="go" href="${esc(p.url)}" aria-label="Open full review"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>`).join('');
-  document.querySelectorAll('.rrow .main').forEach(b => b.onclick = () => { const p = POINTS.find(x => x.id === b.dataset.id); if (!visible(p)) { $('f-red').checked = true; applyFilter(); } map.setView([p.lat, p.lon], Math.max(map.getZoom(), 13)); openPopup(p); S.sheetOpen = false; applySheet(); });
+  document.querySelectorAll('.rrow .main').forEach(b => b.onclick = () => { const p = POINTS.find(x => x.id === b.dataset.id); if (!visible(p)) { $('f-red').checked = true; applyFilter(); } map.setView([p.lat, p.lon], Math.max(map.getZoom(), 13), { animate: false }); S.sheetOpen = false; applySheet(); openPopup(p); });
   $('green-total').textContent = POINTS.length - reds.length; $('red-total').textContent = reds.length;
   const undecided = reds.filter(p => !p.disposition).length;
   const fin = $('finalize');
@@ -571,6 +571,24 @@ function openPopup(p) {
   $('pp-link').href = p.url;
   $('popup').hidden = false; positionPopup();
   document.querySelectorAll('.rrow').forEach(r => r.classList.toggle('on', r.dataset.id === p.id));
+  setTimeout(fitPopup, 30);
+}
+// Pan the map just enough that the whole popup sits clear of the header, heat strip, panels and bottom pill.
+function fitPopup() {
+  if (!S.popup || $('popup').hidden) return;
+  const r = $('popup').getBoundingClientRect(), vis = el => el && !el.hidden && el.offsetParent !== null, box = el => el.getBoundingClientRect();
+  const overlapsX = b => b.left < r.right && b.right > r.left;
+  let top = 12, bottom = window.innerHeight - 12, left = 12, right = window.innerWidth - 12;
+  if (!bar.classList.contains('hidden-bar')) top = box(bar).bottom + 12;
+  if (vis($('heat')) && overlapsX(box($('heat')))) top = Math.max(top, box($('heat')).bottom + 12);
+  if (vis($('chips'))) top = Math.max(top, box($('chips')).bottom + 12);
+  if (wide()) { if (vis($('districts'))) left = box($('districts')).right + 12; right = box($('side')).left - 12; }
+  else bottom = Math.min(bottom, box($('side')).top - 12);
+  [$('runrow'), $('legend')].forEach(el => { if (vis(el) && overlapsX(box(el))) bottom = Math.min(bottom, box(el).top - 12); });
+  let dx = 0, dy = 0;
+  if (r.top < top) dy = top - r.top; else if (r.bottom > bottom) dy = Math.max(bottom - r.bottom, top - r.top);
+  if (r.width <= right - left) { if (r.left < left) dx = left - r.left; else if (r.right > right) dx = right - r.right; }
+  if (dx || dy) map.panBy([-dx, -dy], { animate: true, duration: .25 });
 }
 function positionPopup() { if (!S.popup) return; const pt = map.latLngToContainerPoint([S.popup.lat, S.popup.lon]); $('popup').style.left = pt.x + 'px'; $('popup').style.top = pt.y + 'px'; }
 function closePopup() { S.popup = null; $('popup').hidden = true; document.querySelectorAll('.rrow').forEach(r => r.classList.remove('on')); }
