@@ -35,7 +35,7 @@
       "checksum": "ead23ffb035a8ca27def77e714202198"
     },
     "CONTRACT.yaml": {
-      "checksum": "4afc130d6b79a6ceb0453291722b262c"
+      "checksum": "e7b4509aa072cc18c844df06a27a8bc5"
     },
     "DELIVERY-REPORT.md": {
       "checksum": "2556acf328293309880a885b7d5abc5f"
@@ -47,13 +47,13 @@
       "checksum": "1d3dceaa751b71cad10fefad173eba1f"
     },
     "README-DEVELOPER.md": {
-      "checksum": "aeed01bc3bc4e88523e24f268aa5e8b5"
+      "checksum": "bd6f19aed8395086c313ec42b1418761"
     },
     "README.md": {
-      "checksum": "696a53095ec0f963cf2e1ef18b1ac552"
+      "checksum": "a3de009d678dd6e0d13b055f37518fd9"
     },
     "SPEC.md": {
-      "checksum": "c5843a33cf77c5a1bff1796ea0d99b39"
+      "checksum": "f3241a9291e1ce8d5af8ef591dee5f73"
     },
     "START-HERE.md": {
       "checksum": "a7a5ba9efc50aae7161ebaa934a960b8"
@@ -257,16 +257,16 @@
       "checksum": "b73dbab62a9885633118ac511a799e81"
     },
     "tests/test_viz.py": {
-      "checksum": "64f42c8bb26f3c99c4cc9cc65108071c"
+      "checksum": "7bc4dc0b5d9be23108e317021a3af1d9"
     },
     "tests/test_webapp.py": {
-      "checksum": "2b5964ef9131bde43a90d57ef3c8e0ca"
+      "checksum": "e7d5ecbf64061961b5c15673950eabab"
     },
     "webapp/__init__.py": {
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
     },
     "webapp/app.py": {
-      "checksum": "d466f5bbf45ab4a22b72ac2e6df0bfc4"
+      "checksum": "4b229239cbdb87cb964a30046808971a"
     },
     "webapp/static/tompkins-county.png": {
       "checksum": "fb6c0bc73339e4f71e4d7484a8fec69f"
@@ -281,7 +281,7 @@
       "checksum": "f208b8c4db9819d5602306b80afefe3a"
     },
     "webapp/templates/dashboard.html": {
-      "checksum": "4442b0f7c7f547897fb2831a470a2c17"
+      "checksum": "d218b3875b48706d5a04676d49d9e275"
     },
     "webapp/templates/light_base.html": {
       "checksum": "1ef0e93bea3cd2a78d3161fb82859800"
@@ -305,19 +305,19 @@
       "checksum": "27f221637dbc55196324e52e99abb343"
     },
     "webapp/viz.py": {
-      "checksum": "4283d8b3a89fea3f62bec8a221ff505b"
+      "checksum": "b1d84a8186bb98604ebe64ad6408fbac"
     },
     "capacity_monitor/aggregate.py": {
-      "checksum": "3f60aa7295ccc4356599d845915a2648"
+      "checksum": "b3234549b312e370c029a0e39fefac91"
     },
     "tests/test_aggregate.py": {
-      "checksum": "dedfee340add1660ffc10e2db52588dd"
+      "checksum": "fb4ff9277eee95641332566f50cfe277"
     },
     "METHODS.md": {
-      "checksum": "d543cac429691cf5d63b3a386a975172"
+      "checksum": "8e3ad45b443e8cf245c892e3e52a29b9"
     },
     "TEMPLATE-AUDIT.md": {
-      "checksum": "1460507102e77853b7ba3f4d19e959b8"
+      "checksum": "d3f87939fd8b738e5c93f1dd1e46cda9"
     }
   }
 }

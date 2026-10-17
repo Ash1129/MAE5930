@@ -101,10 +101,10 @@ The statistics are plain functions in `capacity_monitor/pipeline.py` that use th
 | `project_demand(transformer, period, playbook)` | period peak, customers, area forecast | period peak + customers × (forecast share − base share) × kW per heat pump ÷ power factor |
 | `needs_review(facts, table)` | the results above | the first matching decision-table row: outcome, rule number, reason |
 
-These functions drive the per-transformer decisions. Additional aggregate dashboard charts currently
-use plain p, u and X-S numerical functions in `capacity_monitor/aggregate.py`; the modeled thermal view uses
+These functions drive the per-transformer decisions. Descriptive daily dashboard trends
+use plain percentage, unique-count and quartile functions in `capacity_monitor/aggregate.py`; the modeled thermal view uses
 `capacity_monitor/thermal.py`. Their formulas, inputs, assumptions, units and existing test evidence are documented in
-[METHODS.md](METHODS.md). Statistical validation work remains tracked in
+[METHODS.md](METHODS.md). Review of the individual I-MR/capability assumptions remains tracked in
 [TEMPLATE-AUDIT.md](TEMPLATE-AUDIT.md).
 
 ## Outputs

@@ -6,90 +6,47 @@ Per-transformer I-MR, capability, forecast and decision methods are in [SPEC.md]
 [README.md](README.md), and `capacity_monitor/pipeline.py`. The additional views below do not
 change the per-transformer decision-table outcome.
 
-## Aggregate dashboard charts
+## Descriptive dashboard trends
 
-`capacity_monitor/aggregate.py:county_control_statistics(results, period_start)` accepts plain
-transformer result dictionaries and the first review-period date. It performs no I/O and returns:
+`capacity_monitor/aggregate.py:county_trend_statistics(results)` accepts plain transformer result
+records and returns `status` (`computed` or `insufficient_data`) plus one numerical point per date.
+There is no baseline fitting, control limit, out-of-control test or aggregate alarm count.
+`webapp/viz.py:county_trend_charts(results, period_start)` renders the points; period_start is used
+only to shade the review week. The existing pie charts and individual transformer I-MR charts remain.
 
-- `p`, `u`, `x`, `s`: numerical `center` and `points` (date, value, ucl, lcl, out).
-- `p_out`, `u_out`, `x_out`, `s_out`: counts of out-of-limit days inside the review period;
-  a count is days, not transformers or signal events.
-- `status`: `computed` or `insufficient_data` (availability, not process stability).
-- `baseline_source`: `pre_period` or `all_dates_fallback`, with `baseline_dates`.
+| Numerical field | Meaning and units |
+|---|---|
+| `n` | unique eligible transformers reporting that day |
+| `near_rating_count` | reporting transformers whose daily peak/rating is >= 0.90 |
+| `near_rating_pct` | 100 * near_rating_count / n |
+| `signal_transformers` | unique reporting transformers with at least one I-MR rule dated that day; multiple rules count once |
+| `median_pct` | median daily peak/rating, multiplied by 100 |
+| `q1_pct`, `q3_pct` | 25th and 75th percentiles of daily peak/rating, multiplied by 100 |
 
-`webapp/viz.py:county_control_charts` calls that function and renders SVG only. `box_stats(values)`
-also lives in the numerical module; it returns n/min/q1/median/q3/max, linearly interpolates quartiles
-at index p*(n-1), ignores None, and returns None for empty input. Its whiskers use the full range.
+Calibration cases, invalid/nonpositive/nonfinite ratings, and missing/nonfinite peaks are excluded.
+Missing dates are omitted rather than filled with zeros. The denominator can vary by day; tooltips
+show reporting counts, and comparisons should consider coverage changes. Duplicate transformer IDs
+are counted once per date; if duplicate values conflict, the last eligible value is used.
 
-For each day, the input contains each eligible transformer's daily peak divided by its rating.
-Calibration cases, invalid/nonpositive ratings and missing/nonfinite load ratios are excluded.
-A transformer can therefore be absent from a day; `n_d` is the number of eligible ratios on day d.
-The reference days are dates before `period_start`. Currently, if none exist, all dates are used
-instead. That fallback is an open statistical issue: it can fit limits to the same review observations
-being evaluated. Fewer than two total dates or no reference observations returns empty charts.
-A point is flagged only when strictly beyond a limit, with a numerical tolerance of 1e-9.
+`box_stats(values)` returns n/min/q1/median/q3/max; quartiles interpolate linearly at index p*(n-1).
+It ignores None, returns None for empty input, and uses the full range for box whiskers. The loading
+trend instead shades q1 to q3 (the middle 50% of observed transformers); this is a distribution band,
+not a confidence interval. A single observation has equal q1, median and q3.
 
-### p chart: fraction near rating
+These summaries do not assume binomial/Poisson distributions or comparable normal subgroups. They
+also do not establish causation, predict failures, or resolve the individual I-MR assumptions.
+The 90% cutoff remains a descriptive threshold, not a failure probability.
 
-Let `h_d` count ratios at or above 0.90, and `p_d = h_d / n_d`.
-The pooled reference fraction is `p_bar = sum(h_d) / sum(n_d)` over reference days.
-Each day's limits are:
+The former p/u/X-S limits were removed after review: mixed equipment and shared weather complicate
+the p/X-S assumptions, while overlapping I-MR rule detections make a Poisson event-rate model
+unjustified. References: [NIST p charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc332.htm),
+[NIST count charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc331.htm),
+[NIST X-bar/S charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc321.htm).
 
-- `UCL_d = min(1, p_bar + 3 * sqrt(p_bar * (1 - p_bar) / n_d))`
-- `LCL_d = max(0, p_bar - 3 * sqrt(p_bar * (1 - p_bar) / n_d))`
-
-Values, centre and limits are displayed as percentages. Here 90% is the chart's fixed
-`NEAR_RATIO` cutoff, separate from the forecast threshold in the decision playbook.
-This describes the daily fraction near rating, not the probability of equipment failure.
-Conventional binomial limits assume independent trials with a common underlying probability;
-shared weather, repeat observations and unlike transformers can violate those assumptions.
-
-### u chart: signal events per transformer
-
-Let `c_d` count I-MR signal records dated on day d for eligible observations. Multiple rules firing
-on one transformer can contribute multiple records. The rate is `u_d = c_d / n_d` and the pooled
-reference rate is `u_bar = sum(c_d) / sum(n_d)`.
-
-- `UCL_d = u_bar + 3 * sqrt(u_bar / n_d)`
-- `LCL_d = max(0, u_bar - 3 * sqrt(u_bar / n_d))`
-
-The chart multiplies rates and limits by 100 and labels them **signals per 100 transformers**.
-This is an event rate, not the percentage of unique transformers needing review. Standard u-chart
-limits assume Poisson events and comparable opportunities; correlated run rules and weather
-can violate that model. These assumptions need assessment before operational interpretation.
-
-### X-S chart: mean and spread of daily loading ratios
-
-Each day is a subgroup of transformers. `x_bar_d` is the mean ratio and `s_d` is the sample
-standard deviation with denominator `n_d - 1`. The reference centre `x_bar_bar` is the pooled mean
-of all reference ratios (weighted by each day's size); `s_bar` is the unweighted mean of the
-reference days' defined sample standard deviations.
-
-For subgroup size n:
-
-- `c4(n) = sqrt(2/(n-1)) * Gamma(n/2) / Gamma((n-1)/2)`
-- `A3 = 3 / (c4(n) * sqrt(n))`
-- `B3 = max(0, 1 - 3 * sqrt(1 - c4(n)^2) / c4(n))`
-- `B4 = 1 + 3 * sqrt(1 - c4(n)^2) / c4(n)`
-- Mean limits: `x_bar_bar ± A3 * s_bar`
-- Spread limits: `B3 * s_bar`, `B4 * s_bar`
-
-Both panels multiply values by 100, expressing means and spread on the percent-of-rating scale.
-A day with fewer than two observations, or a reference spread of zero, is omitted from these panels.
-Conventional X-S limits rely on independent, approximately normal observations and rational subgroups.
-Different transformers observed together may not form such a subgroup; normalization by rating does
-not establish comparability. Variable subgroup sizes also require review of the pooled estimators.
-
-### Existing verification and remaining work
-
-`tests/test_aggregate.py` checks hand-computed p/u/X/S limits and centers, variable subgroup size,
-period signal counts, missing/nonfinite observations, empty/single-date inputs, constant/single-member
-subgroups, explicit missing-baseline fallback, caller-input preservation, and box quartiles. It imports
-only the numerical module. `tests/test_viz.py` retains the rendering/aggregation integration checks.
-
-The saved 500-transformer report produced byte-for-byte identical SVGs and equal signal counts
-before and after extraction. The next statistical review should address baseline policy and subgroup/
-distribution assumptions. This refactor preserves existing formulas and does not establish suitability.
+`tests/test_aggregate.py` checks hand-computed percentages, unique signal counts and quartiles,
+varying coverage, empty/constant/single observations, duplicate IDs and invalid data. Rendering and
+Flask tests verify the descriptive panels, quartile ribbon, retained pies and absence of aggregate
+alarm labels. The individual decision table and saved 2026-10-15 analysis are unchanged.
 
 ## Modeled thermal cutaway and map temperatures
 

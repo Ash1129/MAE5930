@@ -84,3 +84,12 @@ markup or I/O. The web wrapper preserves its existing output contract. Numerical
 known answers and degenerate cases; saved-data SVGs and counts match the prior implementation exactly.
 The all-date fallback is retained and identified in the numerical metadata. This is architectural and
 numerical verification, not resolution of the modeling assumptions listed above.
+
+## Descriptive trends supersede aggregate control charts
+
+The p/u/X-S charts and their aggregate alarm limits have now been replaced with daily near-rating
+percentage, unique transformers with signals, and median loading with a quartile band. This resolves
+the aggregate baseline-fallback and distribution/subgroup concerns above by removing the inference;
+it does not validate those discarded limits. Pie summaries, individual I-MR charts, per-transformer
+outcomes and the saved analysis remain unchanged. Current formulas and tests are in METHODS.md.
+The next assumptions review concerns the individual I-MR/capability analysis.

@@ -10,7 +10,7 @@ import csv
 import math
 from html import escape
 
-from capacity_monitor.aggregate import box_stats, county_control_statistics
+from capacity_monitor.aggregate import box_stats, county_trend_statistics
 
 STATUS_ORDER = ("within_limits", "review_needed", "inspect_now")
 STABILITY_ORDER = ("stable", "signal", "insufficient_history", "zero_variation")
@@ -216,103 +216,58 @@ def pie_svg(slices: list[dict], active_key: str | None = None) -> str:
     return "".join(parts)
 
 
-# ---- county control charts ---------------------------------------------------------------
-# One daily peak per transformer. A day is a large subgroup whose size changes, so:
-# p (share at or above 90% of rating) and u (stability signals per transformer) match
-# attribute data with a varying sample. X-S matches a large subgroup. X-R, np and c
-# need a small or a fixed sample, so they are not drawn.
+# ---- descriptive daily trends -----------------------------------------------------------
 
-_EMPTY_CHART = '<p class="muted">Not enough daily peaks for this chart.</p>'
+_EMPTY_CHART = '<p class="muted">No eligible daily peaks for this trend.</p>'
 
 
-def _shewhart_panel(points: list[dict], center: float | None, period_start: str, title: str, x: float, y: float, width: float, height: float) -> list[str]:
-    """One dark-theme Shewhart panel. points carry date, value, ucl, lcl, out."""
-    values = [p["value"] for p in points if p["value"] is not None]
-    limits = [p[k] for p in points for k in ("ucl", "lcl") if p.get(k) is not None]
-    if center is not None:
-        limits.append(center)
-    if not values:
-        return [f'<text x="{x + 8}" y="{y + 28}" fill="#5d6675" font-size="12">{escape(title)}: no points</text>']
-    lo = min(values + limits)
-    hi = max(values + limits)
-    if lo == hi:
-        lo, hi = lo - 1, hi + 1
-    span = hi - lo
-    lo -= span * 0.12
-    hi += span * 0.18
-    left, right, top, bottom = 44, 8, 16, 18
-    plot_w = width - left - right
-    plot_h = height - top - bottom
-    n = max(len(points) - 1, 1)
-
-    def px(i: int) -> float:
-        return x + left + plot_w * i / n
-
-    def py(v: float) -> float:
-        return y + top + plot_h * (1 - (v - lo) / (hi - lo))
-
-    parts = [f'<text x="{x + left}" y="{y + 11}" fill="#1D2430" font-size="11">{escape(title)}</text>']
-    first_period = next((i for i, p in enumerate(points) if p["date"] >= period_start), None)
-    if first_period is not None and plot_h > 0:
-        parts.append(
-            f'<rect x="{px(first_period):.1f}" y="{y + top:.1f}" width="{max(px(len(points) - 1) - px(first_period), 0):.1f}" height="{plot_h:.1f}" fill="rgba(182,130,53,.16)"/>'
-        )
-    def tick(v: float) -> str:
-        return f"{v:.1f}" if abs(v) >= 10 else f"{v:.2f}"
-
-    if center is not None:
-        parts.append(f'<line x1="{x + left}" x2="{x + width - right}" y1="{py(center):.1f}" y2="{py(center):.1f}" stroke="#1B7F4B" stroke-dasharray="4 3" stroke-width="1"/>')
-        parts.append(f'<text x="{x + left - 4}" y="{py(center) + 3:.1f}" fill="#1B7F4B" font-size="10" text-anchor="end">{tick(center)}</text>')
-    labeled_ucl = next((p["ucl"] for p in reversed(points) if p.get("ucl") is not None), None)
-    if labeled_ucl is not None:
-        parts.append(f'<text x="{x + left - 4}" y="{py(labeled_ucl) + 3:.1f}" fill="#D7263D" font-size="10" text-anchor="end">{tick(labeled_ucl)}</text>')
-    for key in ("ucl", "lcl"):
-        pts = [(px(i), py(p[key])) for i, p in enumerate(points) if p.get(key) is not None]
-        if len(pts) > 1:
-            parts.append('<polyline fill="none" stroke="#D7263D" stroke-width="1" stroke-dasharray="3 3" points="' + " ".join(f"{a:.1f},{b:.1f}" for a, b in pts) + '"/>')
-    series = [(px(i), py(p["value"])) for i, p in enumerate(points) if p["value"] is not None]
-    if len(series) > 1:
-        parts.append('<polyline fill="none" stroke="#1F5FA8" stroke-width="1.4" points="' + " ".join(f"{a:.1f},{b:.1f}" for a, b in series) + '"/>')
-    for i, p in enumerate(points):
-        if p["value"] is None:
-            continue
-        color = "#D7263D" if p.get("out") else "#1F5FA8"
-        radius = 3.2 if p.get("out") else 2.1
-        parts.append(f'<circle cx="{px(i):.1f}" cy="{py(p["value"]):.1f}" r="{radius}" fill="{color}"><title>{escape(p["date"])}: {p["value"]:.2f}</title></circle>')
-    parts.append(f'<line x1="{x + left}" x2="{x + left}" y1="{y + top}" y2="{y + top + plot_h}" stroke="rgba(29,36,48,.3)"/>')
-    parts.append(f'<line x1="{x + left}" x2="{x + width - right}" y1="{y + top + plot_h}" y2="{y + top + plot_h}" stroke="rgba(29,36,48,.3)"/>')
-    for i in {0, len(points) // 2, len(points) - 1}:
-        if 0 <= i < len(points):
-            parts.append(f'<text x="{px(i):.1f}" y="{y + height - 4}" fill="#5d6675" font-size="10" text-anchor="middle">{escape(points[i]["date"][5:])}</text>')
-    return parts
-
-
-def _shewhart_svg(panels: list[tuple], period_start: str) -> str:
-    """panels: (points, center, title). One panel fills the card; a pair is stacked."""
-    if not panels or not any(item[0] for item in panels):
+def _trend_svg(points: list[dict], key: str, title: str, period_start: str,
+               band: bool = False) -> str:
+    """Render descriptive points, with an optional interquartile ribbon."""
+    if not points:
         return _EMPTY_CHART
-    width = 460
-    row_h = 108 if len(panels) > 1 else 150
-    height = row_h * len(panels)
-    parts = [f'<svg viewBox="0 0 {width} {height}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img">']
-    for i, (points, center, title) in enumerate(panels):
-        parts.extend(_shewhart_panel(points, center, period_start, title, 0, i * row_h, width, row_h))
-    parts.append("</svg>")
-    return "".join(parts)
+    width, height = 460, 190
+    left, right, top, bottom = 48, 16, 25, 30
+    lo = min(p["q1_pct"] if band else p[key] for p in points)
+    hi = max(p["q3_pct"] if band else p[key] for p in points)
+    span = hi - lo or max(abs(hi) * .1, 1)
+    lo = max(0, lo - span * .1)
+    hi += span * .15
+    def px(i):
+        return left + (width - left - right) * i / max(len(points) - 1, 1)
+    def py(value):
+        return top + (height - top - bottom) * (hi - value) / (hi - lo)
+    parts = [f'<svg viewBox="0 0 {width} {height}" width="100%" height="100%" role="img" aria-label="{escape(title, quote=True)}"><title>{escape(title)}</title>']
+    first = next((i for i, p in enumerate(points) if p["date"] >= period_start), None)
+    if first is not None:
+        x = max(left, px(first) - (px(1) - px(0))/2) if len(points) > 1 else left
+        parts.append(f'<rect x="{x:.1f}" y="{top}" width="{width-right-x:.1f}" height="{height-top-bottom}" fill="rgba(182,130,53,.12)"/>')
+    for value in (lo, (lo + hi)/2, hi):
+        parts.append(f'<text x="{left-6}" y="{py(value)+3:.1f}" fill="#5d6675" font-size="10" text-anchor="end">{value:.1f}</text>')
+    if band:
+        coords = [(px(i), py(p["q3_pct"])) for i,p in enumerate(points)]
+        coords += [(px(i), py(p["q1_pct"])) for i,p in reversed(list(enumerate(points)))]
+        parts.append('<polygon fill="rgba(31,95,168,.18)" points="'+ ' '.join(f'{x:.1f},{y:.1f}' for x,y in coords)+'"/>')
+    coords = ' '.join(f'{px(i):.1f},{py(p[key]):.1f}' for i,p in enumerate(points))
+    parts.append(f'<polyline fill="none" stroke="#1F5FA8" stroke-width="1.5" points="{coords}"/>')
+    for i,p in enumerate(points):
+        detail = f'{p["date"]}: {p[key]:.2f}; {p["n"]} reporting'
+        if band:
+            detail += f'; middle 50% {p["q1_pct"]:.2f}–{p["q3_pct"]:.2f}%'
+        parts.append(f'<circle cx="{px(i):.1f}" cy="{py(p[key]):.1f}" r="2.3" fill="#1F5FA8"><title>{escape(detail)}</title></circle>')
+    parts.append(f'<path d="M {left} {top} V {height-bottom} H {width-right}" fill="none" stroke="#87909a"/>')
+    for i in sorted({0, len(points)//2, len(points)-1}):
+        anchor = "start" if i == 0 else ("end" if i == len(points)-1 else "middle")
+        parts.append(f'<text x="{px(i):.1f}" y="{height-8}" fill="#5d6675" font-size="10" text-anchor="{anchor}">{escape(points[i]["date"][5:])}</text>')
+    parts.append('</svg>')
+    return ''.join(parts)
 
 
-def county_control_charts(results: list[dict], period_start: str) -> dict:
-    """Render the numerical aggregate series without calculating control limits."""
-    stats = county_control_statistics(results, period_start)
-    def panel(key, title):
-        series = stats[key]
-        return series["points"], series["center"], title
-
+def county_trend_charts(results: list[dict], period_start: str) -> dict:
+    """Render the numerical daily summaries; no aggregate alarm interpretation."""
+    points = county_trend_statistics(results)["points"]
     return {
-        "p_svg": _shewhart_svg([panel("p", "% at or above 90% of rating")], period_start),
-        "u_svg": _shewhart_svg([panel("u", "Signals per 100 transformers")], period_start),
-        "xs_svg": _shewhart_svg([
-            panel("x", "X-bar, mean peak % of rating"), panel("s", "S, spread")
-        ], period_start),
-        **{key: stats[key] for key in ("p_out", "u_out", "x_out", "s_out")},
+        "near_svg": _trend_svg(points, "near_rating_pct", "At or above 90% of rating (%)", period_start),
+        "signals_svg": _trend_svg(points, "signal_transformers", "Transformers with signals (count)", period_start),
+        "loading_svg": _trend_svg(points, "median_pct", "Median loading and middle 50% (% of rating)", period_start, band=True),
     }

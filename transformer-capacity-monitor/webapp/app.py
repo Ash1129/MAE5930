@@ -30,7 +30,7 @@ from webapp.viz import (  # noqa: E402
     STATUS_ORDER,
     STABILITY_LABEL,
     STABILITY_ORDER,
-    county_control_charts,
+    county_trend_charts,
     forecast_row,
     pie_svg,
     summarize_results,
@@ -217,7 +217,7 @@ def dashboard():
         if band:
             rows = [r for r in rows if r["usage_band"] == band]
         review_n = sum(1 for r in focused["transformers"] if r["status"] != "within_limits")
-        controls = county_control_charts(scope, period_start)
+        trends = county_trend_charts(scope, period_start)
         board = {
             "status_slices": status_slices,
             "stability_slices": stability_slices,
@@ -231,7 +231,7 @@ def dashboard():
             "total": len(focused["transformers"]),
             "area_name": next((a["area_name"] for a in full["areas"] if a["area_id"] == area), area),
             "queue": not status,
-            "controls": controls,
+            "trends": trends,
         }
     return render_template(
         "dashboard.html",

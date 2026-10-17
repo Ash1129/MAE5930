@@ -65,10 +65,11 @@ demonstration. Do not regenerate the working feeds just to view it. Scenario dem
 
 ## Additional statistical and modeled views
 
-[METHODS.md](METHODS.md) documents the aggregate p/u/X-S calculations in `capacity_monitor/aggregate.py`, their
-assumptions and current test coverage, plus thermal and seasonal model inputs, equations and defaults.
-The web layer renders these numerical results; `tests/test_aggregate.py` covers numerical known
-answers and edge cases. Baseline policy and subgroup/distribution assumptions still need review.
+[METHODS.md](METHODS.md) documents descriptive daily trends in `capacity_monitor/aggregate.py`:
+near-rating percentage, unique affected transformer count, median loading and quartiles. The web layer
+renders these without aggregate control limits. `tests/test_aggregate.py` covers numerical known answers
+and edge cases. Individual I-MR/capability assumptions still need review. Thermal/seasonal models and
+existing evidence are also documented in METHODS.md.
 
 ## Alert explanations
 

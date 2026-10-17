@@ -1,6 +1,6 @@
 """Charts aggregate a period's results by area, stability and usage."""
 
-from webapp.viz import box_stats, county_control_charts, filter_summary, pie_svg, summarize_results
+from webapp.viz import box_stats, county_trend_charts, filter_summary, pie_svg, summarize_results
 
 
 def _result(tid, area_id, area_name, stability, status, usage, forecast=None):
@@ -45,7 +45,7 @@ def test_box_and_area_rollup():
     assert "circle" in pie and "review_needed" in pie
 
 
-def test_county_charts_flag_a_week_that_leaves_the_baseline():
+def test_descriptive_trends_have_ribbon_and_no_alarm_limits():
     def one(tid, peaks, signals=()):
         return {
             "transformer_id": tid,
@@ -58,9 +58,20 @@ def test_county_charts_flag_a_week_that_leaves_the_baseline():
             },
         }
 
-    charts = county_control_charts(
+    charts = county_trend_charts(
         [one("T1", [40, 60, 95], ["2026-10-08"]), one("T2", [50, 50, 96])],
         "2026-10-08",
     )
-    assert charts["p_out"] == 1 and charts["u_out"] == 1 and charts["x_out"] == 1
-    assert "2026-10-08" in charts["p_svg"] and "X-bar" in charts["xs_svg"]
+    assert "2026-10-08" in charts["near_svg"]
+    assert "polygon" in charts["loading_svg"]
+    assert "middle 50%" in charts["loading_svg"]
+    assert "Transformers with signals" in charts["signals_svg"]
+    for svg in charts.values():
+        assert "stroke-dasharray" not in svg and "#D7263D" not in svg
+
+
+def test_empty_and_single_day_trends_render():
+    assert "No eligible" in county_trend_charts([], "2026-10-09")["near_svg"]
+    rows = [{"transformer_id": "A", "rated_max": 100,
+             "chart": {"dates": ["2026-10-09"], "values": [40]}}]
+    assert "<svg" in county_trend_charts(rows, "2026-10-09")["loading_svg"]

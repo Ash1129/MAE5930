@@ -129,23 +129,23 @@
     </div>
   </section>
 
-  <section class="band" aria-label="Control charts">
+  <section class="band" aria-label="Daily trends">
     <header>
-      <h2>Control charts</h2>
-      <p class="hint">{% if area %}{{ board.area_name }}{% else %}Whole county{% endif %} · limits from the days before this week · red is outside the limit{% if board.controls.p_out or board.controls.u_out or board.controls.x_out or board.controls.s_out %} · this week p {{ board.controls.p_out }}, u {{ board.controls.u_out }}, X-bar {{ board.controls.x_out }}, S {{ board.controls.s_out }}{% endif %}</p>
+      <h2>Daily trends</h2>
+      <p class="hint">{% if area %}{{ board.area_name }}{% else %}Whole county{% endif %} · descriptive summaries · shaded dates are this review week · reporting counts may vary by day</p>
     </header>
     <div class="controls">
       <figure class="ctrl">
-        <figcaption><h3>p chart</h3><span class="sub">Share of transformers at or above 90% of rating</span></figcaption>
-        <div class="plot">{{ board.controls.p_svg|safe }}</div>
+        <figcaption><h3>Near rating</h3><span class="sub">Daily share at or above 90% of rating (%)</span></figcaption>
+        <div class="plot">{{ board.trends.near_svg|safe }}</div>
       </figure>
       <figure class="ctrl">
-        <figcaption><h3>u chart</h3><span class="sub">I-MR signal events per transformer</span></figcaption>
-        <div class="plot">{{ board.controls.u_svg|safe }}</div>
+        <figcaption><h3>Transformers with signals</h3><span class="sub">Daily count · each transformer counted once</span></figcaption>
+        <div class="plot">{{ board.trends.signals_svg|safe }}</div>
       </figure>
       <figure class="ctrl">
-        <figcaption><h3>X-S chart</h3><span class="sub">Mean daily peak and its spread, as % of rating</span></figcaption>
-        <div class="plot">{{ board.controls.xs_svg|safe }}</div>
+        <figcaption><h3>Typical loading</h3><span class="sub">Median daily peak · band shows middle 50% · % of rating</span></figcaption>
+        <div class="plot">{{ board.trends.loading_svg|safe }}</div>
       </figure>
     </div>
   </section>

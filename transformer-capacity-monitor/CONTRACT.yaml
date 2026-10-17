@@ -183,3 +183,19 @@ tasks:
       of the web layer; SVGs and signal counts for the saved 500-transformer report match HEAD's
       previous renderer exactly. No feeds, database or saved reports were regenerated. Baseline
       fallback and statistical assumptions are preserved and documented for the next review.
+
+  - id: H-11
+    title: Replace unsupported aggregate control limits with descriptive trends
+    points: "Supports stakeholder clarity and statistical validity; no additional points"
+    status: done
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: ["capacity_monitor/aggregate.py", "webapp/viz.py", "webapp/app.py", "webapp/templates/dashboard.html", "tests/test_aggregate.py", "tests/test_viz.py", "tests/test_webapp.py", "METHODS.md", "SPEC.md", "README.md", "README-DEVELOPER.md", "TEMPLATE-AUDIT.md", "CONTRACT.yaml", "manifest.json"]
+    definition_of_done: >
+      Tests verify daily threshold percentages, unique affected transformers, median/quartiles,
+      missing-data handling and rendered dashboard without aggregate alarm limits. All tests pass;
+      saved feeds, database and report bytes remain unchanged.
+    result: >
+      pytest tests -q printed 51 passed in 5.54s. Live dashboard returned HTTP 200 with the three
+      descriptive panels and no old control-chart labels. Saved data paths have no Git diff;
+      individual I-MR charts, decision rules, pies and saved outcome counts remain unchanged.
