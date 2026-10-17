@@ -2,7 +2,12 @@
 {% block title %}Dashboard{% endblock %}
 {% block page_head %}
 <style>
-  .queue-filters{display:flex;flex-wrap:wrap;align-items:end;gap:8px;padding:4px 12px 8px}.queue-filters label{margin:0;font-size:11px;letter-spacing:0;text-transform:none}.queue-filters input,.queue-filters select{display:block;width:auto;max-width:210px;margin:2px 0 0;padding:3px 6px;font-size:12px}
+  .queue-layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(220px,3fr) minmax(0,7fr);gap:12px;padding:4px 12px 12px}
+  .queue-filters{min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:8px 12px;background:rgba(var(--ink-rgb),.025);border:1px solid var(--line);border-radius:8px;overflow:auto}
+  .queue-filters label{margin:0;font-size:11px;letter-spacing:0;text-transform:none}
+  .queue-filters input,.queue-filters select{display:block;width:100%;max-width:none;margin:3px 0 0;padding:5px 7px;font-size:12px}
+  .queue-filters .filter-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .queue-layout>.scroll{min-width:0;min-height:0}
 
   body:has(#board){height:100dvh;overflow:hidden;display:flex;flex-direction:column}
   body:has(#board) .topbar{flex:none}
@@ -66,6 +71,8 @@
     .pies{grid-template-columns:1fr}
     .pie{justify-content:flex-start}
     .pie .svg{height:auto;width:min(120px,42%);max-width:none}
+    .queue-layout{grid-template-columns:1fr;grid-template-rows:auto minmax(260px,1fr)}
+    .queue-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}
   }
 </style>
 {% endblock %}
@@ -167,6 +174,7 @@
 {% if status == 'all' %}<a class="chip" href="{{ url_for('dashboard', period=period.period_id, stability=stability or none, area=area or none, band=band or none) }}">Back to the queue</a>{% endif %}
       {% if alerts %}<a class="chip" href="{{ url_for('alerts') }}">Needs attention {{ alerts|length }}</a>{% endif %}
     </div>
+    <div class="queue-layout">
     <form class="queue-filters" method="get" aria-label="Filter review queue">
       <input type="hidden" name="period" value="{{ period.period_id }}">
       {% for key, value in [('status',status),('stability',stability),('area',area),('band',band)] %}{% if value %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}{% endfor %}
@@ -174,7 +182,7 @@
       <label>Review-needed reason<select name="reason"><option value="">All reasons</option>{% for option in reason_options %}<option value="{{ option.key }}" {% if reason == option.key %}selected{% endif %}>{{ option.label }} ({{ option.count }})</option>{% endfor %}</select></label>
       <label>Follow-up<select name="followup"><option value="">Any follow-up</option><option value="unassigned" {% if followup_filter == 'unassigned' %}selected{% endif %}>No plan yet</option><option value="overdue" {% if followup_filter == 'overdue' %}selected{% endif %}>Overdue</option>{% for key,label in followup_statuses.items() %}<option value="{{ key }}" {% if followup_filter == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
       <label>Sort<select name="sort">{% for key,label in [('priority','Review priority'),('peak','Highest peak'),('forecast','Highest forecast'),('due','Follow-up date')] %}<option value="{{ key }}" {% if sort == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-      <button class="btn" type="submit">Apply</button><a href="{{ url_for('dashboard', period=period.period_id) }}">Reset</a>
+      <div class="filter-actions"><button class="btn" type="submit">Apply</button><a href="{{ url_for('dashboard', period=period.period_id) }}">Reset</a></div>
       {% if reason %}<span class="small">Reason filter shows Review needed cases only.</span>{% endif %}
     </form>
     <div class="scroll" tabindex="0" role="region" aria-label="Transformer review queue">
@@ -194,6 +202,7 @@
         <tr><td colspan="7" class="muted">Nothing matches this filter.</td></tr>
         {% endfor %}
       </table>
+    </div>
     </div>
   </section>
 </div>
