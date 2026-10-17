@@ -550,10 +550,13 @@ $('date-slider').oninput = e => { S.dateIdx = +e.target.value; labels(); clearTi
 $('month-slider').oninput = e => { S.month = +e.target.value; labels(); clearTimeout(fetchTimer); fetchTimer = setTimeout(fetchLoads, 120); };
 let playT = null;
 function stopPlay() { clearInterval(playT); playT = null; S.playing = false; $('play-text').textContent = 'Play'; $('play-ico').innerHTML = '<polygon points="6 3 20 12 6 21 6 3"/>'; }
+// Play walks the selected day from 00:00 to 23:00 and stops; pressed at 23:00 it starts the day over.
+// The day and the month stay under their sliders.
 $('play').onclick = () => {
   if (S.playing) return stopPlay();
+  if (S.hour >= 23) { S.hour = 0; $('hour-slider').value = 0; renderHeat(); }
   S.playing = true; $('play-text').textContent = 'Pause'; $('play-ico').innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
-  playT = setInterval(() => { let h = S.hour + 1; if (h > 23) { h = 0; if (S.mode === 'seasonal') { S.month = S.month % 12 + 1; $('month-slider').value = S.month; } else if (DATES.length) { S.dateIdx = (S.dateIdx + 1) % DATES.length; $('date-slider').value = S.dateIdx; } S.hour = h; $('hour-slider').value = h; fetchLoads(); return; } S.hour = h; $('hour-slider').value = h; renderHeat(); }, 700);
+  playT = setInterval(() => { if (S.hour >= 23) { stopPlay(); return; } S.hour += 1; $('hour-slider').value = S.hour; renderHeat(); }, 700);
 };
 
 // ---- sidebar ----
