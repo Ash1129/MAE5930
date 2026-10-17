@@ -141,8 +141,10 @@ tasks:
       requirements.txt pins the tested versions. scripts/setup_env.sh still installs version ranges
       ("apache-airflow[standard]>=3.0,<4", "flask>=3,<4"); point it at requirements.txt.
       Feeds, database and the 2026-10-15 report are now tracked for a ready-to-open demonstration.
-      Setup still regenerates feeds if readings.csv is missing; that path was not invoked in this audit.
-      Clean-clone verification is deferred. The team plans Devpost submission at the end.
+      The committed manifest checksums are stale for ten files changed at 8a24321. Refresh them
+      before deployment verification. Setup still regenerates feeds if readings.csv is missing;
+      that path was not invoked in this audit. Clean-clone verification is deferred. The team plans
+      Devpost submission at the end.
     definition_of_done: >
       git clone of github.com/Ash1129/MAE5930 into an empty folder, then one setup command and
       pytest tests -q both pass; git grep -i "api_key" finds no real key; the Devpost entry links the repo.
@@ -271,9 +273,47 @@ tasks:
     started_at: "2026-10-17"
     owns: ["capacity_monitor/charts.py", "webapp/app.py", "webapp/templates/dashboard.html", "webapp/static/ui-polish.css", "tests/test_viz.py", "tests/test_webapp.py", "CONTRACT.yaml", "manifest.json"]
     definition_of_done: >
-      Review labels sit inside the plot just right of its y axis; dashboard captions stack below
-      titles and the 70-90% band uses the review color. Tests pass and saved data is unchanged.
+      Review labels sit inside the plot just right of its y axis; dashboard captions align beside
+      titles, the reporting-count caveat is removed, and the 70-90% band uses the review color.
+      Tests pass; saved outcome counts are unchanged.
     result: >
-      Full suite printed 63 passed in 6.78s. Review labels sit at plot x+8 and paint above data with
-      a paper halo; 70-90%, review-needed and short-history colors match. Both dashboard captions
-      now stack beneath their titles. Saved analysis unchanged.
+      At 8a24321, review labels sit at plot x+8 and paint above data with a paper halo; 70-90%,
+      review-needed and short-history colors match. Dashboard captions align beside their titles
+      and the daily reporting-count caveat is absent. The queue receives more vertical space.
+      Earlier full-suite evidence is 63 passed in 6.78s; later targeted UI checks are recorded in
+      H-17. Read-only saved counts remain 22/97/381.
+
+  - id: H-17
+    title: Add case follow-up tracking and refine review evidence and queue
+    points: "Supports stakeholder workflow and interface clarity; no additional rubric points"
+    status: done
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: ["capacity_monitor/store.py", "webapp/", "tests/test_webapp.py", "README.md", "SPEC.md"]
+    notes: >
+      Retrospective ledger entry for the changes delivered in 8a24321. The implementation preceded
+      this ledger entry; the checkout-before-build rule was not followed for this work and should
+      be followed for future tasks.
+    definition_of_done: >
+      The saved case page shows peak evidence and a follow-up form; the queue offers reason, search,
+      follow-up and sorting filters; stale follow-ups are identified; documentation states scope and
+      limits. Targeted UI tests pass and saved review counts remain unchanged.
+    result: >
+      Commit 8a24321 contains the follow-up history, owner/action/date/status/notes form, queue reason
+      and follow-up filters, sorting/search, and peak/freshness evidence. After the later Cpk graph
+      and Show all 500 removal, targeted tests printed "13 passed in 2.23s". A read-only query shows
+      22 inspect now, 97 review needed, 381 within limits, and 0 follow-up records. The local SQLite
+      file has a follow-up table schema change and remains uncommitted.
+
+  - id: H-18
+    title: Refresh template and rubric audit against commit 8a24321
+    points: "Supports documentation and traceability; no additional rubric points"
+    status: in_progress
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: ["TEMPLATE-AUDIT.md", "CONTRACT.yaml"]
+    definition_of_done: >
+      Audit maps current commit behavior to each rubric category, reports verification evidence and
+      manifest drift accurately, and keeps the instructor's starter/layout and generated multi-file
+      dataset questions explicitly open. Ledger entries match delivered features and pending checks.
+    result: ""

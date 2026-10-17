@@ -1,91 +1,82 @@
-# Template and rubric audit — 2026-10-17, revision 963bcdf
+# Template and rubric audit — 2026-10-17, revision 8a24321
 
-This replaces the earlier audit and its superseded follow-ups. Sources are the local course
-[template SPEC](../Timmy's%20stuff/SPEC.md), [ledger](../Timmy's%20stuff/CONTRACT.yaml),
-[agent rules](../Timmy's%20stuff/AGENTS.md), and [rubric](../Timmy's%20stuff/docs/criteria.md).
-This is an implementation/documentation audit, not a predicted judging score or real-utility validation.
+Compared the committed application at `8a2432176367660dafc29bd6cb6d6306d27362ef` with the local
+course [template SPEC](../Timmy's%20stuff/SPEC.md), [rubric](../Timmy's%20stuff/docs/criteria.md),
+[agent rules](../Timmy's%20stuff/AGENTS.md), and the project [SPEC](SPEC.md) and [ledger](CONTRACT.yaml).
+This is a repository and interface review, not a predicted judging score, live deployment check, or
+validation with a utility's operational data.
 
 ## Conclusion
 
-The app now substantially follows the rubric's statistical separation and documentation principles.
-The unsupported aggregate control charts are gone; numerical descriptive functions live outside the
-web layer. Individual-chart findings 2–6 are implemented and tested. Full template compliance remains
-conditional on the explicitly deferred layout/dataset questions and delivery/reproducibility checks.
-Normality-method improvement remains deferred by owner choice, not considered statistically resolved.
+The current interface supports a coherent review-to-follow-up workflow: summarize the county,
+filter the queue by review reason and follow-up state, inspect the evidence for an individual
+transformer, and record an owner and next action. The core QC methods and their assumptions are
+documented separately from web rendering. The project still has explicit template deviations and
+external checks to resolve. The instructor questions about the starter/layout and generated,
+multi-file datasets remain open as requested.
 
 ## Rubric mapping
 
-| Criterion | Current evidence | Remaining qualification |
+| Criterion | Evidence at 8a24321 | Remaining qualification |
 |---|---|---|
-| Working tool, 25 | Flask review app, preserved sample database, backend finalization gate; recent local dashboard and review-page HTTP 200 checks; web-path tests | Team confirms deployed; current public access is not reverified in this audit. |
-| Valid QC analysis, 25 | Plain I-MR/capability/forecast functions in `capacity_monitor/pipeline.py`; descriptive functions in `aggregate.py`; regression, known-answer, edge-case and simulation tests | Synthetic-case evidence is not validation on real load/weather data. Statistical limitations remain documented. |
-| Prompt fit, 5 | SPEC names Smart Grid Transformer Surges and links load monitoring, headroom and heat-pump growth to planning decisions | Forecast explicitly covers heat pumps, not separate EV/data-center scenarios; observed readings can include any load. This is a disclosed scope choice. |
-| Clear user/use case, 5 | Named grid-planning engineer; exception review and period sign-off | No independent utility-user evaluation claimed. “Inspect now” is a prioritization rule, not automatic dispatch. |
-| Minimal reasonable inputs, 5 | Four required utility feeds; optional ambient and asset thermal fields have defaults | File replacement is still a developer/IT workflow; no browser upload. The rubric does not require five inputs. |
-| Demonstration, 10 | All three isolated demo commands executed in this audit; walkthrough numbers and hand checks refreshed | Teammate walkthrough not verified. Preserved 500-transformer demo uses the earlier analysis version. |
-| Documentation, 10 | README, SPEC, METHODS, codebook, demo, start guide and developer notes explain inputs, formulas, assumptions and usage | Add the tested public URL later. Historical delivery sections remain explicitly historical. |
-| 2–3 working datasets, 5 | Normal, boundary-mismatch and missing-rating scenarios ran as documented | Generated multi-file scenarios differ from the template's small committed CSV fixtures; instructor question deferred. |
-| Codebook, 5 | Input schemas/units/collection methods and planted cases in data/README; optional model sources in METHODS | Scenario rows were corrected for the three inspection cases during this audit. |
-| Public/reproducible code, 5 | Public repository location documented; requirements, manifest, launch and publish scripts exist | Fresh-clone verification is deferred; setup currently installs version ranges. Public accessibility and Devpost are not independently checked here. |
+| Working tool, 25 | Flask review app; saved October 15 results; period approval gate; targeted user-path tests | Posit Connect is deployed per the team, but public access and the deployment bundle need later verification. |
+| Valid QC analysis, 25 | Plain I-MR, capability, forecast, and decision functions; framework-independent descriptive summaries; known-answer and edge-case tests documented in SPEC/METHODS | Synthetic data is not field validation. Normality improvement is deferred by the owner; dependence and capability limitations remain documented. |
+| Prompt fit, 5 | Smart Grid Transformer Surges prompt; loading, nameplate headroom, and heat-pump growth inform planning review | The projection models heat pumps by area, not separate EV or data-center adoption scenarios. |
+| Clear user and use case, 5 | SPEC names a grid-planning engineer reviewing three times weekly; findings are explicitly review priorities, not dispatch orders | No independent utility engineer evaluation is claimed. |
+| Minimal inputs, 5 | Four required utility feeds; optional ambient and thermal inputs have defaults; no per-run manual data entry | Feed replacement remains an IT/developer workflow, not a stakeholder upload flow. |
+| Demonstration, 10 | `demo/README.md` documents normal, boundary-mismatch, and missing-rating scenarios; the saved 500-transformer analysis opens without rerunning | Scenarios are generated multi-file sets. Teammate reproduction is pending; saved analysis predates current rules. |
+| Documentation, 10 | README, SPEC, METHODS, codebook, demo guide, start guide, and developer notes describe the tool and methods | Live URL and teammate fresh-clone walkthrough remain pending. The audit and ledger are being reconciled to this commit in H-18. |
+| Test datasets and codebook, 10 | Synthetic cases and `data/README.md` document inputs, units, and scenario behavior | Instructor to confirm whether generated multi-file scenarios meet the small-CSV-fixture expectation. |
+| Public and reproducible code, 5 | Public GitHub repository; pinned `requirements.txt`; setup, test, manifest, and deploy scripts | Clean-clone verification and Devpost submission remain deferred. The committed `manifest.json` has stale checksums for ten files changed by 8a24321; refresh before the next bundle/deployment verification. |
 
-## Resolved since the first audit
+These are rubric categories and evidence, not a score prediction.
 
-- Aggregate calculations moved out of `webapp/viz.py`; numerical summaries have independent tests.
-- County p/u/X-S limits, alarm points and baseline fallback removed. Replacement daily trends show
-  near-rating percentage, unique affected transformer counts and median with the middle-50% band.
-- Individual baseline dependence checks at lags 1–7 run before capability availability is assessed;
-  flags carry into review routing. Checks are pointwise exploratory screens, not proof of independence.
-- Eight-point runs that continue into the review period remain signaled on subsequent days.
-- `history_days` now means baseline days: 60 before the seven-day review period, 67 total.
-- Confidence intervals explicitly support only 95%; other configured levels are rejected.
-- Chart wording distinguishes run-pattern signals from limit exceedances; “no issue detected” avoids
-  asserting independence or stability. Legacy saved results identify missing baseline diagnostics.
-- METHODS documents current formulas, units, numerical outputs, model defaults and limitations.
+## Changes present at 8a24321
 
-## Current evidence
+- The map's review panel uses **Review status**, matching the dashboard.
+- The dashboard keeps the summary and daily-trend captions beside their titles, removes the daily reporting-count caveat from that caption, and allocates more vertical space to the queue.
+- The queue exposes search, Review needed reason categories, follow-up state and overdue filters, and sorting by peak, forecast, or due date. Its reason labels correspond to the category filter. The **Show all 500** control was removed.
+- Individual pages show peak time, margin to rating, sample counts at or above rating, reporting-day coverage, latest saved reading, and analysis time. The page explicitly warns that sample counts do not establish overload duration and reporting-day coverage does not verify every interval.
+- Optional follow-ups record action, owner, due/recheck date, status, and notes in append-only SQLite history. They are separate from report dispositions, remain editable after report sign-off, and are marked for rechecking when their input hash is old. They are period-specific, do not notify owners, and are not included in report exports.
+- The requested Cpk graph was removed. Cpk and its interval remain available as numeric case evidence when calculated; cases with unstable or insufficient history withhold Cpk.
+- The existing peak evidence and follow-up features were added to README and SPEC. The ledger has not previously recorded these changes; H-17 records the implementation commit and H-18 tracks this reconciliation.
 
-| Check | Observed result |
+## Verification evidence and limits
+
+| Check | Evidence |
 |---|---|
-| Latest full suite, preceding statistics-fix verification | `58 passed in 6.07s`; not repeated for these documentation-only edits |
-| `scripts/run_demo.py normal`, run in this audit | Success, step 15; 12 transformers: 4 within, 5 review, 3 inspect |
-| `scripts/run_demo.py boundary-mismatch`, run in this audit | Expected failed analysis at step 7, wrong-period boundary identified |
-| `scripts/run_demo.py missing-rating`, run in this audit | Expected failed analysis at step 7, T-GRO-009 missing rating identified |
-| Scenario isolation | Each command creates its own temporary CAPMON_HOME; working feeds/database/reports untouched |
-| Numerical walkthrough | Updated from the isolated run, including T-DAN-010 Cpk 1.13 and T-LAN-005 Cpk 1.59, interval 1.24–1.95 |
-| Current saved app | Prior check after latest fixes: transformer review HTTP 200, qualified caption and legacy diagnostics label |
-| Static audit checks | Ledger parses, task IDs unique, required contract files exist, local documentation links resolve, manifest checksums match, git diff --check passes |
-| Saved outputs | Working feeds, database and reports have no Git diff; preserved counts remain 22/97/381 |
+| Latest full test run available | `64 passed in 6.82s`, before the last dashboard refinements and Cpk-graph removal; not repeated for this read-only audit. |
+| Latest targeted run after removing the Cpk graph and “Show all 500” | `13 passed in 2.23s` for `tests/test_viz.py` and `tests/test_webapp.py`. |
+| Saved October 15 result counts | Read-only SQLite query: 22 inspect now, 97 review needed, 381 within limits. Follow-up table contains 0 plans. |
+| Working database state | The local `data/capacity_monitor.sqlite3` is modified in the worktree and has the follow-up table; it is not part of commit 8a24321. Its current counts match the saved results above. |
+| Manifest | Comparing the committed manifest hashes with normalized blobs at 8a24321 found ten stale application/documentation file checksums: README, SPEC, store, webapp tests/app/templates/viz, and UI polish CSS. No manifest paths were missing. Manifest regeneration and deployment verification are pending. |
+| Demo scenarios | Normal, boundary-mismatch, and missing-rating scenarios were run in the prior 963bcdf audit, not rerun against 8a24321. |
 
-The normal demo is freshly generated and analyzed only in a temporary directory. The preserved app
-analysis is not the same dataset or analysis version; its counts must not be presented as expected
-output from rerunning current rules. No evaluation script, scheduler trigger or working-data rerun was
-performed. Older test/evaluation counts remain dated historical evidence.
+No feeds were regenerated during this audit. The saved analysis is an earlier result set and should not
+be represented as a rerun of current rules. The workflow test evidence covers local synthetic cases;
+it does not establish production safety or field accuracy.
 
-## Remaining items and agreed timing
+## Open items and agreed timing
 
-| Item | Disposition |
+| Item | Status |
 |---|---|
-| Posit Connect URL/public access | Deployed per team; verify later and add the tested URL to README/delivery evidence. |
-| Reproducibility | Deferred. Install from pinned requirements rather than ranges, then verify a clean checkout. |
-| Starter, stack and `app/` layout | Ask instructor later. Four-file contract exists in `transformer-capacity-monitor/`, but no starter was copied and Flask differs from the named dashboard stacks. |
-| Multi-file datasets | Ask instructor later whether the three generated feed-set scenarios satisfy the fixture requirement. |
-| Devpost submission | Planned for the end. No submission action taken. |
-| Teammate demonstration/method explanation | Have a teammate reproduce the walkthrough and explain the method before closing the corresponding ledger checks. |
-| Normality | Owner deferred changes. Current Jarque–Bera asymptotic screen is retained; it is not an exact finite-sample test. |
-| Real utility feeds, approved thresholds, field-calibrated thermal values | Outside the hackathon demo; do not claim operational readiness. |
+| Starter, stack, and `app/` layout | **Ask the instructor later.** The project uses a Flask layout, not a copied starter in `app/`; no instructor exception is recorded. |
+| Small CSV fixtures vs generated multi-file scenarios | **Ask the instructor later.** Preserve this as an open requirement question. |
+| Posit Connect public access | Team says it is deployed. Verify the public URL and logged-out behavior later, as planned. |
+| Reproducibility | Fresh-clone and pinned-environment checks deferred. Refresh stale manifest checksums before the next deployment verification. |
+| Devpost | Submit at the end, as planned. |
+| Teammate demonstration and method explanation | Pending; do not mark demonstrated by the author alone. |
+| Task checkout discipline | The ledger currently has several open tasks; H-05 and H-07 share the owner "Claude" despite the one-active-task-per-person rule. Resolve the ownership/statuses before starting more ledger work. |
+| Normality | Owner deferred method changes. Current Jarque–Bera screen remains; do not describe the assumption as resolved. |
+| Follow-up continuity | Current plans are period-specific, have no reminders, and are not exported. Carry-forward/notifications are future product work, not a template requirement. |
+| Real utility operation | Real feeds, utility-approved thresholds, feeder topology, interval completeness, and field-calibrated thermal inputs are not validated here. |
 
-Additional statistical limitations remain: dependence screens have multiple-comparison false positives,
-capability intervals were simulated under independent normal observations rather than weather-dependent
-loads, and the synthetic generator selects cases matching intended labels. Missing daily/hourly coverage
-can affect peaks; the current completeness check requires a reading each period day, not all expected
-hourly intervals. Thermal and seasonal outputs remain explicitly MODELED. The public assumption-check
-helper is not hardened for empty direct input, though the capability caller guards sample size.
+## Statistical and operational limitations
 
-## Documentation refreshed in this audit
-
-- Replaced this audit's contradictory historical findings with the current rubric mapping.
-- Updated demo output and hand checks for the corrected baseline; retained the separate saved-data demo.
-- Corrected planted-case codebook rows and the start guide's dashboard description.
-- Updated SPEC's worked example and inspection interpretation, and DELIVERY-REPORT's current snapshot.
-- Updated the task ledger and deployment-manifest checksums without publishing or changing analysis data.
-  The full checksum check also found and corrected a pre-existing stale checksum for map.html.
+The I-MR and Cpk methods are per transformer; county-level descriptive trends carry no control limits.
+Baseline lag screens are exploratory pointwise checks and can have multiple-comparison false
+positives. Cpk interval coverage was simulated under independent normal observations, not weather-
+dependent load. Missing interval data can change a peak: the completeness check requires at least one
+reading per review day, while the page explicitly avoids inferring full hourly coverage or overload
+duration. The heat-pump forecast uses area-level assumptions. Thermal and seasonal views are labeled
+MODELED and do not affect the review decision.
