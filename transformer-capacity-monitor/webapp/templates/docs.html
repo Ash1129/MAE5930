@@ -13,34 +13,36 @@
   .toc a:hover{background:rgba(var(--ink-rgb),.05);color:var(--ink-90)}
   .toc a.on{color:var(--accent-700);box-shadow:inset 2px 0 0 var(--accent);background:rgba(182,130,53,.06)}
   .body{min-width:0;display:flex;flex-direction:column;gap:56px}
+  .body>section{min-width:0;max-width:100%}
   section{scroll-margin-top:84px}
   h2{font-family:var(--font-heading);font-weight:600;font-size:30px;line-height:1.1;margin:0 0 14px;letter-spacing:-.01em}
   h3{font-family:var(--font-heading);font-weight:600;font-size:21px;margin:26px 0 8px}
   p{margin:0 0 12px;max-width:72ch;text-wrap:pretty} .lead{font-size:16px}
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px;margin-top:18px}
+  .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
   .card{display:block;padding:16px 18px;border:1px solid var(--line);border-radius:4px;background:var(--panel);text-decoration:none;color:inherit;transition:border-color .15s,background .15s}
   .card:hover{border-color:var(--accent);background:rgba(182,130,53,.06)}
   .card b{display:block;font-family:var(--font-heading);font-weight:600;font-size:19px;color:var(--accent-700);margin-bottom:4px}
   .card span{font-size:13px;color:var(--ink-60)}
-  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:10px 0 6px}
+  .tbl{max-width:100%;overflow-x:auto;margin:10px 0 6px}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:0}
   th,td{text-align:left;padding:9px 12px 9px 0;border-bottom:1px solid rgba(var(--ink-rgb),.1);vertical-align:top}
   th{font-weight:400;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60)}
   td code,p code,li code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:rgba(var(--ink-rgb),.06);padding:1px 5px;border-radius:3px}
   .tier{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:2px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
   .tier i{width:6px;height:6px;border-radius:50%;background:currentColor}
   .t-ok{color:var(--ok)} .t-amber{color:var(--amber)} .t-red{color:var(--review)}
-  pre{background:rgba(var(--ink-rgb),.04);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto;white-space:pre-wrap;word-break:break-word;color:var(--ink-80)}
+  pre{max-width:100%;background:rgba(var(--ink-rgb),.04);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto;white-space:pre-wrap;word-break:break-word;color:var(--ink-80)}
   ul{padding-left:20px;margin:0 0 12px} li{margin:4px 0}
   .faq details{border-top:1px solid var(--line)} .faq details:last-child{border-bottom:1px solid var(--line)}
   .faq summary{padding:14px 0;font-family:var(--font-heading);font-weight:600;font-size:19px;display:flex;align-items:center;gap:10px}
   .faq .a{padding:0 0 16px 22px;color:var(--ink-80)}
-  .note{font-size:12px;color:var(--ink-60)}
+  .note{font-size:12px;color:var(--ink-60)} p.note{max-width:none}
   form.inline{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 12px}
   form.inline input[type=text]{font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line-16);border-radius:4px;background:var(--panel);color:inherit;min-width:min(100%,280px)}
   form.inline .btn{text-decoration:none}
   .cta{border-top:1px solid var(--line);padding-top:24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
   .cta .btn{text-decoration:none}
-  @media (max-width:760px){.wrap{grid-template-columns:1fr;gap:28px;padding:28px 16px 64px}.toc{position:static;flex-direction:row;flex-wrap:wrap;border-left:0;padding:0}.hero .in{padding:40px 16px 32px}.hero h1{font-size:40px}}
+  @media (max-width:760px){.wrap{grid-template-columns:minmax(0,1fr);gap:28px;padding:28px 16px 64px}.cards{grid-template-columns:minmax(0,1fr)}.toc{position:static;flex-direction:row;flex-wrap:wrap;border-left:0;padding:0}.hero .in{padding:40px 16px 32px}.hero h1{font-size:40px}}
 </style>
 {% endblock %}
 {% block content %}
@@ -89,26 +91,26 @@
       <p>This week's peak plus customers × (forecast heat-pump share − today's share) × kW per heat pump ÷ {{ playbook.forecast.power_factor }} power factor, using the forecast for the transformer's declared area. Review when it reaches {{ (playbook.forecast.near_rating_ratio * 100)|round|int }}% of the rating. It is always labelled as an estimate.</p>
       <h3>The decision table</h3>
       <p>First matching row wins. Rules 1 to 3 are <span class="tier t-red"><i></i>inspect now</span>, 4 to 12 are <span class="tier t-amber"><i></i>review needed</span>, and 13 is <span class="tier t-ok"><i></i>within limits</span>. Thresholds are read from <code>rules/playbook.json</code> (version <code>{{ playbook.version }}</code>) when the table loads, so there is one place to change them.</p>
-      <table>
+      <div class="tbl"><table>
         <tr><th>Rule</th><th>When</th><th>Tier</th><th>Meaning</th></tr>
         {% for row in table %}
         <tr><td>{{ row.rule }}</td><td><code>{{ row.when }}</code></td><td>{% if row.then == 'inspect_now' %}<span class="tier t-red"><i></i>inspect now</span>{% elif row.then == 'review_needed' %}<span class="tier t-amber"><i></i>review needed</span>{% else %}<span class="tier t-ok"><i></i>within limits</span>{% endif %}</td><td>{{ row.notes }}</td></tr>
         {% endfor %}
-      </table>
+      </table></div>
       <p class="note">The map's heat view and the review page's cutaway also show a modeled winding temperature (IEEE C57.91 loading guide, with the outside air). It is for understanding only; no rule reads it.</p>
     </section>
 
     <section id="data">
       <h2>Data</h2>
       <p class="lead">Four files in <code>data/feeds/</code> drive a run. A fifth, outside air, is optional and feeds only the modeled views.</p>
-      <table>
+      <div class="tbl"><table>
         <tr><th>File</th><th>One row is</th><th>Used for</th><th>Status</th></tr>
         <tr><td><code>{{ feeds.readings.file }}</code></td><td>one transformer, one hour: <code>transformer_id, timestamp, load, unit</code></td><td>the daily peaks on every chart</td><td>{% if feeds.readings.present %}<span class="tier t-ok"><i></i>present</span> <span class="note">{{ feeds.readings.bytes }} bytes, {{ feeds.readings.modified }}</span>{% else %}<span class="tier t-red"><i></i>missing</span>{% endif %}</td></tr>
         <tr><td><code>{{ feeds.assets.file }}</code></td><td>one transformer: rating, location, customers, declared area, optional nameplate thermal values</td><td>the rating line, the map, the winter estimate</td><td>{% if feeds.assets.present %}<span class="tier t-ok"><i></i>present</span> <span class="note">{{ feeds.assets.bytes }} bytes, {{ feeds.assets.modified }}</span>{% else %}<span class="tier t-red"><i></i>missing</span>{% endif %}</td></tr>
         <tr><td><code>{{ feeds.boundaries.file }}</code></td><td>one town, village or city polygon with its approval dates</td><td>districts on the map and forecast allocation</td><td>{% if feeds.boundaries.present %}<span class="tier t-ok"><i></i>present</span> <span class="note">{{ feeds.boundaries.bytes }} bytes, {{ feeds.boundaries.modified }}</span>{% else %}<span class="tier t-red"><i></i>missing</span>{% endif %}</td></tr>
         <tr><td><code>{{ feeds.forecast.file }}</code></td><td>one area and forecast version: heat-pump shares and kW per pump</td><td>the winter estimate</td><td>{% if feeds.forecast.present %}<span class="tier t-ok"><i></i>present</span> <span class="note">{{ feeds.forecast.bytes }} bytes, {{ feeds.forecast.modified }}</span>{% else %}<span class="tier t-red"><i></i>missing</span>{% endif %}</td></tr>
         <tr><td><code>{{ optional_feeds.ambient.file }}</code> <span class="note">optional</span></td><td>one hour (or day) of outside air in °C</td><td>the modeled temperature views only</td><td>{% if optional_feeds.ambient.present %}<span class="tier t-ok"><i></i>present</span> <span class="note">{{ optional_feeds.ambient.bytes }} bytes, {{ optional_feeds.ambient.modified }}</span>{% else %}<span class="tier t-amber"><i></i>not provided</span> <span class="note">fixed playbook ambient is used</span>{% endif %}</td></tr>
-      </table>
+      </table></div>
       <p class="note">Files live in <code>{{ feeds_dir }}</code>. Expected columns: <code>readings.csv</code> transformer_id, timestamp (ISO 8601), load, unit · <code>assets.csv</code> transformer_id, name, lat, lon, rated_max, unit, customers, area_id, effective_from, effective_to, notes, plus optional top_oil_rise_c, hot_spot_rise_c, loss_ratio, oil_time_constant_h · <code>boundaries.geojson</code> FeatureCollection with metadata.valid_from / valid_to / approved_version and feature properties area_id, name, kind · <code>heat_pump_forecast.csv</code> forecast_version, area_id, horizon_label, households, hp_share_base, hp_share_forecast, kw_per_heat_pump, valid_from, valid_to, notes · <code>ambient.csv</code> timestamp and temp_c (hourly) or date and temp_c (daily).</p>
       <p>A run refuses incomplete or mismatched inputs and posts an alert instead of publishing a partial report: a missing file, a transformer without a rating, a boundary file valid for another period, or days without readings all stop it before analysis.</p>
       <p><b>Everything in this copy is synthetic.</b> The 500 transformers, their readings, the boundaries' assignment of transformers, the forecast and the outside-air feed are generated by <code>scripts/make_synthetic_data.py</code> with a fixed seed, and planted cases exercise each rule. Replace the feeds with exports from your meter, asset, GIS and forecast systems, keep the same columns, and run a period. The <a href="https://github.com/Ash1129/MAE5930/blob/main/transformer-capacity-monitor/data/README.md">codebook</a> describes every column and how to collect it for real.</p>
@@ -130,9 +132,9 @@
       <p>Schedule: {{ playbook.schedule.description }} Change the cron in <code>rules/playbook.json</code> and the DAG file together. Pause, resume and Run now live on the <a href="{{ url_for('dashboard') }}">dashboard</a>.</p>
       <h3>Failure alerts</h3>
       <p>Failures always appear on the <a href="{{ url_for('alerts') }}">Alerts</a> page. E-mail delivery is enabled by setting environment variables before starting the app:</p>
-      <table>
+      <div class="tbl"><table>
         {% for k, v in env.items() %}<tr><td><code>{{ k }}</code></td><td>{% if v == 'set' %}<span class="tier t-ok"><i></i>set</span>{% else %}<span class="tier t-amber"><i></i>not set</span>{% endif %}</td></tr>{% endfor %}
-      </table>
+      </table></div>
       <h3>Storage and retries</h3>
       <p>Database <code>{{ db }}</code> · reports <code>{{ reports }}</code> · a failed run is retried {{ playbook.retries.max_attempts }} times, then fails and posts an alert. Airflow and this app are free open-source software running on this computer; nothing leaves this machine unless e-mail alerts are configured or AI explanations are turned on.</p>
     </section>
@@ -140,7 +142,7 @@
     <section id="api">
       <h2>API</h2>
       <p class="lead">Every page reads the same JSON you can. All routes are read-only unless marked POST, return JSON, and need no key on this local copy.</p>
-      <table>
+      <div class="tbl"><table>
         <tr><th>Route</th><th>Returns</th></tr>
         <tr><td><a href="{{ url_for('api_status') }}"><code>GET /api/status</code></a></td><td>scheduler state, the last run, the latest unacknowledged alert and the alert count</td></tr>
         <tr><td><a href="{{ url_for('health') }}"><code>GET /health</code></a></td><td>a liveness check for the deployment</td></tr>
@@ -151,7 +153,7 @@
         <tr><td><code>GET /api/periods/&lt;period&gt;/transformers/&lt;id&gt;/summary</code></td><td>the optional plain-language summary; 409 when that setting is off</td></tr>
         <tr><td><code>GET /api/runs/&lt;run_id&gt;</code></td><td>a run's status and current step; <code>POST /api/runs</code> with <code>{"period_end": "YYYY-MM-DD"}</code> starts one</td></tr>
         <tr><td><code>GET /reports/&lt;period&gt;/report.json</code></td><td>the period report as data (also <code>report.md</code> and <code>report.html</code>)</td></tr>
-      </table>
+      </table></div>
       <p class="note">Transformer ids in URLs keep their stored form (for example <code>T-ENF-011</code>) even though pages print them without the prefix.</p>
     </section>
 
