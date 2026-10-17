@@ -193,8 +193,15 @@
 
   /* furniture */
   #legend{position:absolute;left:16px;bottom:16px;z-index:20;display:flex;flex-direction:column;gap:6px;padding:10px 14px;border-radius:14px;font-size:12px;box-sizing:border-box}
-  #legend .row{display:flex;gap:14px;align-items:center} #legend .row span{display:inline-flex;align-items:center;gap:6px}
-  #legend .g{width:8px;height:8px;border-radius:50%;background:#1B7F4B;box-shadow:0 0 0 2px #fff;display:inline-block} #legend .r{width:11px;height:11px;border-radius:50%;background:#D7263D;box-shadow:0 0 0 2px #fff;display:inline-block}
+  #legend .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  #legend .f{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid transparent;font-size:12px;color:var(--ink-90);box-sizing:border-box;transition:background .15s,border-color .15s}
+  #legend .f:hover{background:rgba(29,36,48,.07)} #legend .f:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px}
+  #legend .f[aria-pressed="true"]{background:rgba(29,36,48,.9);color:#fff;border-color:rgba(29,36,48,.9)} #legend .f[aria-pressed="true"] .muted{color:rgba(255,255,255,.7)}
+  #legend.filtered .f[aria-pressed="false"]{opacity:.55}
+  #legend .prow{display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px solid var(--ink-line);margin-top:2px}
+  #legend .prow #period-label{font-size:12px}
+  #filter-hint{font-size:11px}
+  #legend .g{width:8px;height:8px;border-radius:50%;background:#1B7F4B;box-shadow:0 0 0 2px #fff;display:inline-block;flex:none} #legend .r{width:11px;height:11px;border-radius:50%;background:#D7263D;box-shadow:0 0 0 2px #fff;display:inline-block;flex:none}
   #controls{position:absolute;right:16px;bottom:16px;z-index:20;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
   #zoom{display:flex;flex-direction:column;border-radius:12px;overflow:hidden} #zoom button{width:36px;height:36px;border-radius:0} #zoom .sep{height:1px;background:var(--ink-line)}
   #base{display:flex;border-radius:12px;overflow:hidden;font-size:12px}
@@ -276,12 +283,6 @@
 
   <!-- period + run (below the menu bar) -->
   <div id="runrow" class="glass">
-    {% if periods %}
-    <label id="period-label">Period
-      <select id="period-select">{% for p in periods %}<option value="{{ p }}" {% if period and p == period.period_id %}selected{% endif %}>Week ending {{ p }}</option>{% endfor %}</select>
-    </label>
-    <span class="vr"></span>
-    {% endif %}
     <div id="runbox">
       <button id="run-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg><span id="run-pill-text">Run a monitoring period</span></button>
       <div id="run-running" hidden>
@@ -361,8 +362,17 @@
 
   <!-- legend + status -->
   <div id="legend" class="glass">
-    <div class="row"><span><i class="g"></i>Within limits <span class="muted" id="green-total">0</span></span><span><i class="r"></i>Review needed <span class="muted" id="red-total">0</span></span></div>
+    <div class="row">
+      <button class="f" id="f-ok" aria-pressed="false" title="Show only transformers within limits"><i class="g"></i>Within limits <span class="muted" id="green-total">0</span></button>
+      <button class="f" id="f-red" aria-pressed="false" title="Show only transformers that need review"><i class="r"></i>Review needed <span class="muted" id="red-total">0</span></button>
+      <span class="muted small" id="filter-hint">click to filter the map</span>
+    </div>
     <div class="muted" id="status-line">Checking the scheduler...</div>
+    {% if periods %}<div class="prow">
+    <label id="period-label">Period
+      <select id="period-select">{% for p in periods %}<option value="{{ p }}" {% if period and p == period.period_id %}selected{% endif %}>Week ending {{ p }}</option>{% endfor %}</select>
+    </label>
+    </div>{% endif %}
   </div>
   <!-- map controls -->
   <div id="controls">
@@ -394,7 +404,7 @@ const shortName = n => (n || '').replace(/^(City of|Town of|Village of) /, '');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 
 const DISTRICTS = DISTRICTS_RAW.map(d => ({ ...d, fullName: d.name, name: shortName(d.name) })).sort((a, b) => a.name.localeCompare(b.name));
-const S = { district: '', popup: null, running: false, runStep: 0, runFailed: null, alertsOpen: false, mode: 'recorded', metric: 'util',
+const S = { filter: null, district: '', popup: null, running: false, runStep: 0, runFailed: null, alertsOpen: false, mode: 'recorded', metric: 'util',
   dateIdx: +$('date-slider').value || 0, month: 1, hour: 18, playing: false, base: 'sat', sheetOpen: false, firstLaunch: !PERIOD, loads: {}, modeled: false, factor: 1 };
 const wide = () => window.innerWidth >= 1000;
 const phone = () => window.innerWidth < 600;
@@ -439,6 +449,19 @@ function applyLayout() {
   map.invalidateSize();
 }
 window.addEventListener('resize', () => { applyLayout(); renderDistricts(); });
+
+// ---- status filter (legend buttons) ----
+const visible = p => (!S.filter || p.status === S.filter);
+function applyFilter() {
+  POINTS.forEach(p => { const show = visible(p); if (show && !dotLayer.hasLayer(p.marker)) dotLayer.addLayer(p.marker); if (!show && dotLayer.hasLayer(p.marker)) dotLayer.removeLayer(p.marker); });
+  if (S.popup && !visible(S.popup)) closePopup();
+  $('f-ok').setAttribute('aria-pressed', String(S.filter === 'within_limits')); $('f-red').setAttribute('aria-pressed', String(S.filter === 'review_needed'));
+  $('legend').classList.toggle('filtered', !!S.filter);
+  $('filter-hint').textContent = S.filter ? (S.filter === 'review_needed' ? 'showing review needed only' : 'showing within limits only') + ' · click again for all' : 'click to filter the map';
+  renderHeat();
+}
+$('f-ok').onclick = () => { S.filter = S.filter === 'within_limits' ? null : 'within_limits'; applyFilter(); };
+$('f-red').onclick = () => { S.filter = S.filter === 'review_needed' ? null : 'review_needed'; applyFilter(); };
 
 // ---- districts ----
 function renderDistricts() {
@@ -485,7 +508,7 @@ function labels() {
 function renderHeat() {
   labels();
   if (!S.district) { heat._latlngs = []; if (map.hasLayer(heat)) heat.setLatLngs([]); renderHotspots([]); return; }
-  const inView = POINTS.filter(p => p.area === S.district);
+  const inView = POINTS.filter(p => p.area === S.district && visible(p));
   const vals = inView.map(p => [p, loadAt(p, S.hour)]).filter(x => x[1] !== null);
   const maxLoad = Math.max(1, ...vals.map(x => x[1]));
   const pts = vals.map(([p, v]) => [p.lat, p.lon, S.metric === 'util' ? Math.min(v / p.rating, 1.2) : v / maxLoad]);
@@ -524,7 +547,7 @@ function renderSidebar() {
   $('side-scope').hidden = !sel; if (sel) $('side-scope').textContent = 'in ' + sel.fullName;
   $('review-rows').hidden = !!sel;
   $('review-rows').innerHTML = (sel ? [] : redsIn).map(p => `<div class="rrow${S.popup && S.popup.id === p.id ? ' on' : ''}" data-id="${esc(p.id)}"><button class="main" data-id="${esc(p.id)}"><span class="l1"><span class="dot"></span><span class="id">${esc(p.id)}</span><span class="nm">${esc(p.name)} · ${esc(shortName(p.area_name) || p.area)}</span></span><span class="why">${esc(p.reason)}</span>${p.disposition ? `<span class="disp">${esc(p.disposition)}</span>` : ''}</button><a class="go" href="${esc(p.url)}" aria-label="Open full review"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>`).join('');
-  document.querySelectorAll('.rrow .main').forEach(b => b.onclick = () => { const p = POINTS.find(x => x.id === b.dataset.id); map.setView([p.lat, p.lon], Math.max(map.getZoom(), 13)); openPopup(p); S.sheetOpen = false; applySheet(); });
+  document.querySelectorAll('.rrow .main').forEach(b => b.onclick = () => { const p = POINTS.find(x => x.id === b.dataset.id); if (!visible(p)) { S.filter = null; applyFilter(); } map.setView([p.lat, p.lon], Math.max(map.getZoom(), 13)); openPopup(p); S.sheetOpen = false; applySheet(); });
   $('green-total').textContent = POINTS.length - reds.length; $('red-total').textContent = reds.length;
   const undecided = reds.filter(p => !p.disposition).length;
   const fin = $('finalize');
