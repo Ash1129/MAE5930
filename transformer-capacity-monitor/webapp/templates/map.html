@@ -160,6 +160,10 @@
   #side .head .t{font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.1}
   #side .head .n{font-family:var(--font-heading);font-weight:600;font-size:21px;color:#D7263D}
   #side .head .scope{font-size:12px;color:var(--ink-60);margin-left:auto;white-space:nowrap}
+  #side .head .close{all:unset;cursor:pointer;position:absolute;top:10px;right:10px;width:28px;height:28px;display:grid;place-items:center;border-radius:8px;color:var(--ink-60);z-index:1} #side .head .close:hover{background:rgba(var(--ink-rgb),.08);color:var(--ink-90)}
+  #side .head{padding-right:44px}
+  body.side-hidden #controls{right:16px}
+  body.narrow.side-hidden #legend,body.narrow.side-hidden #controls{bottom:16px}
   #side .head .tier{flex-basis:100%;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-60)} #side .head .tier .sr{flex:none}
   #tier-select{font:inherit;font-size:12px;color:var(--ink-90);background:transparent;border:1px solid rgba(var(--ink-rgb),.18);border-radius:8px;padding:4px 8px;cursor:pointer}
   #tier-select:hover{border-color:rgba(var(--ink-rgb),.4)} #tier-select option{color:#1D2430;background:#f3f2f2}
@@ -209,8 +213,8 @@
   #pp-link{margin-top:12px;text-decoration:none;position:relative;z-index:1}
 
   /* furniture */
-  #legend{position:absolute;left:16px;bottom:16px;z-index:20;max-width:calc(50% - 270px);display:flex;flex-direction:column;gap:6px;padding:10px 14px;border-radius:14px;font-size:12px;box-sizing:border-box}
-  #legend .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  #legend{position:absolute;left:16px;bottom:16px;z-index:20;width:max-content;max-width:calc(100% - 32px);display:flex;flex-direction:column;gap:6px;padding:10px 14px;border-radius:14px;font-size:12px;box-sizing:border-box}
+  #legend .row{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
   #legend .f{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 6px;border-radius:999px;font-size:12px;color:var(--ink-90);cursor:pointer;user-select:none;margin:0;letter-spacing:normal;text-transform:none;white-space:nowrap;transition:background .15s,opacity .15s}
   #legend .f:hover{background:rgba(var(--ink-rgb),.07)}
   #legend .f input{appearance:none;-webkit-appearance:none;width:15px;height:15px;margin:0;border:1.5px solid rgba(var(--ink-rgb),.55);border-radius:4px;display:grid;place-items:center;cursor:pointer;background:rgba(255,255,255,.6);flex:none}
@@ -331,7 +335,7 @@
       </form>
     </div>
     {% else %}
-    <div class="head" id="side-head"><span class="t" id="side-title">Needs a person</span><span class="n" id="red-count">0</span><span class="scope" id="side-scope" hidden></span>
+    <div class="head" id="side-head"><span class="t" id="side-title">Needs a person</span><span class="n" id="red-count">0</span><span class="scope" id="side-scope" hidden></span><button class="close" id="side-close" type="button" aria-label="Hide the list" title="Hide"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       <label id="tier-filter" class="tier"><span class="sr">Show</span><select id="tier-select" aria-label="Show which cases"><option value="all">All open</option><option value="inspect_now">Inspect now</option><option value="review_needed">Review needed</option><option value="decided">Decided</option></select></label></div>
     <div class="scroll">
       <div id="hot" hidden>
@@ -389,7 +393,7 @@ const showId = id => String(id ?? '').replace(/^T-/, '');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 
 const DISTRICTS = DISTRICTS_RAW.map(d => ({ ...d, fullName: d.name, name: shortName(d.name) })).sort((a, b) => a.name.localeCompare(b.name));
-const S = { district: '', popup: null, alertsOpen: false, mode: 'recorded', metric: 'util', tier: 'all',
+const S = { district: '', popup: null, sideOpen: false, alertsOpen: false, mode: 'recorded', metric: 'util', tier: 'all',
   dateIdx: +$('date-slider').value || 0, month: 1, hour: 18, playing: false, sheetOpen: false, firstLaunch: !PERIOD, loads: {}, modeled: false, factor: 1 };
 const wide = () => window.innerWidth >= 1000;
 const phone = () => window.innerWidth < 600;
@@ -398,7 +402,7 @@ const inspects = POINTS.filter(p => p.status === 'inspect_now');
 const reds = flagged;  // every case that needs a person, red first
 
 // ---- map ----
-const map = L.map('map', { zoomControl: false, attributionControl: true, fadeAnimation: false }).setView([42.44, -76.5], 10);
+const map = L.map('map', { zoomControl: false, attributionControl: true, fadeAnimation: false, doubleClickZoom: false }).setView([42.44, -76.5], 10);
 map.createPane('heat');
 const heatPane = map.getPane('heat');
 heatPane.style.zIndex = '350';
@@ -408,10 +412,13 @@ L.layerGroup([
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: .8 })
 ]).addTo(map);
 const boundaryLayers = {};
-if (BOUNDARIES) L.geoJSON(BOUNDARIES, { style: { color: '#fff', weight: 1.5, fillOpacity: .03, dashArray: '5 4', opacity: .85 }, onEachFeature: (f, l) => { boundaryLayers[f.properties.area_id] = l; l.bindTooltip(f.properties.name, { sticky: true }); } }).addTo(map);
+if (BOUNDARIES) L.geoJSON(BOUNDARIES, { style: { color: '#fff', weight: 1.5, fillOpacity: .03, dashArray: '5 4', opacity: .85 }, onEachFeature: (f, l) => { boundaryLayers[f.properties.area_id] = l; l.bindTooltip(f.properties.name, { sticky: true }); l.on('dblclick', e => { L.DomEvent.stop(e); selectDistrict(S.district === f.properties.area_id ? '' : f.properties.area_id); }); } }).addTo(map);
+// double-clicking a town on the map does what its row in the Districts list does; double-click open ground to go back to the whole county
+map.on('dblclick', () => { if (S.district) selectDistrict(''); });
 // maxZoom is the map zoom where a point reaches full strength. A dedicated pane keeps the
 // canvas in CSS pixels, so Windows display scaling and Chrome zoom do not shift it off the map.
 const heat = L.heatLayer([], { pane: 'heat', radius: 28, blur: 20, maxZoom: 10, minOpacity: 0.45, max: 1, gradient: { .15: '#1a237e', .35: GREEN, .6: AMBER, .8: '#ff6d00', 1: RED } });
+heat.addTo(map);
 function settleHeat() {
   if (!map.hasLayer(heat) || !heat._canvas) return;
   L.DomUtil.removeClass(heat._canvas, 'leaflet-zoom-animated');
@@ -425,13 +432,14 @@ POINTS.forEach(p => {
   const t = tier(p);
   const m = L.circleMarker([p.lat, p.lon], { radius: t.r, color: '#fff', weight: 2, fillColor: t.color, fillOpacity: .95 });
   m.on('click', e => { L.DomEvent.stopPropagation(e); openPopup(p); });
+  m.on('dblclick', e => { L.DomEvent.stop(e); selectDistrict(S.district === p.area ? '' : p.area); });  // a dot sits on its town: double-click picks the town
   m.bindTooltip(showId(p.id) + (p.status === 'within_limits' ? '' : ' · ' + t.label.toLowerCase()));
   markers[p.id] = m; dots.addLayer(m);
 });
 const bPts = BOUNDARIES ? (BOUNDARIES.features || []).flatMap(f => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).flatMap(p => p[0]).map(c => [c[1], c[0]])) : [];
 const countyBounds = POINTS.length ? L.latLngBounds(POINTS.map(p => [p.lat, p.lon])).pad(.08) : (bPts.length ? L.latLngBounds(bPts) : null);
 const fitPad = () => wide()
-  ? { paddingTopLeft: [70, S.district ? 220 : 120], paddingBottomRight: [332, 80] }
+  ? { paddingTopLeft: [70, S.district ? 220 : 120], paddingBottomRight: [S.sideOpen ? 332 : 16, 80] }
   : { paddingTopLeft: [16, S.district ? 220 : 130], paddingBottomRight: [16, 170] };
 if (countyBounds) map.fitBounds(countyBounds, fitPad());
 map.on('move zoom', positionPopup);
@@ -440,6 +448,7 @@ let userMoved = false;
 map.getContainer().addEventListener('mousedown', () => { userMoved = true; }); map.getContainer().addEventListener('wheel', () => { userMoved = true; }, { passive: true }); map.getContainer().addEventListener('touchstart', () => { userMoved = true; }, { passive: true });
 function refitCounty() { map.invalidateSize(); if (countyBounds && !S.district && !userMoved) map.fitBounds(countyBounds, fitPad()); }
 setTimeout(refitCounty, 300); setTimeout(refitCounty, 1200);
+setSide(false);
 window.addEventListener('load', refitCounty);
 // coming back from a review page: the list must show the decision that was just recorded
 window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
@@ -475,11 +484,12 @@ function renderDistricts() {
 function selectDistrict(id) {
   stopPlay();
   const d = DISTRICTS.find(x => x.id === id);
-  S.district = id; closePopup();
+  S.district = id; closePopup(); setSide(!!id);
   POINTS.forEach(p => markers[p.id].setStyle({ fillOpacity: !id || p.area === id ? .95 : .25, opacity: !id || p.area === id ? 1 : .3 }));
   Object.entries(boundaryLayers).forEach(([k, l]) => l.setStyle({ opacity: !id || k === id ? .85 : .3, weight: k === id ? 2.5 : 1.5 }));
-  if (d) { if (!map.hasLayer(heat)) heat.addTo(map); map.fitBounds(d.bbox, fitPad()); settleHeat(); }
-  else { if (map.hasLayer(heat)) map.removeLayer(heat); if (countyBounds) map.fitBounds(countyBounds, fitPad()); }
+  // the heat layer stays attached (removing it mid-zoom breaks leaflet.heat); it is simply emptied for the county view
+  if (d) { map.fitBounds(d.bbox, fitPad()); settleHeat(); }
+  else { heat.setLatLngs([]); if (countyBounds) map.fitBounds(countyBounds, fitPad()); }
   $('heat').hidden = !d || S.firstLaunch;
   if (d) $('heat-name').textContent = d.fullName;
   renderDistricts(); renderSidebar();
@@ -513,13 +523,13 @@ function labels() {
 }
 function renderHeat() {
   labels();
-  if (!S.district) { heat._latlngs = []; if (map.hasLayer(heat)) heat.setLatLngs([]); renderHotspots([]); return; }
+  if (!S.district) { heat.setLatLngs([]); renderHotspots([]); return; }
   const inView = POINTS.filter(p => p.area === S.district && visible(p));
   const vals = inView.map(p => [p, S.metric === 'temp' ? hotAt(p, S.hour) : loadAt(p, S.hour)]).filter(x => x[1] !== null);
   const maxLoad = Math.max(1, ...vals.map(x => x[1]));
   // temperature: 20 °C is cold, the hot-spot limit is full strength (same ramp as the review page)
   const pts = vals.map(([p, v]) => [p.lat, p.lon, S.metric === 'temp' ? Math.min(Math.max((v - 20) / (TEMP_LIMIT - 20), 0.02), 1.2) : S.metric === 'util' ? Math.min(v / p.rating, 1.2) : v / maxLoad]);
-  if (map.hasLayer(heat)) heat.setLatLngs(pts); else heat._latlngs = pts;
+  heat.setLatLngs(pts);
   renderHotspots(vals, maxLoad);
 }
 function renderHotspots(vals, maxLoad) {
@@ -590,6 +600,7 @@ function openPopup(p) {
   $('pp-link').href = p.url + '?from=map';
   $('pp-summary-text').textContent = ''; $('pp-summary-src').className = ''; $('pp-summary-src').innerHTML = '';
   $('pp-chart').innerHTML = '<span class="muted" style="font-size:11px;padding:6px;display:block">Loading control chart…</span>';
+  if (p.status !== 'within_limits') setSide(true);
   $('popup').hidden = false; positionPopup();
   document.querySelectorAll('.rrow').forEach(r => r.classList.toggle('on', r.dataset.id === p.id));
   setTimeout(fitPopup, 30);
@@ -635,7 +646,7 @@ function fitPopup() {
     if (b.top > window.innerHeight * 0.5) bottom = Math.min(bottom, b.top - 8);
     else top = Math.max(top, b.bottom + 8);
   };
-  [$('heat'), $('chips'), $('legend'), $('controls')].forEach(avoid);
+  [$('heat'), $('chips'), $('legend'), $('controls'), $('side')].forEach(avoid);
   if (wide()) { if (vis($('districts'))) left = box($('districts')).right + 8; if (vis($('side'))) right = Math.min(right, box($('side')).left - 8); }
   else if (vis($('side')) && $('side').classList.contains('open')) bottom = Math.min(bottom, box($('side')).top - 8);
   popup.style.maxHeight = Math.max(160, bottom - top) + 'px';
@@ -651,6 +662,13 @@ function fitPopup() {
 }
 function positionPopup() { if (!S.popup) return; const pt = map.latLngToContainerPoint([S.popup.lat, S.popup.lon]); $('popup').style.left = pt.x + 'px'; $('popup').style.top = pt.y + 'px'; }
 function closePopup() { S.popup = null; $('popup').hidden = true; document.querySelectorAll('.rrow').forEach(r => r.classList.remove('on')); }
+// the review sidebar stays out of the way until an issue is clicked or a town is selected
+function setSide(on) {
+  if (S.firstLaunch) on = true;
+  S.sideOpen = on; $('side').hidden = !on; document.body.classList.toggle('side-hidden', !on);
+  map.invalidateSize();
+}
+const sideClose = $('side-close'); if (sideClose) sideClose.onclick = () => setSide(false);
 $('pp-close').onclick = closePopup;
 
 // ---- alerts ----
