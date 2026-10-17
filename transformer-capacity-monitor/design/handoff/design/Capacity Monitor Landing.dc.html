@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/classical-ece0769b-4784-46e9-8118-18176f9fe202/styles.css">
+  <script src="_ds/classical-ece0769b-4784-46e9-8118-18176f9fe202/_ds_bundle.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+  <style>
+    html,body{height:100%;margin:0;background:#14171c;overflow:hidden}
+    a{color:var(--color-accent-700)} a:hover{color:var(--color-accent-800)}
+    .leaflet-container{background:#0b0f14;font-family:var(--font-body)}
+    .leaflet-control-attribution{background:rgba(255,255,255,.55)!important;font-size:10px;color:#1d2430;backdrop-filter:blur(8px)}
+    .leaflet-tooltip{font-family:var(--font-body);font-size:12px;border-radius:6px}
+    @keyframes cm-spin{to{transform:rotate(360deg)}}
+    @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+  </style>
+</helmet>
+<div ref="{{ frameRef }}" style="width:100%;height:{{ wrapH }};min-height:100%;display:grid;place-items:center;background:{{ wrapBg }};font-family:var(--font-body);color:rgba(29,36,48,.9);font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums">
+<div ref="{{ rootRef }}" data-screen-label="Landing" style="position:relative;overflow:hidden;background:#0b0f14;width:{{ frameW }};height:{{ frameH }};border-radius:{{ frameRadius }}">
+  <div ref="{{ mapRef }}" style="position:absolute;inset:0"></div>
+  <sc-if value="{{ running }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;background:rgba(5,8,12,.32);pointer-events:none;transition:opacity .3s"></div></sc-if>
+
+  <!-- dot popup -->
+  <sc-if value="{{ hasPopup }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:{{ popupX }};top:{{ popupY }};transform:translate(-50%,calc(-100% - 18px));width:300px;z-index:30;padding:14px 16px 16px;background:rgba(255,255,255,.72);backdrop-filter:blur(28px) saturate(1.5);-webkit-backdrop-filter:blur(28px) saturate(1.5);border:1px solid rgba(255,255,255,.4);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.7)">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.1">{{ popup.id }}</div>
+          <div style="color:rgba(29,36,48,.6);font-size:12px;margin-top:2px">{{ popup.name }} · {{ popup.town }}</div>
+        </div>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.02em;padding:3px 9px;border-radius:999px;border:1px solid {{ popup.color }};color:{{ popup.color }};white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:{{ popup.color }}"></span>{{ popup.statusText }}</span>
+        <button onClick="{{ closePopup }}" aria-label="Close" style="all:unset;cursor:pointer;width:24px;height:24px;display:grid;place-items:center;border-radius:6px;color:rgba(29,36,48,.6)" style-hover="background:rgba(29,36,48,.08)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div style="display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;font-size:13px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(29,36,48,.12)">
+        <span style="color:rgba(29,36,48,.6)">Rated maximum</span><span>{{ popup.rated }}</span>
+        <span style="color:rgba(29,36,48,.6)">Period peak</span><span>{{ popup.peak }}</span>
+        <span style="color:rgba(29,36,48,.6)">Cpk</span><span>{{ popup.cpk }}</span>
+        <span style="color:rgba(29,36,48,.6)">Projected peak</span><span>{{ popup.projected }} <span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#8a6200;margin-left:4px">estimate</span></span>
+        <span style="color:rgba(29,36,48,.6)">Rule</span><span>{{ popup.rule }}</span>
+        <span style="color:rgba(29,36,48,.6)">Decision</span><span>{{ popup.decision }}</span>
+      </div>
+      <a href="{{ popup.url }}" class="btn btn-primary btn-block" style="margin-top:12px;text-decoration:none">Open full review <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+    </div>
+  </sc-if>
+
+  <!-- top bar -->
+  <div style="position:absolute;top:12px;left:16px;right:16px;z-index:40;height:52px;display:flex;align-items:center;gap:14px;padding:0 8px 0 18px;background:rgba(255,255,255,.62);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.35);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.65)">
+    <div style="display:flex;align-items:baseline;gap:8px;min-width:0;white-space:nowrap">
+      <span style="font-family:var(--font-heading);font-weight:600;font-size:21px;letter-spacing:-.01em">Transformer Capacity Monitor</span>
+      <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;color:rgba(29,36,48,.6)">Tompkins County</span></sc-if>
+    </div>
+    <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(29,36,48,.6)">Period
+        <select value="{{ periodId }}" onChange="{{ onPeriod }}" style="font:inherit;font-size:13px;color:rgba(29,36,48,.9);background:transparent;border:1px solid rgba(29,36,48,.18);border-radius:8px;padding:4px 8px;font-variant-numeric:tabular-nums">
+          <sc-for list="{{ periods }}" as="p" hint-placeholder-count="1"><option value="{{ p.id }}">{{ p.label }}</option></sc-for>
+        </select>
+      </label>
+    </sc-if>
+
+    <!-- run box -->
+    <div onMouseEnter="{{ openRun }}" onMouseLeave="{{ closeRun }}" onFocus="{{ openRun }}" onBlur="{{ blurRun }}" style="position:relative">
+      <sc-if value="{{ runIdle }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ toggleRun }}" style="all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;border:1px solid var(--color-accent);color:var(--color-accent-700);font-family:var(--font-heading);font-weight:600;font-size:14px;white-space:nowrap" style-hover="background:rgba(182,130,53,.12)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>{{ runPillText }}
+        </button>
+      </sc-if>
+      <sc-if value="{{ running }}" hint-placeholder-val="{{ false }}">
+        <div style="display:inline-flex;align-items:center;gap:10px;height:32px;padding:0 14px 0 10px;border-radius:999px;border:1px solid rgba(29,36,48,.18);background:rgba(255,255,255,.5);font-size:13px;white-space:nowrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2.5" stroke-linecap="round" style="animation:cm-spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg>
+          <span>Running, step {{ runStep }} of 15</span>
+          <span style="width:80px;height:4px;border-radius:2px;background:rgba(29,36,48,.12);overflow:hidden;display:inline-block"><span style="display:block;height:100%;width:{{ runPct }};background:var(--color-accent);transition:width .4s"></span></span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ runFailed }}" hint-placeholder-val="{{ false }}">
+        <div style="display:inline-flex;align-items:center;gap:10px;height:32px;padding:0 6px 0 12px;border-radius:999px;border:1px solid #D7263D;background:rgba(215,38,61,.1);color:#9e1428;font-size:13px;white-space:nowrap">
+          <span style="width:8px;height:8px;border-radius:50%;background:#D7263D"></span><span>Run failed: readings.csv is missing</span>
+          <button onClick="{{ toggleAlerts }}" style="all:unset;cursor:pointer;padding:3px 9px;border-radius:999px;color:#9e1428;text-decoration:underline;text-underline-offset:3px">See alert</button>
+          <button onClick="{{ resetRun }}" aria-label="Dismiss" style="all:unset;cursor:pointer;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;color:#9e1428" style-hover="background:rgba(215,38,61,.12)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ runOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;top:40px;left:0;width:340px;padding:16px;z-index:50;background:rgba(255,255,255,.72);backdrop-filter:blur(28px) saturate(1.5);-webkit-backdrop-filter:blur(28px) saturate(1.5);border:1px solid rgba(255,255,255,.4);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.7)">
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1.1">Run a monitoring period</div>
+          <div style="font-size:12px;color:rgba(29,36,48,.6);margin-top:3px">7 days ending on the date you pick. Rerunning a period replaces its draft results.</div>
+          <div style="display:flex;gap:8px;align-items:end;margin-top:12px">
+            <label style="flex:1;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(29,36,48,.6);display:grid;gap:4px">Period end date
+              <input type="date" class="input" value="{{ runDate }}" onChange="{{ setRunDate }}" style="font-size:13px;min-height:34px;background:rgba(255,255,255,.5)"></label>
+            <button class="btn btn-primary" onClick="{{ startRun }}" style="height:34px">Run now</button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">
+            <sc-for list="{{ feeds }}" as="f" hint-placeholder-count="4">
+              <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid {{ f.border }};color:{{ f.color }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ f.color }}"></span>{{ f.name }} · {{ f.state }}</span>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="flex:1"></div>
+
+    <!-- alerts bell -->
+    <div style="position:relative">
+      <button onClick="{{ toggleAlerts }}" aria-label="Alerts" style="all:unset;cursor:pointer;position:relative;width:36px;height:36px;display:grid;place-items:center;border-radius:10px;color:rgba(29,36,48,.8)" style-hover="background:rgba(29,36,48,.07)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <sc-if value="{{ hasAlerts }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:3px;right:3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#D7263D;color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;border:2px solid rgba(255,255,255,.9)">{{ alertCount }}</span></sc-if>
+      </button>
+      <sc-if value="{{ alertsOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;top:44px;right:0;width:320px;padding:16px;z-index:50;background:rgba(255,255,255,.72);backdrop-filter:blur(28px) saturate(1.5);-webkit-backdrop-filter:blur(28px) saturate(1.5);border:1px solid rgba(255,255,255,.4);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.7)">
+          <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-family:var(--font-heading);font-weight:600;font-size:20px">Latest alert</span><span style="font-size:11px;color:rgba(29,36,48,.6)">{{ alert.when }}</span></div>
+          <div style="font-size:14px;margin-top:8px">{{ alert.headline }}</div>
+          <div style="display:grid;grid-template-columns:96px 1fr;gap:6px 10px;font-size:13px;margin-top:10px">
+            <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(29,36,48,.6);padding-top:3px">What happened</span><span>{{ alert.happened }}</span>
+            <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(29,36,48,.6);padding-top:3px">What to do</span><span>{{ alert.todo }}</span>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:12px"><a href="/alerts" class="btn btn-ghost" style="text-decoration:none;font-size:13px">All alerts ({{ alertCount }})</a></div>
+        </div>
+      </sc-if>
+    </div>
+    <a href="/setup" style="display:inline-flex;align-items:center;gap:6px;color:rgba(29,36,48,.8);text-decoration:none;font-size:13px;padding:0 8px;height:36px;border-radius:10px" style-hover="background:rgba(29,36,48,.07)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}"><span>Setup</span></sc-if></a>
+    <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+      <span style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:rgba(29,36,48,.6);padding-right:8px;white-space:nowrap"><span style="width:26px;height:26px;border-radius:50%;border:1px solid var(--color-accent);color:var(--color-accent-700);font-family:var(--font-heading);font-weight:600;font-size:12px;display:grid;place-items:center">MD</span>M. Delgado</span>
+    </sc-if>
+  </div>
+
+  <!-- DESKTOP: left districts panel -->
+  <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;top:80px;left:16px;width:220px;max-height:calc(100% - 160px);display:flex;flex-direction:column;z-index:20;background:rgba(255,255,255,.62);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.35);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.65);transition:background .2s" style-hover="background:rgba(255,255,255,.68)">
+      <div style="padding:16px 18px 8px;font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.1">Districts</div>
+      <div style="overflow:auto;padding:0 8px 8px;display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ districts }}" as="d" hint-placeholder-count="13">
+          <button onClick="{{ d.onSelect }}" style="all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;gap:8px;height:44px;padding:0 10px;border-radius:12px;width:100%;background:{{ d.bg }};color:{{ d.fg }};transition:background .15s" style-hover="background:rgba(29,36,48,.07)" style-focus="outline:2px solid var(--color-accent);outline-offset:-2px">
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2"><span style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.name }}</span><span style="font-size:11px;color:{{ d.subFg }}">{{ d.sub }}</span></span>
+            <sc-if value="{{ d.hasRed }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:{{ d.redFg }}"><span style="width:7px;height:7px;border-radius:50%;background:#D7263D"></span>{{ d.red }}</span></sc-if>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- NARROW: district chip row -->
+  <sc-if value="{{ narrow }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:76px;left:0;right:0;z-index:20;display:flex;gap:6px;overflow-x:auto;padding:0 16px;scrollbar-width:none">
+      <sc-for list="{{ districts }}" as="d" hint-placeholder-count="6">
+        <button onClick="{{ d.onSelect }}" style="all:unset;cursor:pointer;flex:none;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:999px;font-size:13px;white-space:nowrap;background:{{ d.chipBg }};color:{{ d.fg }};backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(255,255,255,.35);box-shadow:0 4px 14px rgba(0,0,0,.2)">{{ d.name }}<sc-if value="{{ d.hasRed }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:{{ d.redFg }}"><span style="width:6px;height:6px;border-radius:50%;background:#D7263D"></span>{{ d.red }}</span></sc-if></button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- heat control strip (district selected) -->
+  <sc-if value="{{ heatVisible }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:{{ heatTop }};left:{{ heatLeft }};right:{{ heatRight }};z-index:20;padding:12px 16px;background:rgba(255,255,255,.62);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.35);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.65)">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px">
+        <span style="font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1;margin-right:4px">{{ selectedName }}</span>
+        <span class="seg" style="background:rgba(255,255,255,.35)">
+          <button onClick="{{ setRecorded }}" style="all:unset;cursor:pointer;padding:6px 12px;font-size:13px;color:{{ segRecFg }};box-shadow:{{ segRecRing }}">Recorded</button>
+          <button onClick="{{ setSeasonal }}" style="all:unset;cursor:pointer;padding:6px 12px;font-size:13px;border-left:1px solid var(--color-divider);color:{{ segSeaFg }};box-shadow:{{ segSeaRing }}">Seasonal model</button>
+        </span>
+        <span class="seg" style="background:rgba(255,255,255,.35)">
+          <button onClick="{{ setUtil }}" style="all:unset;cursor:pointer;padding:6px 12px;font-size:13px;color:{{ segUtilFg }};box-shadow:{{ segUtilRing }}">Utilization</button>
+          <button onClick="{{ setLoad }}" style="all:unset;cursor:pointer;padding:6px 12px;font-size:13px;border-left:1px solid var(--color-divider);color:{{ segLoadFg }};box-shadow:{{ segLoadRing }}">Load</button>
+        </span>
+        <sc-if value="{{ seasonal }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:999px;background:#F4B400;color:#1D2430">Modeled</span></sc-if>
+        <sc-if value="{{ recorded }}" hint-placeholder-val="{{ true }}"><span style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid #1B7F4B;color:#1B7F4B">Recorded</span></sc-if>
+        <span style="margin-left:auto;font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1">{{ clock }}</span>
+      </div>
+      <div style="display:grid;gap:6px;margin-top:10px">
+        <sc-if value="{{ recorded }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:48px minmax(120px,1fr) minmax(0,220px);gap:10px;align-items:center">
+            <span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(29,36,48,.6)">Date</span>
+            <input type="range" min="0" max="{{ dateMax }}" value="{{ dateIdx }}" onChange="{{ setDate }}" style="width:100%;accent-color:var(--color-accent);margin:0">
+            <span style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ dateLabel }}</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ seasonal }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:48px minmax(120px,1fr) minmax(0,220px);gap:10px;align-items:center">
+            <span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(29,36,48,.6)">Month</span>
+            <input type="range" min="1" max="12" value="{{ month }}" onChange="{{ setMonth }}" style="width:100%;accent-color:var(--color-accent);margin:0">
+            <span style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ monthLabel }}</span>
+          </div>
+        </sc-if>
+        <div style="display:grid;grid-template-columns:48px minmax(120px,1fr) minmax(0,220px);gap:10px;align-items:center">
+          <span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(29,36,48,.6)">Hour</span>
+          <input type="range" min="0" max="23" value="{{ hour }}" onChange="{{ setHour }}" style="width:100%;accent-color:var(--color-accent);margin:0">
+          <span style="display:flex;align-items:center;gap:10px;min-width:0"><span style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">{{ hourLabel }}</span>
+            <button onClick="{{ togglePlay }}" class="btn btn-primary" style="height:30px;padding:0 12px;flex:none"><sc-if value="{{ playing }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></sc-if><sc-if value="{{ notPlaying }}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg></sc-if>{{ playLabel }}</button></span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- right sidebar / bottom sheet -->
+  <div style="position:absolute;z-index:25;display:flex;flex-direction:column;top:{{ sideTop }};right:{{ sideRight }};left:{{ sideLeft }};bottom:{{ sideBottom }};width:{{ sideWidth }};height:{{ sideHeight }};border-radius:{{ sideRadius }};background:rgba(255,255,255,.62);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.35);box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.65);transition:height .25s ease,background .2s" style-hover="background:rgba(255,255,255,.68)">
+    <sc-if value="{{ narrow }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ toggleSheet }}" aria-label="Toggle review list" style="all:unset;cursor:pointer;display:grid;place-items:center;height:18px;width:100%"><span style="width:40px;height:4px;border-radius:2px;background:rgba(29,36,48,.25)"></span></button>
+    </sc-if>
+    <sc-if value="{{ firstLaunch }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:10px">
+        <div style="font-family:var(--font-heading);font-weight:600;font-size:22px">No period has been run yet</div>
+        <div style="font-size:13px;color:rgba(29,36,48,.6);max-width:220px;text-wrap:pretty">The map shows town boundaries only. Run the first period to see every transformer sorted into within limits or review needed.</div>
+        <button class="btn btn-primary" onClick="{{ startRun }}" style="margin-top:8px">Run the first period</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ hasPeriod }}" hint-placeholder-val="{{ true }}">
+      <div onClick="{{ sheetHeaderClick }}" style="padding:14px 18px 10px;display:flex;align-items:baseline;gap:10px;flex:none">
+        <span style="font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.1">Review needed</span>
+        <span style="font-family:var(--font-heading);font-weight:600;font-size:21px;color:#D7263D">{{ redCount }}</span>
+        <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:rgba(29,36,48,.6);margin-left:auto;white-space:nowrap">in {{ selectedName }}</span></sc-if>
+      </div>
+      <div style="flex:1;overflow:auto;min-height:0;display:flex;flex-direction:column">
+        <sc-if value="{{ heatVisible }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:4px 18px 12px;border-bottom:1px solid rgba(29,36,48,.12)">
+            <div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(29,36,48,.6)">Hotspots now</span><span style="font-size:11px;color:rgba(29,36,48,.6)">{{ clock }}</span><sc-if value="{{ seasonal }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:1px 6px;border-radius:999px;background:#F4B400;color:#1D2430">Modeled</span></sc-if></div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+              <sc-for list="{{ hotspots }}" as="h" hint-placeholder-count="4">
+                <a href="{{ h.url }}" style="text-decoration:none;color:inherit;display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:12px">
+                  <span><b style="font-weight:600">{{ h.id }}</b> <span style="color:rgba(29,36,48,.6)">{{ h.name }}</span></span><span style="white-space:nowrap">{{ h.text }}</span>
+                  <span style="grid-column:1/-1;height:4px;border-radius:2px;background:rgba(29,36,48,.1);overflow:hidden"><span style="display:block;height:100%;width:{{ h.w }};background:{{ h.color }}"></span></span>
+                </a>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <div style="display:flex;flex-direction:column">
+          <sc-for list="{{ reviewRows }}" as="r" hint-placeholder-count="8">
+            <div style="display:flex;align-items:stretch;border-bottom:1px solid rgba(29,36,48,.1);background:{{ r.bg }}" style-hover="background:rgba(29,36,48,.05)">
+              <button onClick="{{ r.onClick }}" style="all:unset;cursor:pointer;flex:1;min-width:0;padding:10px 6px 10px 18px;display:flex;flex-direction:column;gap:3px" style-focus="outline:2px solid var(--color-accent);outline-offset:-2px">
+                <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:9px;height:9px;border-radius:50%;background:#D7263D;box-shadow:0 0 0 2px #fff;flex:none"></span><span style="font-weight:600;font-size:14px">{{ r.id }}</span><span style="font-size:12px;color:rgba(29,36,48,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }} · {{ r.town }}</span></span>
+                <span style="font-size:12px;color:rgba(29,36,48,.75);line-height:1.35;text-wrap:pretty">{{ r.reason }}</span>
+                <sc-if value="{{ r.hasDisp }}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid #1F5FA8;color:#1F5FA8;margin-top:2px">{{ r.disposition }}</span></sc-if>
+              </button>
+              <a href="{{ r.url }}" aria-label="Open full review" style="display:grid;place-items:center;width:36px;color:rgba(29,36,48,.5);flex:none" style-hover="color:var(--color-accent-700)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="flex:none;padding:12px 18px 14px;border-top:1px solid rgba(29,36,48,.12);display:flex;flex-direction:column;gap:6px">
+        <button class="btn btn-primary btn-block" disabled="{{ finalizeDisabled }}" style="margin:0">Finalize report</button>
+        <span style="font-size:12px;color:rgba(29,36,48,.6);text-align:center">{{ finalizeReason }}</span>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- bottom-left: legend + status -->
+  <div style="position:absolute;left:16px;bottom:{{ furnitureBottom }};z-index:20;display:flex;flex-direction:column;gap:6px;padding:10px 14px;background:rgba(255,255,255,.62);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.35);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.65);font-size:12px">
+    <div style="display:flex;gap:14px;align-items:center">
+      <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#1B7F4B;box-shadow:0 0 0 2px #fff"></span>Within limits <span style="color:rgba(29,36,48,.6)">{{ greenTotal }}</span></span>
+      <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:11px;height:11px;border-radius:50%;background:#D7263D;box-shadow:0 0 0 2px #fff"></span>Review needed <span style="color:rgba(29,36,48,.6)">{{ redTotal }}</span></span>
+    </div>
+    <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}"><div style="color:rgba(29,36,48,.6)">{{ statusLine }}</div></sc-if>
+  </div>
+
+  <!-- bottom-right: map controls -->
+  <div style="position:absolute;right:{{ controlsRight }};bottom:{{ furnitureBottom }};z-index:20;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+    <div style="display:flex;flex-direction:column;background:rgba(255,255,255,.62);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.35);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.65);overflow:hidden">
+      <button onClick="{{ zoomIn }}" aria-label="Zoom in" style="all:unset;cursor:pointer;width:36px;height:36px;display:grid;place-items:center;color:rgba(29,36,48,.8)" style-hover="background:rgba(29,36,48,.07)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      <span style="height:1px;background:rgba(29,36,48,.12)"></span>
+      <button onClick="{{ zoomOut }}" aria-label="Zoom out" style="all:unset;cursor:pointer;width:36px;height:36px;display:grid;place-items:center;color:rgba(29,36,48,.8)" style-hover="background:rgba(29,36,48,.07)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+    </div>
+    <div style="display:flex;background:rgba(255,255,255,.62);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.35);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.65);overflow:hidden;font-size:12px">
+      <button onClick="{{ setSat }}" style="all:unset;cursor:pointer;padding:0 12px;height:32px;color:{{ satFg }};box-shadow:{{ satRing }}">Satellite</button>
+      <button onClick="{{ setStreets }}" style="all:unset;cursor:pointer;padding:0 12px;height:32px;border-left:1px solid rgba(29,36,48,.12);color:{{ streetsFg }};box-shadow:{{ streetsRing }}">Streets</button>
+    </div>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scenario&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;district&quot;,&quot;popup&quot;,&quot;running&quot;,&quot;failed&quot;,&quot;first-launch&quot;,&quot;run-open&quot;,&quot;alerts&quot;],&quot;section&quot;:&quot;State&quot;},&quot;frame&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;fill&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;fill&quot;,&quot;desktop&quot;,&quot;tablet&quot;,&quot;phone&quot;],&quot;section&quot;:&quot;Viewport&quot;}}">
+const GREEN = '#1B7F4B', RED = '#D7263D', AMBER = '#F4B400', BLUE = '#1F5FA8';
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const FACTORS = {1:1.35,2:1.3,3:1.15,4:0.95,5:0.85,6:0.9,7:1.0,8:1.0,9:0.85,10:0.9,11:1.1,12:1.3};
+const CURVE = [0.55,0.5,0.48,0.47,0.48,0.52,0.6,0.7,0.75,0.72,0.7,0.7,0.72,0.72,0.74,0.78,0.86,0.95,1.0,0.97,0.9,0.8,0.7,0.62];
+const DATES = ['2026-10-09','2026-10-10','2026-10-11','2026-10-12','2026-10-13','2026-10-14','2026-10-15'];
+const DAYJ = [0.93,0.97,0.9,1.0,1.04,0.98,1.02];
+const RULES = {
+  1:['insufficient_history','Not enough stable history to judge the load pattern; a person decides'],
+  2:['signal','Chart signal: the load pattern changed; capability is not calculated for an unstable pattern'],
+  4:['stable','A reading in the period reached or exceeded the rated maximum'],
+  6:['stable','Capability assumptions not met (serial correlation or non-normal daily peaks); Cpk shown for information only'],
+  7:['stable','Low Cpk against the rated maximum (playbook threshold 1.33)'],
+  8:['stable','Uncertain Cpk: the lower 95% confidence bound is below 1.33'],
+  9:['stable','Forecast peak near or above the rated maximum (0.9 of rating or more)'],
+};
+const RULE_PICK = [2,7,7,8,9,9,6,1,4];
+const DISPS = ['Approve by M. Delgado','Request changes by M. Delgado','Approve by M. Delgado'];
+const hash = (s, k=0) => { let h = 2166136261 ^ k; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return ((h >>> 0) % 10000) / 10000; };
+const fmt1 = v => v.toLocaleString(undefined, {minimumFractionDigits:1, maximumFractionDigits:1});
+const fmt2 = v => v.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+const pct = v => Math.round(v * 100) + '% of rating';
+const shortName = n => n.replace(/^(City of|Town of|Village of) /, '');
+
+class Component extends DCLogic {
+  state = { width: 1440, points: [], districts: [], district: '', popup: null, runOpen: false, running: false, runStep: 0, runFailed: false,
+    runDate: '2026-10-15', alertsOpen: false, mode: 'recorded', metric: 'util', dateIdx: 6, month: 1, hour: 18, playing: false,
+    base: 'sat', sheetOpen: false, firstLaunch: false, periodId: '2026-10-15', mapTick: 0 };
+  frameRef = React.createRef(); rootRef = React.createRef(); mapRef = React.createRef();
+  markers = {}; boundaryLayers = {};
+
+  componentDidMount() {
+    this.ro = new ResizeObserver(() => { const w = this.rootRef.current ? this.rootRef.current.clientWidth : 1440; if (w !== this.state.width) this.setState({ width: w }); if (this.map) this.map.invalidateSize(); });
+    this.ro.observe(this.rootRef.current);
+    Promise.all([fetch('data/assets.csv').then(r => r.text()), fetch('data/boundaries.geojson').then(r => r.json())]).then(([csv, geo]) => {
+      this.geo = geo;
+      const districts = geo.features.map(f => { const rings = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates; const pts = rings.flatMap(p => p[0]); const lats = pts.map(p => p[1]), lons = pts.map(p => p[0]); return { id: f.properties.area_id, fullName: f.properties.name, name: shortName(f.properties.name), kind: f.properties.kind, bbox: [[Math.min(...lats), Math.min(...lons)], [Math.max(...lats), Math.max(...lons)]] }; });
+      const byId = Object.fromEntries(districts.map(d => [d.id, d]));
+      const lines = csv.trim().split('\n').slice(1);
+      const points = lines.map(l => {
+        const c = l.split(','); const id = c[0]; const rating = +c[4]; const h = hash(id), h2 = hash(id,1), h3 = hash(id,2), h4 = hash(id,3), h5 = hash(id,4);
+        const red = h < 0.2; const rule = red ? RULE_PICK[Math.floor(h2 * RULE_PICK.length)] : 11;
+        const stability = red ? RULES[rule][0] : 'stable';
+        const ratio = red ? (rule === 4 ? 1.0 + 0.05*h3 : 0.72 + 0.2*h3) : 0.5 + 0.3*h3;
+        let cpk = null; if (stability === 'stable') cpk = red ? (rule === 7 ? 0.8 + 0.5*h4 : rule === 8 ? 1.35 + 0.2*h4 : 1.2 + 0.4*h4) : 1.4 + 1.2*h4;
+        const ciw = rule === 8 ? 0.3 : 0.2;
+        const fr = Math.min(1.15, ratio + 0.05 + 0.15*h5 + (rule === 9 ? 0.15 : 0));
+        return { id, name: c[1], lat: +c[2], lon: +c[3], rating, unit: c[5], area: c[7], town: byId[c[7]] ? byId[c[7]].name : c[7], cls: c[11], status: red ? 'review_needed' : 'within_limits', stability, rule,
+          reason: red ? RULES[rule][1] : 'All checks passed', period_peak: rating*ratio, ratio, cpk, ci_low: cpk === null ? null : cpk - ciw, ci_high: cpk === null ? null : cpk + ciw,
+          projected: rating*fr, fr, disposition: red && h5 < 0.3 ? DISPS[Math.floor(h4*3)] : null, url: '/periods/2026-10-15/transformers/' + id };
+      });
+      this.setState({ points, districts }, () => { this.initMap(); this.applyScenario(); });
+    });
+  }
+  componentDidUpdate(prev) {
+    if (prev.scenario !== this.props.scenario && this.map) this.applyScenario();
+    if (prev.frame !== this.props.frame && this.map) setTimeout(() => this.map.invalidateSize(), 50);
+  }
+  componentWillUnmount() { this.ro && this.ro.disconnect(); clearInterval(this.playT); clearInterval(this.runT); if (this.map) this.map.remove(); }
+
+  applyScenario() {
+    const s = this.props.scenario ?? 'normal';
+    clearInterval(this.runT); this.stopPlay();
+    const reset = { firstLaunch: false, running: false, runFailed: false, runStep: 0, popup: null, alertsOpen: false };
+    if (s === 'first-launch') { this.setState({ ...reset, firstLaunch: true }, () => this.selectDistrict('')); this.map.closePopup(); return; }
+    if (s === 'district') { this.setState(reset, () => this.selectDistrict('ITH-C')); return; }
+    if (s === 'popup') { this.setState(reset, () => { this.selectDistrict(''); const p = this.state.points.find(x => x.status === 'review_needed' && x.area === 'ITH-C') || this.state.points[0]; this.map.setView([p.lat, p.lon], 13); this.setState({ popup: p }); }); return; }
+    if (s === 'running') { this.setState(reset, () => { this.selectDistrict(''); this.startRun(); }); return; }
+    if (s === 'failed') { this.setState({ ...reset, runFailed: true }, () => this.selectDistrict('')); return; }
+    if (s === 'run-open') { this.setState({ ...reset, runOpen: true }, () => this.selectDistrict('')); return; }
+    if (s === 'alerts') { this.setState({ ...reset, alertsOpen: true }, () => this.selectDistrict('')); return; }
+    this.setState(reset, () => this.selectDistrict(''));
+  }
+
+  initMap() {
+    const L = window.L; if (!L) { setTimeout(() => this.initMap(), 100); return; }
+    const map = L.map(this.mapRef.current, { zoomControl: false, attributionControl: true }).setView([42.44, -76.5], 10);
+    this.map = map;
+    this.sat = L.layerGroup([
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' }),
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: .8 })]).addTo(map);
+    this.streets = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap contributors' });
+    L.geoJSON(this.geo, { style: { color: '#fff', weight: 1.5, fillOpacity: .03, dashArray: '5 4', opacity: .85 }, onEachFeature: (f, l) => { this.boundaryLayers[f.properties.area_id] = l; l.bindTooltip(f.properties.name, { sticky: true }); } }).addTo(map);
+    this.heat = L.heatLayer([], { radius: 22, blur: 18, maxZoom: 14, max: 1, gradient: { .15: '#1a237e', .35: GREEN, .6: AMBER, .8: '#ff6d00', 1: RED } });
+    this.dots = L.layerGroup().addTo(map);
+    this.state.points.forEach(p => {
+      const red = p.status === 'review_needed';
+      const m = L.circleMarker([p.lat, p.lon], { radius: red ? 5.5 : 4, color: '#fff', weight: 2, fillColor: red ? RED : GREEN, fillOpacity: .95 });
+      m.on('click', () => this.setState({ popup: p }));
+      m.bindTooltip(p.id + (red ? ' · review needed' : ''));
+      this.markers[p.id] = m; this.dots.addLayer(m);
+    });
+    this.countyBounds = L.latLngBounds(this.state.points.map(p => [p.lat, p.lon])).pad(.08);
+    map.fitBounds(this.countyBounds, this.fitPad());
+    map.on('move zoom', () => this.setState(s => ({ mapTick: s.mapTick + 1 })));
+    map.on('click', () => this.setState({ popup: null, alertsOpen: false }));
+    setTimeout(() => { map.invalidateSize(); map.fitBounds(this.countyBounds, this.fitPad()); }, 300);
+  }
+  wide() { return this.state.width >= 1000; }
+  fitPad() { return this.wide() ? { paddingTopLeft: [260, 80], paddingBottomRight: [340, 60] } : { paddingTopLeft: [20, 130], paddingBottomRight: [20, 110] }; }
+  selectDistrict(id) {
+    this.stopPlay();
+    const d = this.state.districts.find(x => x.id === id);
+    this.setState({ district: id, popup: null });
+    this.state.points.forEach(p => this.markers[p.id] && this.markers[p.id].setStyle({ fillOpacity: !id || p.area === id ? .95 : .25, opacity: !id || p.area === id ? 1 : .3 }));
+    Object.entries(this.boundaryLayers).forEach(([k, l]) => l.setStyle({ opacity: !id || k === id ? .85 : .3, weight: k === id ? 2.5 : 1.5 }));
+    if (d) { this.map.fitBounds(d.bbox, this.fitPad()); if (!this.map.hasLayer(this.heat)) this.heat.addTo(this.map); }
+    else { if (this.map.hasLayer(this.heat)) this.map.removeLayer(this.heat); this.map.fitBounds(this.countyBounds, this.fitPad()); }
+    setTimeout(() => this.renderHeat(), 0);
+  }
+  loadAt(p, h) { const s = this.state; const f = s.mode === 'seasonal' ? FACTORS[s.month] : DAYJ[s.dateIdx]; return p.rating * p.ratio * CURVE[h] * f * (0.9 + 0.2 * hash(p.id, h + 7)); }
+  renderHeat() {
+    if (!this.map || !this.state.district) return;
+    const s = this.state, inView = s.points.filter(p => p.area === s.district);
+    const maxLoad = Math.max(1, ...inView.map(p => this.loadAt(p, s.hour)));
+    this.heat.setLatLngs(inView.map(p => { const v = this.loadAt(p, s.hour); return [p.lat, p.lon, s.metric === 'util' ? Math.min(v / p.rating, 1.2) : v / maxLoad]; }));
+  }
+  startRun = () => {
+    if (this.state.running) return;
+    this.setState({ running: true, runStep: 1, runOpen: false, runFailed: false });
+    clearInterval(this.runT);
+    this.runT = setInterval(() => { if (this.state.runStep >= 15) { clearInterval(this.runT); this.setState({ running: false, runStep: 0, firstLaunch: false }, () => this.selectDistrict(this.state.district)); } else this.setState(st => ({ runStep: st.runStep + 1 })); }, 650);
+  };
+  stopPlay() { clearInterval(this.playT); this.playT = null; if (this.state.playing) this.setState({ playing: false }); }
+
+  renderVals() {
+    const s = this.state, L = window.L, wide = this.wide(), narrow = !wide, phone = s.width < 600;
+    const frame = this.props.frame ?? 'fill';
+    const sel = s.districts.find(d => d.id === s.district);
+    const reds = s.points.filter(p => p.status === 'review_needed');
+    const redsIn = s.district ? reds.filter(p => p.area === s.district) : reds;
+    const undecided = reds.filter(p => !p.disposition).length;
+    const accent = 'var(--color-accent)';
+    const ring = on => on ? 'inset 0 0 0 1px ' + accent : 'none';
+    const fg = on => on ? 'var(--color-accent-700)' : 'rgba(29,36,48,.75)';
+    const districts = [{ id: '', name: 'Whole county', sub: s.points.length + ' transformers', red: reds.length }].concat(
+      [...s.districts].sort((a, b) => a.name.localeCompare(b.name)).map(d => ({ id: d.id, name: d.name, sub: d.kind + ' · ' + s.points.filter(p => p.area === d.id).length, red: reds.filter(p => p.area === d.id).length })))
+      .map(d => { const on = d.id === s.district; return { ...d, hasRed: d.red > 0, onSelect: () => this.selectDistrict(d.id), bg: on ? 'rgba(29,36,48,.9)' : 'transparent', chipBg: on ? 'rgba(29,36,48,.9)' : 'rgba(255,255,255,.62)', fg: on ? '#fff' : 'rgba(29,36,48,.9)', subFg: on ? 'rgba(255,255,255,.65)' : 'rgba(29,36,48,.6)', redFg: on ? '#ffb3bd' : '#b01d30' }; });
+    const reviewRows = (s.firstLaunch ? [] : redsIn).map(p => ({ id: p.id, name: p.name, town: p.town, reason: p.reason, disposition: p.disposition, hasDisp: !!p.disposition, url: p.url, bg: s.popup && s.popup.id === p.id ? 'rgba(182,130,53,.12)' : 'transparent',
+      onClick: () => { this.map.setView([p.lat, p.lon], Math.max(this.map.getZoom(), 13)); this.setState({ popup: p, sheetOpen: false }); } }));
+    const hourLabel = String(s.hour).padStart(2, '0') + ':00' + (s.hour >= 17 && s.hour <= 21 ? ', evening peak hours' : s.hour <= 5 ? ', overnight' : '');
+    const clock = (s.mode === 'seasonal' ? MONTHS[s.month - 1] + ', typical day' : DATES[s.dateIdx]) + '  ' + String(s.hour).padStart(2, '0') + ':00';
+    let hotspots = [];
+    if (sel) { const inView = s.points.filter(p => p.area === sel.id).map(p => [p, this.loadAt(p, s.hour)]); const maxLoad = Math.max(1, ...inView.map(x => x[1]));
+      hotspots = inView.sort((a, b) => b[1] / (s.metric === 'util' ? b[0].rating : 1) - a[1] / (s.metric === 'util' ? a[0].rating : 1)).slice(0, 8).map(([p, v]) => { const u = v / p.rating; const w = s.metric === 'util' ? Math.min(100, u * 100) : 100 * v / maxLoad; return { id: p.id, name: p.name, url: p.url, text: s.metric === 'util' ? Math.round(u * 100) + '% of rating' : fmt1(v) + ' ' + p.unit, w: w + '%', color: u >= .9 ? RED : u >= .7 ? AMBER : GREEN }; }); }
+    let popup = null, popupX = '0px', popupY = '0px';
+    if (s.popup && this.map) { const p = s.popup; const pt = this.map.latLngToContainerPoint([p.lat, p.lon]); popupX = pt.x + 'px'; popupY = pt.y + 'px'; const red = p.status === 'review_needed';
+      popup = { id: p.id, name: p.name, town: p.town, color: red ? RED : GREEN, statusText: red ? 'Review needed' : 'Within limits', rated: fmt1(p.rating) + ' ' + p.unit, peak: fmt1(p.period_peak) + ' ' + p.unit + ' (' + pct(p.ratio) + ')',
+        cpk: p.cpk === null ? 'not calculated: ' + p.stability.replace('_', ' ') : fmt2(p.cpk) + ' (' + fmt2(p.ci_low) + ' to ' + fmt2(p.ci_high) + ')', projected: fmt1(p.projected) + ' ' + p.unit + ' (' + pct(p.fr) + ')', rule: red ? 'Rule ' + p.rule + ' · ' + p.reason : 'None · all checks passed', decision: p.disposition || 'none recorded', url: p.url }; }
+    const sheetH = s.sheetOpen ? '62%' : (s.firstLaunch ? '220px' : '140px');
+    const furnitureBottom = wide ? '16px' : s.sheetOpen ? 'calc(62% + 12px)' : (s.firstLaunch ? '232px' : '152px');
+    const alertCount = s.runFailed ? 3 : 2;
+    return {
+      frameRef: this.frameRef, rootRef: this.rootRef, mapRef: this.mapRef,
+      wrapH: frame === 'fill' ? '100vh' : '100%', wrapBg: frame === 'desktop' ? 'transparent' : '#14171c',
+      frameW: frame === 'tablet' ? '768px' : frame === 'phone' ? '390px' : frame === 'desktop' ? '1440px' : '100%', frameH: frame === 'tablet' ? 'min(1024px,100%)' : frame === 'phone' ? 'min(844px,100%)' : frame === 'desktop' ? '900px' : '100%', frameRadius: frame === 'fill' || frame === 'desktop' ? '0' : '28px',
+      wide, narrow, phone, hasPopup: !!popup, popup, popupX, popupY, closePopup: () => this.setState({ popup: null }),
+      periodId: s.periodId, periods: ['2026-10-15', '2026-10-14', '2026-10-13'].map(id => ({ id, label: 'Week ending ' + id })), onPeriod: e => this.setState({ periodId: e.target.value }),
+      runIdle: !s.running && !s.runFailed, running: s.running, runFailed: s.runFailed, runStep: s.runStep, runPct: Math.round(s.runStep / 15 * 100) + '%', runOpen: s.runOpen && !s.running,
+      runPillText: wide ? 'Run a monitoring period' : 'Run', openRun: () => wide && this.setState({ runOpen: true }), closeRun: () => wide && this.setState({ runOpen: false }), blurRun: e => { if (!e.currentTarget.contains(e.relatedTarget)) this.setState({ runOpen: false }); },
+      toggleRun: () => this.setState(st => ({ runOpen: !st.runOpen })), runDate: s.runDate, setRunDate: e => this.setState({ runDate: e.target.value }), startRun: this.startRun, resetRun: () => this.setState({ runFailed: false }),
+      feeds: [['readings.csv', !s.runFailed], ['assets.csv', true], ['boundaries.geojson', true], ['heat_pump_forecast.csv', true]].map(([name, ok]) => ({ name, state: ok ? 'present' : 'missing', color: ok ? GREEN : RED, border: ok ? 'rgba(27,127,75,.5)' : 'rgba(215,38,61,.6)' })),
+      hasAlerts: alertCount > 0, alertCount, alertsOpen: s.alertsOpen, toggleAlerts: () => this.setState(st => ({ alertsOpen: !st.alertsOpen })),
+      alert: s.runFailed ? { when: 'today 06:02', headline: 'The run for the week ending 2026-10-15 stopped at step 8 of 15.', happened: 'readings.csv was not found in data/feeds, so no load values could be read.', todo: 'Copy the latest readings export into data/feeds and run the period again.' }
+        : { when: 'Fri 06:04', headline: '3 transformers have no forecast for their town.', happened: 'heat_pump_forecast.csv has no row for Trumansburg, so no projected peak could be made for them.', todo: 'Ask planning for the Trumansburg forecast row; until then these cases stay red under rule 10.' },
+      districts, selectedName: sel ? sel.fullName : '', hasSelection: !!sel, heatVisible: !!sel && !s.firstLaunch, heatTop: wide ? '80px' : '124px', heatLeft: wide ? '252px' : '16px', heatRight: wide ? '332px' : '16px',
+      recorded: s.mode === 'recorded', seasonal: s.mode === 'seasonal', setRecorded: () => this.setState({ mode: 'recorded' }, () => this.renderHeat()), setSeasonal: () => this.setState({ mode: 'seasonal' }, () => this.renderHeat()),
+      setUtil: () => this.setState({ metric: 'util' }, () => this.renderHeat()), setLoad: () => this.setState({ metric: 'load' }, () => this.renderHeat()),
+      segRecFg: fg(s.mode === 'recorded'), segRecRing: ring(s.mode === 'recorded'), segSeaFg: fg(s.mode === 'seasonal'), segSeaRing: ring(s.mode === 'seasonal'), segUtilFg: fg(s.metric === 'util'), segUtilRing: ring(s.metric === 'util'), segLoadFg: fg(s.metric === 'load'), segLoadRing: ring(s.metric === 'load'),
+      clock, dateMax: DATES.length - 1, dateIdx: s.dateIdx, setDate: e => this.setState({ dateIdx: +e.target.value }, () => this.renderHeat()), dateLabel: DATES[s.dateIdx] + ' (' + (s.dateIdx + 1) + ' of ' + DATES.length + ' recorded days)',
+      month: s.month, setMonth: e => this.setState({ month: +e.target.value }, () => this.renderHeat()), monthLabel: MONTHS[s.month - 1] + ', ×' + FACTORS[s.month].toFixed(2) + ' of recorded level',
+      hour: s.hour, setHour: e => this.setState({ hour: +e.target.value }, () => this.renderHeat()), hourLabel,
+      playing: s.playing, notPlaying: !s.playing, playLabel: s.playing ? 'Pause' : 'Play',
+      togglePlay: () => { if (s.playing) return this.stopPlay(); this.setState({ playing: true }); this.playT = setInterval(() => this.setState(st => { let h = st.hour + 1, dateIdx = st.dateIdx, month = st.month; if (h > 23) { h = 0; if (st.mode === 'seasonal') month = month % 12 + 1; else dateIdx = (dateIdx + 1) % DATES.length; } return { hour: h, dateIdx, month }; }, () => this.renderHeat()), 700); },
+      hotspots,
+      sideTop: wide ? '80px' : 'auto', sideRight: wide ? '16px' : '0', sideLeft: wide ? 'auto' : '0', sideBottom: wide ? '16px' : '0', sideWidth: wide ? '300px' : 'auto', sideHeight: wide ? 'auto' : sheetH, sideRadius: wide ? '20px' : '20px 20px 0 0',
+      toggleSheet: () => this.setState(st => ({ sheetOpen: !st.sheetOpen })), sheetHeaderClick: () => narrow && this.setState(st => ({ sheetOpen: !st.sheetOpen })),
+      firstLaunch: s.firstLaunch, hasPeriod: !s.firstLaunch, redCount: redsIn.length, redTotal: s.firstLaunch ? 0 : reds.length, greenTotal: s.firstLaunch ? 0 : s.points.length - reds.length, reviewRows,
+      finalizeDisabled: undecided > 0, finalizeReason: undecided > 0 ? undecided + ' red cases still need a decision before the report can be finalized' : 'Every red case has a decision',
+      statusLine: s.firstLaunch ? 'No runs yet · next Mon 06:00 · scheduler active' : 'Last run Fri 06:02 · next Mon 06:00 · scheduler active',
+      furnitureBottom, controlsRight: '16px',
+      zoomIn: () => this.map && this.map.zoomIn(), zoomOut: () => this.map && this.map.zoomOut(),
+      setSat: () => { if (s.base === 'sat') return; this.map.removeLayer(this.streets); this.sat.addTo(this.map); this.setState({ base: 'sat' }); },
+      setStreets: () => { if (s.base === 'streets') return; this.map.removeLayer(this.sat); this.streets.addTo(this.map); this.setState({ base: 'streets' }); },
+      satFg: fg(s.base === 'sat'), satRing: ring(s.base === 'sat'), streetsFg: fg(s.base === 'streets'), streetsRing: ring(s.base === 'streets'),
+    };
+  }
+}
+</script>
+</body>
+</html>

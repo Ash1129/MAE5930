@@ -2,14 +2,16 @@
 
 What this tool IS. Where the code and this file disagree, the code is the bug: change this file first,
 then the code. Filled in from the app as built, following the hackathon template in
-`Timmy's stuff/SPEC.md`. Three lines in section 1 still need a team answer that the code cannot give.
+`Timmy's stuff/SPEC.md`. Team, track and challenge prompt confirmed by the team.
 
 ## 1. Team and prompt
-- **Team name:** TO CONFIRM.
-- **Track:** TO CONFIRM, on-campus (24 hours, due Sat Oct 17 1 PM ET) or Virtual DL Challenge (7 days, due Fri Oct 23 3 PM ET).
-- **Prompt we chose:** TO CONFIRM. Copy the prompt number and exact title from the Devpost challenge page.
-  The business task the app was built to is "Log transformer loads and monitor capacity against limits
-  across Tompkins County" (see `BUILD.md`). It is an energy-systems reliability prompt.
+- **Team name:** SplitSync.
+- **Track:** On-campus (24-hour sprint).
+- **Challenge category:** Energy Systems.
+- **Prompt we chose:** Smart Grid Transformer Surges.
+
+  > Due to sudden local adoption of heat pumps, EVs, data centers, etc., local step-down transformers are blowing out. The utility has no predictive tracking. Design a system to log load and monitor/model the ability of the system to meet transformer requirements/limits to support local neighorhoods.
+
 - **Our public repo:** github.com/Ash1129/MAE5930 (the app lives in `transformer-capacity-monitor/`).
 
 ## 2. User and use case (rubric: scope 5, user and use case 5)
@@ -20,8 +22,9 @@ then the code. Filled in from the app as built, following the hackathon template
   changed, its headroom below the nameplate rating is thin or uncertain, or projected heat-pump growth
   would push its peak to 90% of rating or more. The engineer records a disposition on each flagged
   transformer, then signs off the period report.
-- **Why this matches the prompt:** it logs transformer loads and monitors them against their rated limits
-  across the county, with SPC deciding when a change is real and capability deciding how much margin is left.
+- **Why this matches the prompt:** it logs neighborhood transformer loads, uses SPC to flag changes in
+  daily peaks, measures headroom against transformer ratings, and projects additional heat-pump demand
+  so utility planners can identify transformers that may struggle to meet future neighborhood needs.
 
 ## 3. Inputs (rubric: minimal inputs 5)
 Four feeds a utility planning team already holds. The engineer types nothing per run. Full column
@@ -30,7 +33,7 @@ definitions and real collection methods are in `data/README.md`.
 | Input | Type and units | Where the user gets it |
 |---|---|---|
 | `readings.csv`, one row per transformer per hour | load, kVA | AMI smart-meter interval data summed per transformer, or a transformer load monitor |
-| `assets.csv`, one row per transformer | nameplate rating in kVA, lat/lon, customers served | the utility's asset register and GIS connectivity model (customers = meters connected downstream) |
+| `assets.csv`, one row per transformer | nameplate rating in kVA, lat/lon, customers served, optional customer class | the utility's asset register and GIS connectivity model (customers = meters connected downstream; class = their main rate class) |
 | `boundaries.geojson`, one polygon per town or village | lon/lat polygons | Tompkins County GIS open data portal |
 | `heat_pump_forecast.csv`, one row per area | adoption share 0-1, kW per heat pump | the utility's load forecast or the state electrification forecast used in planning |
 
@@ -65,7 +68,7 @@ it is a candidate for removal.
   Against a 100 kVA rating, mean = 59.992 and Cpk = (100 − 59.992)/(3 × 0.8865) = 15.04. This series
   alternates perfectly, so both assumption checks must also fire on it. Setting the period day
   2026-10-13 to 70 kVA must trigger "beyond 3 sigma" on that date. The real demo also gives a hand check:
-  T-DAN-010 has rating 50, mean 40.226 and σ 2.679, so Cpk = 9.774/8.037 = 1.22.
+  T-DAN-010 has rating 50, mean 40.176 and σ 2.850, so Cpk = 9.824/8.551 = 1.15.
   These tests in `tests/test_pipeline.py` assert the known answers and degenerate cases:
   - `test_imr_chart_limits_come_from_history_not_rating` and `test_capability_cpk_and_interval` cover the series above.
   - `test_cpk_interval_hand_computed_known_answer` checks a 25-point interval computed by hand.
@@ -98,6 +101,8 @@ The web app and the scheduler only call these functions and display the results.
     It also shows Cpk with its 95% interval, the period peak as a percentage of rating, the projected peak
     as a percentage of rating, the matching decision-table rule, and the source readings.
   - **Period report:** HTML, Markdown and JSON, finalized only after every flagged case has a disposition.
+  - **Heatmap:** hourly load per transformer for any recorded date. A seasonal view labeled MODELED
+    scales the recorded shapes by the playbook's assumed monthly factors. It is context only and feeds no decision.
 - *How to read this:* red means a person must look before the report goes out. The rule number names the
   reason, for example "rule 2: chart signal", "rule 8: lower 95% bound below 1.33" or
   "rule 9: forecast peak at 90% of rating or more".
@@ -128,4 +133,5 @@ the numbers it prints. All three datasets are SYNTHETIC and produced by `scripts
 - No AI or model calls anywhere. Every step is a fixed rule.
 - No load-flow, voltage or thermal-ageing modelling. Capacity means the nameplate kVA rating only.
 - No per-customer forecasting. Heat-pump growth is applied by area share.
+- No fitted seasonal model. The heatmap's monthly factors are labeled assumptions, not estimates.
 - Real utility feeds and the approved playbook thresholds are owner setup, not part of the hackathon build.

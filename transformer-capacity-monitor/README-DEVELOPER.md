@@ -48,9 +48,25 @@ counts. Report files are overwritten in `data/reports/<period>/` with per-run co
 - **Forecast units**: heat-pump demand is real power (kW). For assets rated in kVA the added kW is divided by `forecast.power_factor` before it is added to the period peak; kW-rated assets add directly. The factor and note are in every result's forecast assumptions.
 - **Thresholds**: `rules/decision-table.csv` references playbook values as `${section.key}`; `load_decision_table` resolves them, so editing `rules/playbook.json` changes behavior. The DAG reads its cron and time zone from the playbook too.
 
+## Map page (landing)
+
+`webapp/templates/map.html` is a standalone page (it does not extend `base.html`) built to the design handoff in `design/`: full-bleed Leaflet map, glass districts panel (left), heat strip (district selected), review sidebar or bottom sheet (right / narrow), top bar with the run pill, alerts bell and reviewer. `_render_map(period_id)` builds the context; `/` renders the first-launch state when no period exists. The run pill posts to `POST /api/runs` and polls `GET /api/runs/<id>` (status, current_step, failure headline); `/api/status` adds `latest_alert` and `unacknowledged_alerts`. Finalize posts to the period's finalize route with the reviewer name; the button is disabled client-side while any red case lacks a decision and the backend still returns 409.
+
+## Heatmap
+
+`capacity_monitor/heat.py` parses the readings feed once into `{date: {transformer: [24 hourly loads]}}` (cached until the file changes) plus each transformer's average hourly shape and daily-peak level. `/api/heat/recorded?date=` returns one recorded day; `/api/heat/seasonal?month=` returns a MODELED typical day: level x `seasonal_model.monthly_factors[month]` x shape, with `winter_evening_boost` on 17:00-21:00 in Dec-Feb. The heat view lives on the Map page (`webapp/templates/map.html`, Leaflet.heat): district buttons from the boundary feed; choosing a district zooms in and reveals recorded or seasonal mode, date/month/hour sliders with playback, utilization or absolute load, and a hotspot list. `/heatmap` routes redirect to the map. Seasonal factors are placeholders in `rules/playbook.json` until the utility supplies monthly peak ratios from a full year of readings.
+
 ## Synthetic data
 
-`scripts/make_synthetic_data.py --count N` writes the 12 labeled cases plus N-12 generated transformers. The generator verifies each intended-pass series with the real chart, capability and assumption functions and redraws until it matches its label. `data/feeds/readings.csv` is gitignored (42 MB at 500 transformers); regenerate with the script.
+`scripts/make_synthetic_data.py --count N` writes the 12 labeled cases plus N-12 generated transformers, each with a `customer_class` (residential, commercial, institutional, mixed) that sets its hourly load shape; downtown Ithaca is mostly commercial so it stays loaded at night. The generator verifies each intended-pass series with the real chart, capability and assumption functions and redraws until it matches its label. `data/feeds/readings.csv` is gitignored (42 MB at 500 transformers); regenerate with the script.
+
+## Alert explanations
+
+`explain.py` maps known failure patterns to plain-language title/meaning/action (templates, no AI) and groups non-blocking warnings as notes. `ai_explain.py` optionally asks the Claude CLI (`claude -p`, the owner's subscription) to rewrite an alert; it runs in an empty temp folder so no project context loads, passes the alert as data between markers, requires a JSON answer, length-limits, PII-redacts and guard-checks the answer, caches it in `ai_explanations`, and is triggered in the background by `send_alert` when the Setup toggle (`settings.ai_explanations`) is on. `CAPMON_CLAUDE_CLI` overrides the binary path (tests use a fake); `CAPMON_CLAUDE_TIMEOUT` sets the call timeout.
+
+## Map popup
+
+Clicking a transformer opens a glass card with a short summary, compact I-MR control charts and the key numbers. `GET /api/periods/<id>/transformers/<tid>/mini` returns the chart (`charts.mini_imr_svg`, inline attributes only so it cannot leak CSS), the rule-based line (`explain.summarize_transformer`) and any cached AI summary. When AI explanations are on in Setup, the page then calls `GET .../summary`, which runs one slim Claude CLI call on `claude-haiku-5-5` (`CAPMON_CLAUDE_SUMMARY_MODEL`; no tools, no MCP servers, no skills, no saved session, about 700 tokens, 3 to 9 seconds), passes the transformer's facts as data between markers, guard-checks and PII-redacts the answer, and caches it per period, transformer, inputs and model. Concurrent requests for the same transformer share one call. The rule-based line shows until the summary arrives and stays if the call fails.
 
 ## Guardrails
 

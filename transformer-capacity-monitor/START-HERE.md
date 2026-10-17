@@ -10,8 +10,8 @@ equipment or operating settings.
 1. **Open the tool.** Double-click `Start Capacity Monitor.command` (or run `./scripts/start_app.sh` and
    `./scripts/start_airflow.sh`). Your browser opens http://127.0.0.1:5055 on the **Map**: every transformer
    as a dot, green for within limits and red for needing review; click a red dot for its numbers and
-   **Open full review**. Scheduled runs happen on their own on Monday, Wednesday and Friday at 06:00; the
-   **Dashboard** link lets you pick a period end date and press **Run now**.
+   **Open full review**. Pick a district on the left to zoom in and see load by hour (recorded) or by month (a labeled model). Scheduled runs happen on their own on Monday, Wednesday and Friday at 06:00; to run one yourself,
+   pick a period end date at the top of the Map and press **Run now**. The **Dashboard** shows the scheduler, alerts and run history.
 2. **Review the exceptions.** Open the period, press **Review** on each flagged transformer, read the
    checklist beside the chart and source readings, then choose **Approve conclusion**, **Request changes**
    or **Reject** (with a note). One case at a time; nothing is batch-approved.
@@ -24,8 +24,9 @@ equipment or operating settings.
 - **Reopen:** http://127.0.0.1:5055 while the tool is running; otherwise double-click the Start launcher again.
 - **Stop:** double-click `Stop Capacity Monitor.command` (or `./scripts/stop.sh`).
 - **Pause scheduled runs:** the **Pause scheduled runs** button on the dashboard (Resume to continue).
-- **A run failed:** the dashboard and the Alerts page show the run, the step and the reason (for
-  example a missing feed or a boundary file for the wrong period). Fix the feed in `data/feeds/` and
+- **A run failed:** the dashboard and the Alerts page explain in plain words what happened and what to do
+  (for example a missing feed or a boundary file for the wrong period). With AI explanations turned on in
+  Setup, Claude also rewrites each alert. Fix the feed in `data/feeds/` and
   press **Run now** for the same period end date; the rerun replaces that period's draft.
 - **Something looks stuck:** `./scripts/status.sh` shows what is running; `./scripts/stop.sh` then the
   Start launcher restarts everything. Logs are in `logs/`.

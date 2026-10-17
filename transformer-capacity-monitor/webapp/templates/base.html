@@ -1,45 +1,103 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}Transformer Capacity Monitor{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,600&family=Lora:wght@400;600&display=swap">
 {% block head %}{% endblock %}
 <style>
-  :root{--ink:#1d2430;--muted:#5d6675;--line:#dfe3e8;--bg:#f6f7f9;--card:#fff;--ok:#1b7f4b;--okbg:#def7e7;--warn:#9a5b00;--warnbg:#fff1d6;--bad:#b3261e;--badbg:#fde3e1;--info:#1f5fa8;--infobg:#e3eefb}
-  *{box-sizing:border-box} body{margin:0;font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--bg)}
-  header{background:#fff;border-bottom:1px solid var(--line);padding:10px 20px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
-  header .brand{font-weight:700;font-size:16px;margin-right:auto} header a{color:var(--info);text-decoration:none} header a:hover{text-decoration:underline}
-  main{max-width:1180px;margin:18px auto;padding:0 16px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
-  h1{font-size:22px;margin:0 0 10px} h2{font-size:17px;margin:0 0 10px} h3{font-size:15px;margin:14px 0 6px}
-  table{border-collapse:collapse;width:100%} th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px} th{color:var(--muted);font-weight:600}
-  .tag{display:inline-block;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:600;white-space:nowrap}
-  .ok{background:var(--okbg);color:var(--ok)} .warn{background:var(--warnbg);color:var(--warn)} .bad{background:var(--badbg);color:var(--bad)} .info{background:var(--infobg);color:var(--info)} .muted{color:var(--muted)}
-  .btn{display:inline-block;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:600;cursor:pointer;text-decoration:none;font-size:14px}
-  .btn.primary{background:var(--info);border-color:var(--info);color:#fff} .btn.danger{background:var(--bad);border-color:var(--bad);color:#fff} .btn.warn{background:var(--warn);border-color:var(--warn);color:#fff} .btn[disabled]{opacity:.5;cursor:not-allowed}
-  input[type=text],input[type=date],textarea{padding:7px 9px;border:1px solid var(--line);border-radius:8px;font:inherit;width:100%} textarea{min-height:90px}
-  label{display:block;font-size:13px;color:var(--muted);margin:8px 0 4px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
-  .flash{padding:10px 14px;border-radius:8px;margin-bottom:12px} .flash.error{background:var(--badbg);color:var(--bad)} .flash.info{background:var(--infobg);color:var(--info)}
-  .kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:14px} .kv dt{color:var(--muted)} .kv dd{margin:0}
-  .steps li{padding:4px 0;border-bottom:1px dashed var(--line);display:flex;gap:10px;align-items:baseline} .steps{list-style:none;padding:0;margin:0}
-  .steps .n{width:28px;color:var(--muted);text-align:right} .steps .d{color:var(--muted);font-size:12px;margin-left:auto;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  details summary{cursor:pointer;color:var(--info)} pre{background:#f1f3f6;padding:10px;border-radius:8px;overflow:auto;font-size:12px}
-  .small{font-size:13px} .right{text-align:right}
-  .synthetic{background:#fff6cc;border:1px dashed #d4a800;padding:6px 10px;border-radius:8px;font-size:13px;margin-bottom:12px}
+  /* ---- design language shared with ashwinprajeeth.com (dark theme) ---- */
+  :root{
+    --bg:#1a1919;--surface:#262525;--surface-2:#2f2e2d;--text:#f3f1e8;--muted:#aeaba3;--divider:rgba(243,241,232,.22);--line:rgba(243,241,232,.12);
+    --accent:#c9964a;--accent-700:#e1ad66;--accent-800:#facb8d;--accent-100:#3a2a14;
+    --ok:#57b57f;--okbg:rgba(87,181,127,.14);--warn:#e1ad66;--warnbg:rgba(225,173,102,.14);--bad:#ff6b7a;--badbg:rgba(255,107,122,.14);--info:#8ab4f8;--infobg:rgba(138,180,248,.14);
+    --font-heading:"Cormorant Garamond",Georgia,serif;--font-body:"Lora",Georgia,serif;--gutter:clamp(20px,5vw,72px);--radius:4px;
+    --ink:var(--text);--ink-90:var(--text);--ink-75:rgba(243,241,232,.75);--ink-60:var(--muted);--card:var(--surface);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.55 var(--font-body);color:var(--text);background:var(--bg);font-variant-numeric:tabular-nums}
+  a{color:var(--accent-700)} a:hover{color:var(--accent-800)}
+  h1,h2,h3{font-family:var(--font-heading);font-weight:600;line-height:1.15;margin:0 0 12px;text-wrap:balance}
+  h1{font-size:34px;letter-spacing:-.01em} h2{font-size:24px} h3{font-size:19px;margin:18px 0 8px}
+  p{margin:0 0 10px}
+  code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--surface-2);padding:1px 5px;border-radius:3px}
+  pre{background:var(--surface-2);border:1px solid var(--line);padding:12px;border-radius:var(--radius);overflow:auto;font-size:12px;line-height:1.5}
+  .small{font-size:13px} .muted{color:var(--muted)} .right{text-align:right}
+
+  /* header, as on the site */
+  .site-header{position:sticky;top:0;z-index:10;background:var(--bg)}
+  .site-header::after{content:"";position:absolute;left:var(--gutter);right:var(--gutter);bottom:0;height:1px;background:var(--divider)}
+  .site-header__inner{display:flex;align-items:center;gap:24px;padding:10px var(--gutter)}
+  .brand{font-family:var(--font-heading);font-weight:600;font-size:20px;color:var(--text);text-decoration:none;white-space:nowrap;margin-right:auto} .brand:hover{color:var(--text)}
+  .brand small{font-family:var(--font-body);font-weight:400;font-size:12px;color:var(--muted);margin-left:8px}
+  .site-nav{display:flex;align-items:center;gap:20px;font-size:14px}
+  .site-nav a{color:var(--text);text-decoration:none;white-space:nowrap} .site-nav a:hover,.site-nav a.is-active{color:var(--accent-700)}
+  .header-tools{display:flex;align-items:center;gap:20px}
+  .header-divider{width:1px;height:28px;background:var(--text)}
+  .icon-circle{position:relative;width:36px;height:36px;border:1px solid var(--text);border-radius:9px;color:var(--text);display:grid;place-items:center;font-size:13px;letter-spacing:.04em;text-decoration:none;font-family:var(--font-heading);font-weight:600;transition:background-color .15s;background:transparent;cursor:pointer;padding:0}
+  .icon-circle:hover{background:rgba(243,241,232,.08);color:var(--text)}
+  .icon-circle .count{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#D7263D;color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;border:2px solid var(--bg);font-family:var(--font-body)}
+  .btn-solid{display:inline-flex;align-items:center;gap:8px;background:var(--text);color:var(--bg);border-radius:5px;padding:8px 16px;font-family:var(--font-heading);font-weight:600;font-size:15px;text-decoration:none;white-space:nowrap;border:0;cursor:pointer;transition:opacity .15s}
+  .btn-solid:hover{opacity:.85;color:var(--bg)}
+  @media (max-width:860px){.site-nav,.header-tools .btn-solid,.header-tools .header-divider:last-of-type{display:none} .site-header__inner{gap:14px} .header-tools{gap:12px} .brand small{display:none}}
+
+  main{max-width:1180px;margin:0 auto;padding:28px var(--gutter) 60px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:18px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+  table{border-collapse:collapse;width:100%} th,td{text-align:left;padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px}
+  th{color:var(--muted);font-weight:400;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+  .tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;letter-spacing:.03em;border:1px solid currentColor;white-space:nowrap;background:transparent}
+  .tag.ok{color:var(--ok)} .tag.warn{color:var(--warn)} .tag.bad{color:var(--bad)} .tag.info{color:var(--info)} .tag.muted{color:var(--muted)}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)} .info{color:var(--info)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:var(--radius);border:1px solid var(--divider);background:transparent;color:var(--text);font-family:var(--font-heading);font-weight:600;font-size:15px;line-height:1.2;cursor:pointer;text-decoration:none;transition:background-color .15s}
+  .btn:hover{background:rgba(243,241,232,.07);color:var(--text)} .btn:active{background:rgba(243,241,232,.14)}
+  .btn.primary{color:var(--accent-700);border-color:var(--accent)} .btn.primary:hover{color:var(--accent-800);background:rgba(201,150,74,.12)}
+  .btn.danger{color:var(--bad);border-color:var(--bad)} .btn.danger:hover{background:var(--badbg)}
+  .btn.warn{color:var(--warn);border-color:var(--warn)} .btn.warn:hover{background:var(--warnbg)}
+  .btn.small{padding:6px 12px;font-size:13px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  input[type=text],input[type=date],textarea,select{padding:7px 10px;border:1px solid var(--divider);border-radius:var(--radius);font:inherit;font-size:14px;width:100%;background:transparent;color:var(--text);caret-color:var(--accent)}
+  input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;border-color:var(--accent)}
+  textarea{min-height:90px;resize:vertical}
+  label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:10px 0 5px}
+  .flash{padding:10px 14px;border-radius:var(--radius);margin-bottom:14px;border:1px solid currentColor;font-size:14px}
+  .flash.error{color:var(--bad);background:var(--badbg)} .flash.info{color:var(--accent-700);background:rgba(201,150,74,.1)}
+  .kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;font-size:14px} .kv dt{color:var(--muted)} .kv dd{margin:0}
+  .steps{list-style:none;padding:0;margin:0} .steps li{padding:6px 0;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:baseline}
+  .steps .n{width:28px;color:var(--muted);text-align:right;font-family:var(--font-heading);font-weight:600;font-size:16px} .steps .d{color:var(--muted);font-size:12px;margin-left:auto;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  details summary{cursor:pointer;color:var(--accent-700)} details summary:hover{color:var(--accent-800)}
+  .synthetic{background:var(--warnbg);border:1px dashed var(--warn);padding:6px 10px;border-radius:var(--radius);font-size:13px;margin-bottom:12px}
+  .xp{font-size:14px} .xp-title{font-family:var(--font-heading);font-weight:600;font-size:18px;margin-bottom:6px} .xp-row{display:grid;grid-template-columns:110px 1fr;gap:8px;margin:4px 0} .xp-k{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.12em;padding-top:3px}
+  .ai{border-left:2px solid var(--accent);padding-left:12px;margin-bottom:10px}
+  .paper{background:#f6f4ee;border-radius:8px;padding:10px;overflow:auto;color:#1d2430}
+  .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-700);margin-bottom:8px}
+  .rule{width:120px;height:1px;background:var(--accent);margin:14px 0 18px}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
-<header>
-  <span class="brand">Transformer Capacity Monitor <span class="muted small">Tompkins County</span></span>
-  <a href="{{ url_for('map_latest') }}">Map</a>
-  <a href="{{ url_for('charts_latest') }}">Charts</a>
-  <a href="{{ url_for('dashboard') }}">Dashboard</a>
-  <a href="{{ url_for('alerts') }}">Alerts{% if unacked_alerts %} <span class="tag bad">{{ unacked_alerts }}</span>{% endif %}</a>
-  <a href="{{ url_for('metrics') }}">Review metrics</a>
-  <a href="{{ url_for('setup') }}">Setup</a>
-  <span class="muted small">Reviewer: {{ reviewer_name or 'not set' }}</span>
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand" href="{{ url_for('map_latest') }}">Transformer Capacity Monitor<small>Tompkins County</small></a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="{{ url_for('map_latest') }}" {% if request.endpoint in ('map_latest','period_map') %}class="is-active"{% endif %}>Map</a>
+      <a href="{{ url_for('charts_latest') }}" {% if request.endpoint in ('charts_latest','period_charts','area_detail') %}class="is-active"{% endif %}>Charts</a>
+      <a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}class="is-active"{% endif %}>Dashboard</a>
+      <a href="{{ url_for('alerts') }}" {% if request.endpoint == 'alerts' %}class="is-active"{% endif %}>Alerts</a>
+      <a href="{{ url_for('metrics') }}" {% if request.endpoint == 'metrics' %}class="is-active"{% endif %}>Review metrics</a>
+      <a href="{{ url_for('setup') }}" {% if request.endpoint == 'setup' %}class="is-active"{% endif %}>Setup</a>
+    </nav>
+    <div class="header-tools">
+      <span class="icon-circle" title="Reviewer: {{ reviewer_name or 'not set' }}">{{ (reviewer_name or '?').split()|map('first')|join('')|upper|truncate(2, True, '') }}</span>
+      <span class="header-divider" aria-hidden="true"></span>
+      <a class="icon-circle" href="{{ url_for('alerts') }}" aria-label="Alerts"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>{% if unacked_alerts %}<span class="count">{{ unacked_alerts }}</span>{% endif %}</a>
+      <span class="header-divider" aria-hidden="true"></span>
+      <a class="btn-solid" href="{{ url_for('map_latest') }}">Open the map</a>
+    </div>
+  </div>
 </header>
 <main>
 {% with messages = get_flashed_messages(with_categories=true) %}{% for cat, m in messages %}<div class="flash {{ cat }}">{{ m }}</div>{% endfor %}{% endwith %}

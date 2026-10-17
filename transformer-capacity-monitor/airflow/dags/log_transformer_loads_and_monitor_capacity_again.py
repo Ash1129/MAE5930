@@ -106,7 +106,9 @@ def _on_dag_failure(context):
         run = store.get_run(ref["run_id"])
         if run and run["status"] == "running":
             store.finish_run(ref["run_id"], "failed", error=f"Airflow task failed: {context.get('task_instance').task_id}")
-        send_alert(store, "error", f"Airflow DAG run {context['dag_run'].run_id} failed in task {context.get('task_instance').task_id}", run_id=ref["run_id"], period_id=ref["period"]["period_id"])
+        already = any(a["run_id"] == ref["run_id"] for a in store.list_alerts(limit=50))
+        if not already:  # the step itself alerts with the specific reason; only alert here for unexplained task failures
+            send_alert(store, "error", f"Airflow DAG run {context['dag_run'].run_id} failed in task {context.get('task_instance').task_id}", run_id=ref["run_id"], period_id=ref["period"]["period_id"])
     except Exception as exc:  # noqa: BLE001
         print(f"failure callback error: {exc!r}")
 

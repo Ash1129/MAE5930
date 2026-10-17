@@ -2,15 +2,9 @@
 {% block content %}
 <div class="grid">
   <div class="card">
-    <h2>Run a monitoring period now</h2>
-    <p class="small muted">A run covers {{ playbook.period_days }} days ending on the date you pick and uses {{ playbook.history_days }} days of history for the control charts. Rerunning a period replaces its draft results.</p>
-    <form method="post" action="{{ url_for('start_run') }}">
-      <label for="period_end">Period end date</label>
-      <input type="date" id="period_end" name="period_end" value="{{ default_end }}" required>
-      <p><button class="btn primary" type="submit">Run now</button></p>
-    </form>
-    <h3>Feeds in {{ playbook.get('_feeds_dir', 'data/feeds') }}</h3>
-    <table>{% for name, f in feeds.items() %}<tr><td>{{ name }}</td><td>{{ f.file }}</td><td>{% if f.present %}<span class="tag ok">present</span> <span class="muted small">{{ f.modified }}</span>{% else %}<span class="tag bad">missing</span>{% endif %}</td></tr>{% endfor %}</table>
+    <h2>Run a period</h2>
+    <p class="small">Starting a run and checking the feed files now live on the <a href="{{ url_for('map_latest') }}">Map</a> page.</p>
+    <p><a class="btn primary" href="{{ url_for('map_latest') }}">Go to the Map</a></p>
   </div>
   <div class="card">
     <h2>Scheduler (Apache Airflow)</h2>
@@ -46,9 +40,21 @@
 </div>
 {% endif %}
 {% if alerts %}
-<div class="card"><h2>Unacknowledged alerts</h2>
-<table><tr><th>When</th><th>Level</th><th>Run</th><th>Message</th><th>Delivery</th><th></th></tr>
-{% for a in alerts %}<tr><td>{{ a.created_at }}</td><td><span class="tag {{ 'bad' if a.level == 'error' else 'warn' }}">{{ a.level }}</span></td><td class="small">{% if a.run_id %}<a href="{{ url_for('run_detail', run_id=a.run_id) }}">{{ a.run_id }}</a>{% endif %}</td><td class="small">{{ a.message[:300] }}</td><td class="small muted">{{ a.delivered }}</td><td><form method="post" action="{{ url_for('ack_alert', alert_id=a.id) }}"><button class="btn">Acknowledge</button></form></td></tr>{% endfor %}
+<div class="card"><h2>Needs attention</h2>
+<table><tr><th>When</th><th>Run</th><th>Alert</th><th></th></tr>
+{% for a in alerts %}{% set e = a|explain %}<tr><td class="small">{{ a.created_at[:16].replace('T', ' ') }}</td><td class="small">{% if a.run_id %}<a href="{{ url_for('run_detail', run_id=a.run_id) }}">period {{ a.period_id }}</a>{% if e.step %}<br>step {{ e.step }}: {{ e.step_name }}{% endif %}{% endif %}</td><td>{% set e = a|explain %}
+<div class="xp">
+  {% if e.ai %}<div class="ai"><div class="xp-title">{{ e.ai.title }} <span class="tag info">written by Claude</span></div><div class="xp-row"><span class="xp-k">What happened</span><span>{{ e.ai.meaning }}</span></div><div class="xp-row"><span class="xp-k">What to do</span><span>{{ e.ai.action }}</span></div></div>
+<details class="small"><summary>Rule-based explanation</summary>{% endif %}
+  <div class="xp-title">{{ e.title }}</div>
+  <div class="xp-row"><span class="xp-k">What happened</span><span>{{ e.meaning }}</span></div>
+  <div class="xp-row"><span class="xp-k">What to do</span><span>{{ e.action }}</span></div>
+  {% for o in e.others %}<div class="xp-row"><span class="xp-k">Also</span><span>{{ o.meaning }} {{ o.action }}</span></div>{% endfor %}
+  {% if e.notes %}<details class="small"><summary>{{ e.notes|length }} note(s), nothing to fix</summary><ul>{% for n in e.notes %}<li>{{ n }}</li>{% endfor %}</ul></details>{% endif %}
+  {% if e.ai %}</details>{% endif %}
+{% if e.ai_on %}<form method="post" action="{{ url_for('ai_explain_alert', alert_id=a.id) }}" style="margin-top:6px"><button class="btn small">{{ 'Ask Claude again' if e.ai else 'Explain with Claude' }}</button>{% if e.ai_error %} <span class="small muted">last attempt: {{ e.ai_error }}</span>{% endif %}</form>{% endif %}
+  <details class="small"><summary>Technical details</summary><pre style="white-space:pre-wrap">{{ e.details }}</pre></details>
+</div></td><td><form method="post" action="{{ url_for('ack_alert', alert_id=a.id) }}"><button class="btn">Acknowledge</button></form></td></tr>{% endfor %}
 </table></div>
 {% endif %}
 <div class="grid">

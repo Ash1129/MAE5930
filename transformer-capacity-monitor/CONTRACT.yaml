@@ -16,17 +16,20 @@ tasks:
   - id: H-01
     title: Fill in every blank in SPEC.md
     points: "15 - Tool Design: scope matches a prompt (5), clear user and use case (5), minimal inputs (5)"
-    status: in_progress
+    status: done
     owner: "team"
     started_at: "2026-10-16 18:20"
     owns: ["SPEC.md"]
+    notes: >
+      The prompt names heat pumps, EVs and data centers as load growth. The app models heat-pump growth
+      only, so EV and data-center load is a scope gap a judge may notice.
     definition_of_done: >
       grep -c "FILL IN" SPEC.md prints 0 and grep -c "TO CONFIRM" SPEC.md prints 0, and every
       teammate can say the method sentence in SPEC section 4 without reading it.
     result: >
-      Sections 2 to 9 are filled from the app as built. "grep -c FILL IN" prints 0. Three items are
-      still marked TO CONFIRM because only the team knows them: team name, track, and the Devpost
-      prompt number and title. Devpost blocks automated reads.
+      Both greps print 0. Section 1 was filled by the team on GitHub (6673ef2) - team SplitSync,
+      on-campus track, Energy Systems prompt "Smart Grid Transformer Surges". Sections 2 to 9 are filled
+      from the app as built. The method-sentence check is for the team to do out loud.
 
   - id: H-02
     title: Two or three test datasets plus a codebook
@@ -57,7 +60,7 @@ tasks:
       hand-computed Bissell interval, forecast with unit conversion) and degenerate cases (constant
       data, n = 1, empty, non-finite). Deviation - the statistics are in capacity_monitor/pipeline.py,
       not app/qc.py.
-    result: "pytest tests -q printed '24 passed in 3.75s' on 2026-10-16."
+    result: "pytest tests -q printed '26 passed in 4.58s' on 2026-10-16."
 
   - id: H-04
     title: Working tool wired to the H-03 functions
@@ -90,7 +93,8 @@ tasks:
       numbers.
     result: >
       demo/README.md covers normal, boundary-mismatch and missing-rating with pasted output and hand
-      checks for T-DRY-004, T-DAN-010, T-LAN-005, T-CAR-006 and T-ULY-007. Not yet followed by a teammate.
+      checks for T-DRY-004, T-DAN-010, T-LAN-005, T-CAR-006 and T-ULY-007. Numbers refreshed after
+      the class-specific load shapes changed the seeded draws. Not yet followed by a teammate.
 
   - id: H-06
     title: Deploy to the course Posit Connect server
@@ -141,5 +145,5 @@ tasks:
       pytest tests -q both pass; git grep -i "api_key" finds no real key; the Devpost entry links the repo.
     result: >
       requirements.txt added. On 2026-10-16 a copy of the app with no .venv, plus a new Python 3.12 venv
-      holding only requirements.txt, printed "24 passed in 4.71s" for pytest and the same normal-demo
-      result. Not yet tested from an actual git clone. Devpost submission not done.
+      holding only requirements.txt, printed "26 passed in 4.14s" for pytest after the heatmap
+      commit 9525bc6, and the same normal-demo result. Not yet tested from an actual git clone. Devpost submission not done.

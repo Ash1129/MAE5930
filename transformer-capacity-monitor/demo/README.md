@@ -28,18 +28,18 @@ What it prints:
 Run status: success, stopped at step 15
 
 transformer stability               Cpk        95% CI peak/rating forecast/rating  rule  outcome
-T-CAR-006   stable                 3.03   [2.34,3.73]         70%            139%     9  review_needed
-T-CAY-003   stable                 3.78   [2.91,4.64]         66%             75%    11  within_limits
-T-DAN-010   stable                 1.22   [0.93,1.50]         85%             94%     7  review_needed
+T-CAR-006   stable                 2.75   [2.12,3.38]         73%            142%     9  review_needed
+T-CAY-003   stable                 2.87   [2.21,3.53]         65%             75%    11  within_limits
+T-DAN-010   stable                 1.15   [0.87,1.42]         93%            101%     7  review_needed
 T-DRY-004   signal                    -             -         82%               -     2  review_needed
-T-ENF-011   stable                 4.21   [3.25,5.17]         64%             72%    11  within_limits
-T-GRO-009   stable                 4.18   [3.23,5.14]         65%             76%    11  within_limits
-T-ITH-001   stable                 4.07   [3.14,5.00]         67%             75%    11  within_limits
-T-ITH-002   stable                 3.69   [2.85,4.53]         66%             74%    11  within_limits
-T-LAN-005   stable                 1.43   [1.10,1.77]         75%             84%     8  review_needed
-T-NEW-008   stable                 2.20   [1.69,2.70]         72%             80%    11  within_limits
-T-TRU-012   stable                 2.96   [2.29,3.64]         64%             74%    11  within_limits
-T-ULY-007   insufficient_history      -             -         57%               -     1  review_needed
+T-ENF-011   stable                 3.31   [2.55,4.07]         64%             71%    11  within_limits
+T-GRO-009   stable                 3.94   [3.04,4.84]         64%             74%    11  within_limits
+T-ITH-001   stable                 3.35   [2.58,4.11]         65%             74%    11  within_limits
+T-ITH-002   stable                 3.05   [2.35,3.75]         63%             71%    11  within_limits
+T-LAN-005   stable                 1.54   [1.18,1.90]         78%             87%     8  review_needed
+T-NEW-008   stable                 2.84   [2.19,3.49]         66%             74%    11  within_limits
+T-TRU-012   stable                 3.41   [2.63,4.19]         68%             78%    11  within_limits
+T-ULY-007   insufficient_history      -             -         61%               -     1  review_needed
 
 12 transformers: 7 within limits, 5 need review.
 ```
@@ -49,23 +49,26 @@ nothing matched, so the transformer is within limits. Each "review_needed" row s
 
 | Transformer | Rule | Why it is flagged | Check it by hand |
 |---|---|---|---|
-| T-DRY-004 | 2, chart signal | The daily peak of 61.5 kVA on 2026-10-13 is above the UCL of 53.91 kVA. The centre is 44.91 and MR-bar is 3.38. The peak is still only 82% of the 75 kVA rating. Cpk is withheld because the pattern is not stable. | UCL = 44.91 + 2.66 × 3.384 = 53.91 |
-| T-DAN-010 | 7, low Cpk | Cpk is 1.22, below 1.33, although every reading is under the 50 kVA rating. | (50 − 40.226) / (3 × 2.679) = 1.22 |
-| T-LAN-005 | 8, uncertain Cpk | Cpk is 1.43, above 1.33, but its 95% lower bound of 1.10 is below 1.33. Sixty-one days of data cannot rule out thin headroom. | Bissell interval with 0.62 × 60 = 37.2 degrees of freedom |
-| T-CAR-006 | 9, forecast | Healthy today at 70% of rating with Cpk 3.03. Heat-pump growth adds 68.2 kVA, so the projected peak is 139% of the 100 kVA rating. | 70.48 + 60 × (0.57 − 0.12) × 2.4 / 0.95 = 138.7 kVA |
-| T-ULY-007 | 1, insufficient history | A new transformer with 12 days of readings, short of the 20 baseline days a chart needs. | 12 < 20 |
+| T-DRY-004 | 2, chart signal | The daily peak of 61.5 kVA on 2026-10-13 is above the UCL of 55.47 kVA. The centre is 44.81 and MR-bar is 4.01. The peak is still only 82% of the 75 kVA rating. Cpk is withheld because the pattern is not stable. | UCL = 44.81 + 2.66 × 4.008 = 55.47 |
+| T-DAN-010 | 7, low Cpk | Cpk is 1.15, below 1.33, although every reading is under the 50 kVA rating. Its forecast peak of 101% would also trip rule 9, but rule 7 matches first. | (50 − 40.176) / (3 × 2.850) = 1.15 |
+| T-LAN-005 | 8, uncertain Cpk | Cpk is 1.54, above 1.33, but its 95% lower bound of 1.18 is below 1.33. Sixty-one days of data cannot rule out thin headroom. | Bissell interval with 0.62 × 60 = 37.2 degrees of freedom |
+| T-CAR-006 | 9, forecast | Healthy today at 73% of rating with Cpk 2.75. Heat-pump growth adds 68.2 kVA, so the projected peak is 142% of the 100 kVA rating. | 73.30 + 60 × (0.57 − 0.12) × 2.4 / 0.95 = 141.5 kVA |
+| T-ULY-007 | 1, insufficient history | A new transformer with 12 days of readings. Only 5 fall before the period, short of the 20 baseline days a chart needs. | 5 < 20 |
 
 T-NEW-008 sits where four synthetic boundary rectangles overlap: ITH-T, DAN, ENF and NEW. It is within
 limits. Its forecast assumptions record `allocation_flagged: true`, the four located areas, and that its
 declared primary area NEW was used. No warning is raised, because the declared area contains the location.
 
-**See it in the app.** Run `./scripts/start_app.sh`, open http://127.0.0.1:5055/dashboard, pick period end
-2026-10-15 and press **Run now**. This runs on whatever is in `data/feeds/`. To get exactly the 12
+**See it in the app.** Run `./scripts/start_app.sh` and open http://127.0.0.1:5055, which is the Map.
+Pick period end 2026-10-15 and press **Run now** on the Map. This runs on whatever is in `data/feeds/`. To get exactly the 12
 transformers above, first run `.venv/bin/python scripts/make_synthetic_data.py --end 2026-10-15`.
 1. On the **Map**, the five transformers above show as red dots.
 2. Open T-DRY-004 with **Review**. The I-MR chart marks 2026-10-13 in red, and the checklist sits beside it.
 3. Choose **Approve conclusion**, **Request changes** or **Reject** with a note. Repeat for each red transformer.
 4. Press **Approve and finalize report**. It is refused with HTTP 409 until every flagged case has a disposition.
+5. Optionally open the period's **Heatmap** to see hourly load by transformer. Its seasonal view is
+   labeled MODELED: it scales the recorded hourly shapes by assumed monthly factors and is never used
+   in a review decision.
 
 ---
 
@@ -118,7 +121,7 @@ The test suite covers the inputs that are too small to show in a demo table:
 .venv/bin/python -m pytest tests -q
 ```
 
-That prints `24 passed`. The tests include these cases:
+That prints `26 passed`. The tests include these cases:
 - **Constant readings** give "zero variation". No Cpk is reported, and decision-table rule 3 sends the case to review as a likely meter fault.
 - **One point or no points** give "insufficient history".
 - **Non-finite values** are dropped before the chart.

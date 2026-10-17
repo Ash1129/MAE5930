@@ -56,7 +56,9 @@ team exports this as a CSV or database view.
 
 **Synthetic generation.** Each transformer gets one daily peak per day drawn from a normal distribution
 with the mean and standard deviation in section 6, scaled by its rating. Each hour is that peak times a
-fixed 24-hour residential load shape. The peak always falls at 18:00. Seed 7.
+24-hour load shape for the transformer's `customer_class`. Residential and mixed shapes peak at 18:00,
+and commercial and institutional shapes peak mid-morning. The shape changes which hour holds the peak,
+not the daily peak value the statistics use. Seed 7.
 
 ## 3. `feeds/assets.csv`: transformer asset records
 
@@ -71,12 +73,14 @@ fixed 24-hour residential load shape. The peak always falls at 18:00. Seed 7.
 | `area_id` | text, e.g. `DRY` | declared primary planning area | Must match a boundary `area_id`. It always picks the forecast area. If the location falls in several areas, `allocation_flagged` is recorded with the projection. A warning appears only when the location is outside the declared area, or there is no declared area. |
 | `effective_from`, `effective_to` | ISO date, `YYYY-MM-DD`; `effective_to` may be blank | dates the record is valid | A record counts only if it covers the period end date. This handles replaced transformers. |
 | `notes` | text | free-text remark | Screened. Instruction-like text is quarantined and shown as a warning, never acted on. |
+| `customer_class` | text: `residential`, `commercial`, `institutional` or `mixed` | the main kind of load the transformer serves | Optional; blank becomes `unknown`. Shown on the map and the heatmap only. No statistic or decision rule uses it. |
 
 **How to collect it for real.** The nameplate rating, location and in-service dates come from the
 utility's asset register or work-management system, joined to GIS. The customer count is a standard GIS
 connectivity query that counts active service points whose meters are connected to the transformer. It
 is the same data the utility uses for outage management, so a planning engineer can get it without
-measuring anything.
+measuring anything. The customer class comes from the rate class of those service points in the
+customer information system: mostly residential rates make a residential transformer, and so on.
 
 ## 4. `feeds/boundaries.geojson`: planning areas
 
@@ -115,7 +119,7 @@ overlaps Enfield and Danby, so T-NEW-008 falls in four areas and its allocation 
 `projected_peak = period_peak + customers × (hp_share_forecast − hp_share_base) × kw_per_heat_pump / power_factor`
 
 Worked example from the `normal` demo, T-CAR-006: 60 customers × (0.57 − 0.12) × 2.4 kW / 0.95 = 68.2 kVA
-added. With a 70.5 kVA period peak, the projected peak is 138.7 kVA, which is 139% of its 100 kVA rating.
+added. With a 73.3 kVA period peak, the projected peak is 141.5 kVA, which is 142% of its 100 kVA rating.
 
 **How to collect it for real.** Distribution utilities produce electrification forecasts for their
 long-term load forecast and capital plan. In New York, these draw on state electrification scenarios.
@@ -126,7 +130,8 @@ design-temperature heat load of a typical home. None of these are measured by th
 ## 6. The planted cases in the `normal` demo
 
 All draws are per transformer, as a fraction of its rating: daily peak ~ Normal(mean, sd).
-The generator re-draws each series until the real pipeline confirms the intended case.
+The generator re-draws each series until the real pipeline confirms the intended case. T-ITH-001 is
+`commercial`, T-LAN-005 and T-NEW-008 are `mixed`, and the other nine are `residential`.
 
 | Transformer | Rating, kVA | Customers | Case | Mean, sd | What it demonstrates |
 |---|---|---|---|---|---|

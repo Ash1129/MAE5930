@@ -573,6 +573,7 @@ def evaluate_transformers(joined: dict, charts: dict, playbook: dict, table: lis
             "rated_max": t["rated_max"],
             "unit": t["unit"],
             "customers": t["customers"],
+            "customer_class": t.get("customer_class", "unknown"),
             "lat": t["lat"],
             "lon": t["lon"],
             "stability": stability,

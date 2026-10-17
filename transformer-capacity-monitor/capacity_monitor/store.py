@@ -89,6 +89,12 @@ CREATE TABLE IF NOT EXISTS alerts (
   acknowledged_at TEXT,
   acknowledged_by TEXT
 );
+CREATE TABLE IF NOT EXISTS ai_explanations (
+  key TEXT PRIMARY KEY,
+  title TEXT, meaning TEXT, action TEXT, source TEXT,
+  error TEXT,
+  created_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT
@@ -309,6 +315,29 @@ class Store:
     def acknowledge_alert(self, alert_id: int, who: str) -> None:
         with self._conn() as c:
             c.execute("UPDATE alerts SET acknowledged_at=?, acknowledged_by=? WHERE id=?", (now_iso(), who, alert_id))
+
+    # ---- AI explanations cache -----------------------------------------------------------
+    def get_ai_explanation(self, key: str) -> dict | None:
+        with self._conn() as c:
+            r = c.execute("SELECT * FROM ai_explanations WHERE key=? AND title IS NOT NULL", (key,)).fetchone()
+        return dict(r) if r else None
+
+    def get_ai_error(self, key: str) -> str | None:
+        with self._conn() as c:
+            r = c.execute("SELECT error FROM ai_explanations WHERE key=?", (key,)).fetchone()
+        return r["error"] if r else None
+
+    def set_ai_explanation(self, key: str, rec: dict | None, error: str | None = None) -> None:
+        with self._conn() as c:
+            if rec:
+                c.execute("INSERT INTO ai_explanations(key, title, meaning, action, source, error, created_at) VALUES (?,?,?,?,?,NULL,?) ON CONFLICT(key) DO UPDATE SET title=excluded.title, meaning=excluded.meaning, action=excluded.action, source=excluded.source, error=NULL, created_at=excluded.created_at",
+                          (key, rec["title"], rec["meaning"], rec["action"], rec.get("source", "Claude CLI"), now_iso()))
+            else:
+                c.execute("INSERT INTO ai_explanations(key, error, created_at) VALUES (?,?,?) ON CONFLICT(key) DO UPDATE SET error=excluded.error, created_at=excluded.created_at", (key, error, now_iso()))
+
+    def count_ai_explanations(self) -> int:
+        with self._conn() as c:
+            return c.execute("SELECT COUNT(*) FROM ai_explanations WHERE title IS NOT NULL").fetchone()[0]
 
     def get_setting(self, key: str, default=None):
         with self._conn() as c:

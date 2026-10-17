@@ -74,6 +74,7 @@ until the utility approves its own.
 | `forecast.near_rating_ratio` | 0.9 | a projected peak at this share of rating or more needs review |
 | `forecast.power_factor` | 0.95 | converts forecast kW to kVA |
 | `schedule.cron` | `0 6 * * 1,3,5` | Mon, Wed, Fri at 06:00 America/New_York |
+| `seasonal_model.monthly_factors` | 0.85 to 1.35 | MODELED monthly multipliers for the heatmap's seasonal view only |
 
 ## How each function works
 
@@ -94,5 +95,6 @@ The Airflow DAG and the Flask app only call these functions, store the results a
 - A map of transformers, green for within limits and red for review needed.
 - A review page per transformer with the I-MR chart, Cpk and its interval, assumption flags, the
   projection and its assumptions, the matching rule, and the source readings.
+- A heatmap of hourly load per transformer for a recorded date, plus a seasonal view labeled MODELED.
 - A period report in `data/reports/<period end>/` as HTML, Markdown and JSON. It can be finalized only
   after every flagged transformer has a disposition, and the backend enforces this with HTTP 409.

@@ -39,6 +39,24 @@ Test suite after the fixes: **24 passed**. Evaluation cases: 6 of 6.
 
 `scripts/make_synthetic_data.py --count 500` keeps the 12 labeled cases and adds 488 generated transformers spread across the twelve areas (ratings 25 to 500 kVA, 86% designed to be within limits, the rest a mix of chart signal, low Cpk, uncertain Cpk, forecast exceedance and insufficient history). On this dataset one full run (steps 1-15, 732,000 hourly readings) takes about 3 seconds; the result was 500 monitored, 403 within limits, 97 review needed (36 chart signals, 7 insufficient history, 13 low Cpk, 20 uncertain Cpk, 21 forecast exceedances). The 42 MB readings file is not committed to git; the Start launcher regenerates it when missing.
 
+## Popup summaries and charts (2026-10-16)
+
+The map popup now shows a Claude Haiku summary (Claude CLI, `claude-haiku-5-5`, slim call, cached) above compact I-MR control charts and the key numbers. Verified with a real call: about 8.5 s first time, 15 ms from cache, and the text kept the tool's figures exactly. Tests: `tests/test_popup.py` (fake CLI; one call then cache, flags, unsafe answer refused, toggle respected). 34 tests pass.
+
+## Landing page rebuilt to the design handoff (2026-10-16)
+
+`webapp/templates/map.html` now reproduces `design_handoff_landing_page/design/Capacity Monitor Landing.dc.html`: full-bleed satellite map, liquid-glass top bar with the collapsible run box (expands on hover/focus, shows progress "Running, step n of 15" and a failure pill with "See alert"), districts panel with red counts, review sidebar with hotspots and the finalize control (disabled with a reason until every red case has a decision; backend 409 unchanged), glass dot popup, legend with scheduler status, zoom and Satellite/Streets controls, tablet chip row and phone bottom sheet. Fonts, colors, radii, blur and copy follow `tokens.css`. Routes, data and the finalize rule are unchanged; two small JSON endpoints were added for run progress. Tests: 30 pass.
+
+## Plain-language alerts (added 2026-10-16)
+
+- **Rule-based explanations** (`capacity_monitor/explain.py`, no AI): every alert and failed run shows a headline, "What happened" and "What to do" written from fixed templates for the known failure patterns (wrong-period boundary file, missing rating, missing feed, incomplete readings, unit mismatch, forecast version, scheduler task failure), with the technical text under "Technical details" and overlap notes grouped as "nothing to fix". Duplicate scheduler alerts are suppressed.
+- **AI explanations through the Claude CLI** (`capacity_monitor/ai_explain.py`, optional, owner's choice): when turned on in Setup and the `claude` command-line tool is installed and signed in, each new alert is also rewritten by Claude. Guardrails: the alert text is passed as data between markers with an instruction to ignore embedded instructions; the answer must be JSON with title/meaning/action; it is length-limited, PII-redacted and refused if it contains instruction-like or blocked wording; results are cached per distinct alert; Claude's text is display-only and never feeds a decision. Tested with a fake CLI (`tests/test_ai_explain.py`) and with one real call on this Mac (12 s; a correct explanation of the boundary-period failure). This departs from the brief's "no AI" rule at the owner's explicit request and only in the presentation layer; the rule-based text remains the fallback and is what the tool shows when the CLI is absent.
+
+## Map and heatmap (added 2026-10-16)
+
+- **Map** (home page): the Run now form and feed status sit at the top; every transformer on satellite imagery, green within limits, red review needed, popup with numbers and a link to the full review; district boundaries; period selector.
+- **District heat view** (on the Map page, no separate menu item): district buttons on the left zoom to each town or village and reveal the heat controls; a Leaflet.heat layer shows load at the selected hour as utilization or absolute kVA; Date, month and hour are sliders with live labels; Play animates hour by hour through recorded days. The **Seasonal model** view scales each transformer's recorded hourly shape by playbook monthly factors (winter highest) and is labeled MODELED everywhere; it exists because the synthetic feed covers August to October only. A hotspot list names the highest-loaded transformers in view with links to their review pages. Synthetic assets now carry a customer class with its own hourly shape, so downtown Ithaca (commercial) stays loaded at night. Tests: `tests/test_heat.py`, `tests/test_explain.py`, `tests/test_ai_explain.py` (30 total pass). Verified in the browser: Ithaca district zoom, January model, hotspot list.
+
 ## Launch location
 
 - Double-click `Start Capacity Monitor.command` (or `./scripts/start_airflow.sh` and `./scripts/start_app.sh`).

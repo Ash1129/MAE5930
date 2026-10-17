@@ -3,6 +3,27 @@
 <p><a href="{{ url_for('period_detail', period_id=period.period_id) }}">&larr; Period {{ period.period_id }}</a></p>
 <div class="card">
 <h1>{{ r.transformer_id }} <span class="muted">{{ r.name }}</span> <span class="tag {{ 'bad' if r.status == 'review_needed' else 'ok' }}">{{ r.status.replace('_',' ') }}</span></h1>
+<div class="summary" id="summary">
+  <p id="summary-text">{{ summary.ai.text if summary.ai else summary.rule }}</p>
+  <span class="summary-src{{ ' ai' if summary.ai else '' }}" id="summary-src">{% if summary.ai %}Written by Claude Haiku · check the chart{% elif summary.ai_on %}<span class="spin"></span>Writing a summary with Claude Haiku{% else %}Rule-based summary{% endif %}</span>
+</div>
+<style>
+  .summary{margin:4px 0 22px;padding:14px 18px;border-left:2px solid var(--accent);background:rgba(201,150,74,.07);border-radius:0 8px 8px 0;max-width:820px}
+  .summary p{margin:0;font-size:17px;line-height:1.55;color:var(--text);text-wrap:pretty}
+  .summary-src{display:inline-flex;align-items:center;gap:7px;margin-top:8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .summary-src.ai{color:var(--accent-700)}
+  .summary-src .spin{width:10px;height:10px;border:1.5px solid rgba(201,150,74,.3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+{% if summary.ai_on and not summary.ai %}
+<script>
+fetch({{ summary.url|tojson }}).then(r => r.ok ? r.json() : null).then(j => {
+  const src = document.getElementById('summary-src');
+  if (j && j.text) { document.getElementById('summary-text').textContent = j.text; src.className = 'summary-src ai'; src.textContent = 'Written by Claude Haiku · check the chart'; }
+  else { src.className = 'summary-src'; src.textContent = 'Rule-based summary'; }
+}).catch(() => { const src = document.getElementById('summary-src'); src.className = 'summary-src'; src.textContent = 'Rule-based summary'; });
+</script>
+{% endif %}
 <div class="grid">
 <div>
 <h3>Checklist (playbook {{ playbook.version }})</h3>
@@ -24,7 +45,7 @@
 </div>
 {% if r.chart.signals %}<h3>Chart signals</h3><table><tr><th>Rule</th><th>Date</th><th>Value</th><th>In period</th></tr>{% for s in r.chart.signals %}<tr><td>{{ s.rule }}</td><td>{{ s.date }}</td><td>{{ s.value|num(1) }}</td><td>{{ 'yes' if s.in_period else 'no (history)' }}</td></tr>{% endfor %}</table>{% endif %}
 <h3>Control chart (shaded = this period; black line = rated maximum)</h3>
-<div style="overflow:auto">{{ svg|safe }}</div>
+<div class="paper">{{ svg|safe }}</div>
 <details><summary>Forecast assumptions</summary><pre>{{ r.projection.assumptions|tojson(indent=1) }}</pre></details>
 <details><summary>Source readings in the period (last {{ period_readings|length }} of {{ r.period_readings|length }})</summary>
 <table><tr><th>Timestamp</th><th>Load</th><th>Unit</th></tr>{% for x in period_readings %}<tr><td>{{ x.timestamp }}</td><td>{{ x.load|num(2) }}</td><td>{{ x.unit }}</td></tr>{% endfor %}</table></details>

@@ -1,93 +1,731 @@
-{% extends "base.html" %}
-{% block title %}Map, period ending {{ period.period_id }}{% endblock %}
-{% block head %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if period %}Map, period ending {{ period.period_id }}{% else %}Transformer Capacity Monitor{% endif %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Lora:wght@400;600&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
 <style>
-  .maprow{display:grid;grid-template-columns:1fr 340px;gap:16px}
-  @media (max-width:900px){.maprow{grid-template-columns:1fr}}
-  #map{height:640px;border:1px solid var(--line);border-radius:10px;background:#e9eef2}
-  .legend span{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:middle;border:2px solid #fff;box-shadow:0 0 0 1px #888}
-  .list a{display:block;padding:7px 8px;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}
-  .list a:hover{background:var(--bg)}
-  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
-  .leaflet-popup-content{font:13px/1.4 system-ui,sans-serif;min-width:240px}
-  .leaflet-popup-content table{width:100%;border-collapse:collapse} .leaflet-popup-content td{padding:2px 4px;border-bottom:1px solid #eee;vertical-align:top}
-  .leaflet-popup-content td:first-child{color:#666;white-space:nowrap}
-  .popbtn{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:8px;background:#1f5fa8;color:#fff!important;font-weight:600;text-decoration:none}
+  /* ---- tokens (design_handoff_landing_page/tokens.css) ---- */
+  :root{
+    --status-ok:#1B7F4B;--status-review:#D7263D;--status-modeled:#F4B400;--status-info:#1F5FA8;
+    --ink:#1D2430;--ink-90:rgba(29,36,48,.9);--ink-75:rgba(29,36,48,.75);--ink-60:rgba(29,36,48,.6);--ink-line:rgba(29,36,48,.12);
+    --color-accent:#b68235;--color-accent-700:#7d5411;--color-accent-800:#5a3b0a;--accent-tint:rgba(182,130,53,.12);--accent-tint-press:rgba(182,130,53,.22);
+    --color-divider:rgba(32,31,29,.16);
+    --glass-bg:rgba(255,255,255,.62);--glass-bg-hover:rgba(255,255,255,.68);--glass-bg-card:rgba(255,255,255,.72);
+    --glass-blur:blur(24px) saturate(1.5);--glass-blur-card:blur(28px) saturate(1.5);
+    --glass-border:1px solid rgba(255,255,255,.35);--glass-highlight:inset 0 1px 0 rgba(255,255,255,.65);--glass-shadow:0 10px 30px rgba(0,0,0,.25);
+    --map-dim:rgba(5,8,12,.32);
+    --radius-panel:20px;--radius-bar:16px;--radius-control:12px;--radius-row:12px;--radius-pill:999px;
+    --font-heading:"Cormorant Garamond",Georgia,serif;--font-body:"Lora",Georgia,serif;
+  }
+  html,body{height:100%;margin:0;background:#14171c;overflow:hidden}
+  body{font-family:var(--font-body);color:var(--ink-90);font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+  a{color:var(--color-accent-700)} a:hover{color:var(--color-accent-800)}
+  button{font:inherit}
+  .leaflet-container{background:#0b0f14;font-family:var(--font-body)}
+  .leaflet-control-attribution{background:rgba(255,255,255,.55)!important;font-size:10px;color:#1d2430;backdrop-filter:blur(8px)}
+  .leaflet-tooltip{font-family:var(--font-body);font-size:12px;border-radius:6px}
+  @keyframes cm-spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+  :focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+
+  #root{position:relative;overflow:hidden;background:#0b0f14;width:100%;height:100%}
+  #map{position:absolute;inset:0;z-index:0;isolation:isolate}
+  #dim{position:absolute;inset:0;background:var(--map-dim);pointer-events:none;transition:opacity .3s;z-index:10}
+  [hidden]{display:none!important}
+
+  .glass{background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:var(--glass-border);border-radius:var(--radius-panel);box-shadow:var(--glass-shadow),var(--glass-highlight);transition:background .2s}
+  .glass:hover{background:var(--glass-bg-hover)}
+  .glass-card{background:var(--glass-bg-card);backdrop-filter:var(--glass-blur-card);-webkit-backdrop-filter:var(--glass-blur-card);border:1px solid rgba(255,255,255,.4);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.7)}
+  .heading{font-family:var(--font-heading);font-weight:600;line-height:1.1}
+  .micro{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-60)}
+  .muted{color:var(--ink-60)}
+  .reset{all:unset;cursor:pointer;box-sizing:border-box}
+  .icon-btn{all:unset;cursor:pointer;display:grid;place-items:center;border-radius:10px;color:rgba(29,36,48,.8)} .icon-btn:hover{background:rgba(29,36,48,.07)}
+
+  /* design-system classes used by the prototype */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;text-decoration:none;font-family:var(--font-heading);font-weight:600;font-size:14px;line-height:1.2;color:#201f1d;background:transparent;border:1px solid transparent;padding:9px 16px;border-radius:4px;box-sizing:border-box}
+  .btn svg{display:block} .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn-primary{color:var(--color-accent);border-color:var(--color-accent)} .btn-primary:hover:not(:disabled){background:var(--accent-tint)} .btn-primary:active:not(:disabled){background:var(--accent-tint-press)}
+  .btn-ghost{color:var(--color-accent);padding-inline:5px} .btn-ghost:hover{background:rgba(182,130,53,.1)}
+  .btn-block{width:100%;margin-top:9px}
+  .input{width:100%;min-height:36px;padding:6px 10px;font:inherit;font-size:14px;color:#201f1d;caret-color:var(--color-accent);background:transparent;border:1px solid var(--color-divider);border-radius:4px;box-sizing:border-box}
+  .input:hover{border-color:rgba(32,31,29,.45)} .input:focus-visible{border-color:var(--color-accent);outline-offset:0}
+  .seg{display:inline-flex;overflow:hidden;border:1px solid var(--color-divider);border-radius:4px;background:rgba(255,255,255,.35)}
+  .seg button{all:unset;cursor:pointer;padding:6px 12px;font-size:13px;color:var(--ink-75)}
+  .seg button+button{border-left:1px solid var(--color-divider)}
+  .seg button.on{color:var(--color-accent-700);box-shadow:inset 0 0 0 1px var(--color-accent)}
+
+  /* site header, copied from ashwinprajeeth.com (dark theme tokens) */
+  #bar{--hd-bg:#1a1919;--hd-text:#f3f1e8;--hd-accent:#c9964a;--hd-accent-700:#e1ad66;--hd-divider:rgba(243,241,232,.22);--gutter:clamp(20px,5vw,72px);
+    position:absolute;top:0;left:0;right:0;z-index:40;background:var(--hd-bg);color:var(--hd-text);transition:transform .25s}
+  #bar::after{content:"";position:absolute;left:var(--gutter);right:var(--gutter);bottom:0;height:1px;background:var(--hd-divider)}
+  #bar.hidden-bar{transform:translateY(-100%)}
+  .site-header__inner{display:flex;align-items:center;gap:24px;padding:10px var(--gutter)}
+  #bar .brand{font-family:var(--font-heading);font-weight:600;font-size:20px;color:var(--hd-text);text-decoration:none;white-space:nowrap;margin-right:auto}
+  #bar .brand:hover{color:var(--hd-text)}
+  .site-nav{display:flex;align-items:center;gap:20px;font-size:14px}
+  .site-nav a{color:var(--hd-text);text-decoration:none;white-space:nowrap} .site-nav a:hover{color:var(--hd-accent-700)}
+  .site-nav a.is-active{color:var(--hd-accent-700)}
+  .header-tools{display:flex;align-items:center;gap:20px}
+  .header-divider{width:1px;height:28px;background:var(--hd-text)}
+  .icon-circle{all:unset;cursor:pointer;position:relative;box-sizing:border-box;width:36px;height:36px;border:1px solid var(--hd-text);border-radius:9px;color:var(--hd-text);display:grid;place-items:center;font-size:13px;letter-spacing:.04em;text-decoration:none;transition:background-color .15s;font-family:var(--font-heading);font-weight:600}
+  .icon-circle:hover{background:rgba(243,241,232,.08)}
+  #bell .count{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#D7263D;color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;border:2px solid var(--hd-bg);box-sizing:border-box;font-family:var(--font-body)}
+  .theme-switch{all:unset;cursor:pointer;box-sizing:border-box;position:relative;width:60px;height:36px;border:1px solid var(--hd-text);border-radius:999px;color:var(--hd-text);transition:background-color .15s}
+  .theme-switch:hover{background:rgba(243,241,232,.08)}
+  .theme-switch__icon{position:absolute;top:50%;left:12px;transform:translateY(-50%);display:grid;transition:left .2s}
+  .theme-switch--on .theme-switch__icon{left:calc(100% - 27px)}
+  #bar-show{position:absolute;top:12px;left:16px;z-index:41;background:#1a1919;color:#f3f1e8;border-color:#f3f1e8;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+  #alerts-card{position:absolute;top:46px;right:0;width:320px;padding:16px;z-index:50;box-sizing:border-box;color:var(--ink-90)}
+  #reviewer{font-size:12px}
+  /* run row controls */
+  #period-label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-60);white-space:nowrap}
+  #period-select{font:inherit;font-size:13px;color:var(--ink-90);background:transparent;border:1px solid rgba(29,36,48,.18);border-radius:8px;padding:4px 8px;font-variant-numeric:tabular-nums}
+  #runbox{position:relative}
+  #run-pill{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:5px;background:#1a1919;color:#f3f1e8;font-family:var(--font-heading);font-weight:600;font-size:15px;white-space:nowrap;box-sizing:border-box;transition:opacity .15s}
+  #run-pill:hover{opacity:.85}
+  #run-pill svg{color:#e1ad66}
+  #run-running{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 14px 0 10px;border-radius:999px;border:1px solid rgba(29,36,48,.18);background:rgba(255,255,255,.5);font-size:13px;white-space:nowrap;box-sizing:border-box}
+  #run-running .track{width:80px;height:4px;border-radius:2px;background:rgba(29,36,48,.12);overflow:hidden;display:inline-block}
+  #run-running .track span{display:block;height:100%;background:var(--color-accent);transition:width .4s}
+  #run-failed{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 6px 0 12px;border-radius:999px;border:1px solid #D7263D;background:rgba(215,38,61,.1);color:#9e1428;font-size:13px;white-space:nowrap;box-sizing:border-box}
+  #run-failed .see{all:unset;cursor:pointer;padding:3px 9px;border-radius:999px;color:#9e1428;text-decoration:underline;text-underline-offset:3px}
+  #run-failed .x{all:unset;cursor:pointer;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;color:#9e1428} #run-failed .x:hover{background:rgba(215,38,61,.12)}
+  #run-card{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);width:340px;padding:16px;z-index:50;box-sizing:border-box}
+  #run-card .title{font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1.1}
+  .feedchip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid}
+  .feedchip i{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+  .vr{width:1px;height:26px;background:rgba(29,36,48,.18);flex:none}
+
+  /* period + run row */
+  #runrow{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:30;height:48px;display:flex;align-items:center;gap:12px;padding:0 8px 0 14px;border-radius:999px;box-sizing:border-box;max-width:calc(100% - 640px)}
+  #runrow .vr{height:24px}
+  body.narrow #runrow{top:124px;left:50%;transform:translateX(-50%);right:auto;max-width:calc(100% - 32px);height:44px;padding:0 6px 0 12px}
+  body.phone #bar .brand{font-size:18px}
+  body.narrow #heat{top:180px}
+
+  /* District names stay visible. Hiding them until hover, and hiding the top chips above
+     1000px, made Chrome at 100% zoom (and Windows display scaling) show only the map.
+     The same rules apply on macOS and Windows. */
+  #districts{position:absolute;left:10px;top:116px;bottom:72px;z-index:20;overflow:auto;max-width:250px}
+  #districts .dtitle{display:inline-block;font-family:var(--font-heading);font-weight:700;font-size:18px;letter-spacing:.02em;color:var(--ink-90);background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.45);border-radius:10px;padding:4px 12px;margin:0 0 6px 2px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+  #district-list{list-style:none;margin:0;padding:6px 5px;display:flex;flex-direction:column;gap:1px;border:1px solid rgba(255,255,255,.45);border-radius:14px;background:rgba(255,255,255,.78);box-shadow:0 6px 22px rgba(0,0,0,.18)}
+  .drow{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:3px;font-size:12px;line-height:1.3;color:rgba(29,36,48,.82);box-sizing:border-box;min-height:22px}
+  .drow .dash{flex:0 0 auto;width:11px;height:2px;border-radius:2px;background:rgba(29,36,48,.45)}
+  .drow .txt{white-space:nowrap;display:flex;align-items:baseline;gap:6px}
+  .drow .nm{font-size:13px}
+  .drow .sub{font-size:11px;color:var(--ink-60)}
+  .drow .red{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#b01d30} .drow .red i{width:6px;height:6px;border-radius:50%;background:#D7263D;display:inline-block}
+  .drow:hover{color:var(--ink-90)} #districts:hover .drow:hover .dash{background:rgba(29,36,48,.6)}
+  .drow.on{color:var(--ink-90)} .drow.on .nm{font-weight:600}
+  .drow.on .dash{background:var(--ink-90);width:16px}
+  .drow:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px;border-radius:6px}
+  #chips{position:absolute;top:62px;left:16px;right:332px;z-index:26;display:flex;gap:6px;overflow-x:auto;padding:0;scrollbar-width:none} #chips::-webkit-scrollbar{display:none}
+  .chip{all:unset;cursor:pointer;flex:none;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:999px;font-size:13px;white-space:nowrap;background:rgba(255,255,255,.62);color:var(--ink-90);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(255,255,255,.35);box-shadow:0 4px 14px rgba(0,0,0,.2);box-sizing:border-box}
+  .chip.on{background:rgba(29,36,48,.9);color:#fff}
+  .chip .red{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#b01d30} .chip.on .red{color:#ffb3bd}
+  .chip .red i{width:6px;height:6px;border-radius:50%;background:#D7263D;display:inline-block}
+
+  /* heat strip */
+  #heat{position:absolute;top:112px;left:270px;right:332px;z-index:20;padding:12px 16px;box-sizing:border-box}
+  #heat .head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+  #heat .dname{font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1;margin-right:4px}
+  #heat .clock{margin-left:auto;font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1}
+  .badge-modeled{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:999px;background:#F4B400;color:#1D2430}
+  .badge-recorded{font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid #1B7F4B;color:#1B7F4B}
+  #heat .rows{display:grid;gap:6px;margin-top:10px}
+  .srow{display:grid;grid-template-columns:48px minmax(120px,1fr) minmax(0,220px);gap:10px;align-items:center}
+  .srow input[type=range]{width:100%;accent-color:var(--color-accent);margin:0}
+  .srow .lbl{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .srow .hourcell{display:flex;align-items:center;gap:10px;min-width:0}
+  .srow .hourcell .lbl{flex:1}
+  #play{height:30px;padding:0 12px;flex:none}
+
+  /* sidebar / sheet */
+  #side{position:absolute;z-index:25;display:flex;flex-direction:column;top:80px;right:16px;bottom:16px;width:300px;box-sizing:border-box;transition:height .25s ease,background .2s}
+  #side .handle{all:unset;cursor:pointer;display:grid;place-items:center;height:18px;width:100%} #side .handle span{width:40px;height:4px;border-radius:2px;background:rgba(29,36,48,.25)}
+  #side .head{padding:14px 18px 10px;display:flex;align-items:baseline;gap:10px;flex:none}
+  #side .head .t{font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.1}
+  #side .head .n{font-family:var(--font-heading);font-weight:600;font-size:21px;color:#D7263D}
+  #side .head .scope{font-size:12px;color:var(--ink-60);margin-left:auto;white-space:nowrap}
+  #side .scroll{flex:1;overflow:auto;min-height:0;display:flex;flex-direction:column}
+  #hot{padding:4px 18px 12px;border-bottom:1px solid var(--ink-line)}
+  #hot .hh{display:flex;align-items:baseline;gap:8px}
+  #hot .hh .micro{font-size:11px;letter-spacing:.1em}
+  #hot .rows{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  #hot a{text-decoration:none;color:inherit;display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:12px}
+  #hot a .bar{grid-column:1/-1;height:4px;border-radius:2px;background:rgba(29,36,48,.1);overflow:hidden} #hot a .bar span{display:block;height:100%}
+  .rrow{display:flex;align-items:stretch;border-bottom:1px solid rgba(29,36,48,.1)} .rrow:hover{background:rgba(29,36,48,.05)} .rrow.on{background:var(--accent-tint)}
+  .rrow .main{all:unset;cursor:pointer;flex:1;min-width:0;padding:10px 6px 10px 18px;display:flex;flex-direction:column;gap:3px;box-sizing:border-box} .rrow .main:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px}
+  .rrow .l1{display:flex;align-items:center;gap:8px;min-width:0}
+  .rrow .dot{width:9px;height:9px;border-radius:50%;background:#D7263D;box-shadow:0 0 0 2px #fff;flex:none}
+  .rrow .id{font-weight:600;font-size:14px;white-space:nowrap}
+  .rrow .nm{font-size:12px;color:var(--ink-60);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rrow .why{font-size:12px;color:var(--ink-75);line-height:1.35;text-wrap:pretty}
+  .rrow .disp{align-self:flex-start;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid #1F5FA8;color:#1F5FA8;margin-top:2px}
+  .rrow .go{display:grid;place-items:center;width:36px;color:rgba(29,36,48,.5);flex:none} .rrow .go:hover{color:var(--color-accent-700)}
+  #side .foot{flex:none;padding:12px 18px 14px;border-top:1px solid var(--ink-line);display:flex;flex-direction:column;gap:6px}
+  #side .foot .why{font-size:12px;color:var(--ink-60);text-align:center}
+  #first{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:10px}
+  #first .t{font-family:var(--font-heading);font-weight:600;font-size:22px}
+  #first .d{font-size:13px;color:var(--ink-60);max-width:220px;text-wrap:pretty}
+
+  /* popup */
+  #popup{position:absolute;transform:translate(-50%,calc(-100% - 18px));width:340px;z-index:30;padding:14px 16px 16px;box-sizing:border-box}
+  #popup .top{display:flex;align-items:flex-start;gap:10px}
+  #popup .id{font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.1}
+  #popup .sub{color:var(--ink-60);font-size:12px;margin-top:2px}
+  #popup .chip{all:unset;display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.02em;padding:3px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap;box-sizing:border-box}
+  #popup .chip i{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+  #popup .close{all:unset;cursor:pointer;width:24px;height:24px;display:grid;place-items:center;border-radius:6px;color:var(--ink-60)} #popup .close:hover{background:rgba(29,36,48,.08)}
+  #popup .grid{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;font-size:13px;margin-top:12px;padding-top:10px;border-top:1px solid var(--ink-line)}
+  #popup .grid .k{color:var(--ink-60)}
+  #pp-summary{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid rgba(29,36,48,.08)}
+  #pp-summary p{margin:0;font-size:13px;line-height:1.45;color:var(--ink-90);text-wrap:pretty}
+  #pp-summary-src{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-60)}
+  #pp-summary-src.ai{color:var(--color-accent-700)}
+  #pp-summary-src .spin{width:10px;height:10px;border:1.5px solid rgba(182,130,53,.3);border-top-color:var(--color-accent);border-radius:50%;animation:cm-spin .8s linear infinite}
+  #pp-chart{margin-top:10px;min-height:166px;border-radius:10px;background:rgba(255,255,255,.7);padding:6px 6px 2px}
+  #pp-chart svg{display:block}
+  #popup .grid{font-size:12.5px}
+  .estimate{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#8a6200;margin-left:4px}
+
+  /* furniture */
+  #legend{position:absolute;left:16px;bottom:16px;z-index:20;max-width:calc(50% - 270px);display:flex;flex-direction:column;gap:6px;padding:10px 14px;border-radius:14px;font-size:12px;box-sizing:border-box}
+  #legend .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  #legend .f{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 6px;border-radius:999px;font-size:12px;color:var(--ink-90);cursor:pointer;user-select:none;margin:0;letter-spacing:normal;text-transform:none;white-space:nowrap;transition:background .15s,opacity .15s}
+  #legend .f:hover{background:rgba(29,36,48,.07)}
+  #legend .f input{appearance:none;-webkit-appearance:none;width:15px;height:15px;margin:0;border:1.5px solid rgba(29,36,48,.55);border-radius:4px;display:grid;place-items:center;cursor:pointer;background:rgba(255,255,255,.6);flex:none}
+  #legend .f input:checked{background:rgba(29,36,48,.9);border-color:rgba(29,36,48,.9)}
+  #legend .f input:checked::after{content:"";width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
+  #legend .f input:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+  #legend .f:has(input:not(:checked)){opacity:.55}
+  #legend .prow{display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px solid var(--ink-line);margin-top:2px}
+  #legend .prow #period-label{font-size:12px}
+  #legend .g{width:8px;height:8px;border-radius:50%;background:#1B7F4B;box-shadow:0 0 0 2px #fff;display:inline-block;flex:none} #legend .r{width:11px;height:11px;border-radius:50%;background:#D7263D;box-shadow:0 0 0 2px #fff;display:inline-block;flex:none}
+  #controls{position:absolute;right:16px;bottom:16px;z-index:20;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+  #zoom{display:flex;flex-direction:column;border-radius:12px;overflow:hidden} #zoom button{width:36px;height:36px;border-radius:0} #zoom .sep{height:1px;background:var(--ink-line)}
+  #base{display:flex;border-radius:12px;overflow:hidden;font-size:12px}
+  #base button{all:unset;cursor:pointer;padding:0 12px;height:32px;color:var(--ink-75)} #base button+button{border-left:1px solid var(--ink-line)} #base button.on{color:var(--color-accent-700);box-shadow:inset 0 0 0 1px var(--color-accent)}
+
+  /* narrow */
+  body.narrow #districts{display:none}
+  body.narrow #chips{top:76px;left:0;right:0;padding:0 16px}
+  body.narrow #heat{top:180px;left:16px;right:16px}
+  body.narrow #side{top:auto;right:0;left:0;bottom:0;width:auto;height:140px;border-radius:20px 20px 0 0}
+  body.narrow #side.first{height:220px} body.narrow #side.open{height:62%}
+  body.narrow #legend,body.narrow #controls{bottom:152px} body.narrow #side.first~#legend,body.narrow #side.first~#controls{bottom:232px} body.narrow #side.open~#legend,body.narrow #side.open~#controls{bottom:calc(62% + 12px)}
+  body.narrow #reviewer,body.narrow .brand .county,body.narrow #nav,body.narrow #bar .vr{display:none}
+  body.phone #period-label,body.phone #runrow .vr{display:none}
+  body.narrow #bar{height:52px;padding-left:16px;gap:10px}
+  body.narrow #run-card{display:none}
+  body.phone #status-line{display:none}
+  body.phone #legend{max-width:calc(100% - 150px);padding:8px 10px} body.phone #legend .row{flex-wrap:wrap;gap:4px 10px}
 </style>
-{% endblock %}
-{% block content %}
-<div class="card">
-<h1>Map, period ending {{ period.period_id }} <span class="tag {{ 'ok' if period.status == 'final' else 'warn' }}">{{ period.status }}</span></h1>
-<p class="small">Green = within limits. Red = needs a person's review. Click a dot for its numbers and a button to the full review. To run a new period, pause the schedule or see alerts, open the <a href="{{ url_for('dashboard') }}">Dashboard</a>.</p>
-{% if focus_area %}<p class="small">Showing <b>{{ focus_name }}</b>. <a href="{{ url_for('period_map', period_id=period.period_id) }}">Show every area</a> · <a href="{{ url_for('area_detail', period_id=period.period_id, area_id=focus_area) }}">Area details</a> · <a href="{{ url_for('period_charts', period_id=period.period_id) }}">Charts</a></p>{% endif %}
-<p class="small muted legend">
-  <span style="background:#1b7f4b"></span>Within limits &nbsp;&nbsp;
-  <span style="background:#d7263d"></span>Review needed &nbsp;&nbsp;
-  Click a dot for its numbers and a link to the full review (chart, source readings, disposition).
-  &nbsp; Period:
-  <select id="period-select" onchange="location.href='/periods/'+this.value+'/map'">{% for p in periods %}<option value="{{ p }}" {% if p == period.period_id %}selected{% endif %}>{{ p }}</option>{% endfor %}</select>
-</p>
-<div class="maprow">
+</head>
+<body class="wide">
+<div id="root">
   <div id="map"></div>
-  <div>
-    {% set shown = points if not focus_area else points|selectattr('area_id','equalto',focus_area)|list %}
-    <h3 style="margin-top:0">Review needed ({{ shown|selectattr('status','equalto','review_needed')|list|length }})</h3>
-    <div class="list">
-    {% for p in shown if p.status == 'review_needed' %}<a href="#" onclick="focusPoint('{{ p.id }}');return false;"><span class="dot" style="background:#d7263d"></span><b>{{ p.id }}</b> <span class="muted small">{{ p.area }}</span><br><span class="small">{{ p.reason }}</span>{% if p.disposition %}<br><span class="small muted">{{ p.disposition }}</span>{% endif %}</a>{% endfor %}
+  <div id="dim" hidden></div>
+
+  <!-- dot popup -->
+  <div id="popup" class="glass-card" hidden>
+    <div class="top">
+      <div style="flex:1;min-width:0"><div class="id" id="pp-id"></div><div class="sub" id="pp-sub"></div></div>
+      <span class="chip" id="pp-chip"><i></i><span id="pp-status"></span></span>
+      <button class="close" id="pp-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
-    <h3>Within limits ({{ shown|selectattr('status','equalto','within_limits')|list|length }})</h3>
-    <div class="list">
-    {% for p in shown if p.status == 'within_limits' %}<a href="#" onclick="focusPoint('{{ p.id }}');return false;"><span class="dot" style="background:#1b7f4b"></span><b>{{ p.id }}</b> <span class="muted small">{{ p.area }}</span></a>{% endfor %}
+    <div id="pp-summary"><p id="pp-summary-text"></p><span id="pp-summary-src"></span></div>
+    <div id="pp-chart"></div>
+    <div class="grid">
+      <span class="k">Rated maximum</span><span id="pp-rated"></span>
+      <span class="k">Period peak</span><span id="pp-peak"></span>
+      <span class="k">Cpk</span><span id="pp-cpk"></span>
+      <span class="k">Projected peak</span><span><span id="pp-proj"></span><span class="estimate">estimate</span></span>
+      <span class="k">Rule</span><span id="pp-rule"></span>
+      <span class="k">Decision</span><span id="pp-dec"></span>
+    </div>
+    <a id="pp-link" href="#" class="btn btn-primary btn-block" style="margin-top:12px;text-decoration:none">Open full review <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+  </div>
+
+  <!-- site header (after ashwinprajeeth.com: brand left, nav, tools right, hairline under) -->
+  <header id="bar" class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="{{ url_for('map_latest') }}">Transformer Capacity Monitor</a>
+      <nav id="nav" class="site-nav" aria-label="Main">
+        <a href="{{ url_for('map_latest') }}" class="is-active" aria-current="page">Map</a>
+        <a href="{{ url_for('charts_latest') }}">Charts</a>
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('alerts') }}">Alerts</a>
+        <a href="{{ url_for('metrics') }}">Review metrics</a>
+        <a href="{{ url_for('setup') }}" id="setup-link">Setup</a>
+      </nav>
+      <div class="header-tools">
+        <span id="reviewer" class="icon-circle" title="Reviewer: {{ reviewer_name or 'not set' }}"><span id="reviewer-initials"></span><span id="reviewer-name" hidden>{{ reviewer_name or 'Reviewer not set' }}</span></span>
+        <span class="header-divider" aria-hidden="true"></span>
+        <div style="position:relative">
+          <button id="bell" class="icon-circle" aria-label="Alerts">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span class="count" id="alert-count" {% if not unacked_alerts %}hidden{% endif %}>{{ unacked_alerts }}</span>
+          </button>
+          <div id="alerts-card" class="glass-card" hidden>
+            <div style="display:flex;align-items:baseline;justify-content:space-between"><span class="heading" style="font-size:20px">Latest alert</span><span style="font-size:11px;color:var(--ink-60)" id="al-when"></span></div>
+            <div style="font-size:14px;margin-top:8px" id="al-head"></div>
+            <div style="display:grid;grid-template-columns:96px 1fr;gap:6px 10px;font-size:13px;margin-top:10px" id="al-rows">
+              <span class="micro" style="font-size:10px;letter-spacing:.1em;padding-top:3px">What happened</span><span id="al-happened"></span>
+              <span class="micro" style="font-size:10px;letter-spacing:.1em;padding-top:3px">What to do</span><span id="al-todo"></span>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:12px"><a href="{{ url_for('alerts') }}" class="btn btn-ghost" style="text-decoration:none;font-size:13px">All alerts (<span id="al-count">{{ unacked_alerts }}</span>)</a></div>
+          </div>
+        </div>
+        <span class="header-divider" aria-hidden="true"></span>
+        <button id="bar-toggle" type="button" class="theme-switch theme-switch--on" role="switch" aria-checked="true" aria-label="Hide header" title="Hide header"><span class="theme-switch__icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg></span></button>
+      </div>
+    </div>
+  </header>
+  <button id="bar-show" class="icon-circle" aria-label="Show header" title="Show header" hidden><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+
+  <!-- districts (desktop) -->
+  <nav id="districts" aria-label="Districts"><div class="dtitle">Districts</div><ul id="district-list"></ul></nav>
+  <!-- districts (narrow chips) -->
+  <div id="chips"></div>
+
+  <!-- heat strip -->
+  <div id="heat" class="glass" hidden>
+    <div class="head">
+      <span class="dname" id="heat-name"></span>
+      <span class="seg"><button id="m-rec" class="on">Recorded</button><button id="m-sea">Seasonal model</button></span>
+      <span class="seg"><button id="x-util" class="on">Utilization</button><button id="x-load">Load</button></span>
+      <span class="badge-modeled" id="badge-modeled" hidden>Modeled</span>
+      <span class="badge-recorded" id="badge-recorded">Recorded</span>
+      <span class="clock" id="clock"></span>
+    </div>
+    <div class="rows">
+      <div class="srow" id="row-date"><span class="micro">Date</span><input type="range" id="date-slider" min="0" max="{{ (dates|length) - 1 if dates else 0 }}" value="{{ dates.index(heat_default_date) if (heat_default_date and heat_default_date in dates) else ((dates|length) - 1 if dates else 0) }}"><span class="lbl" id="date-label"></span></div>
+      <div class="srow" id="row-month" hidden><span class="micro">Month</span><input type="range" id="month-slider" min="1" max="12" value="1"><span class="lbl" id="month-label"></span></div>
+      <div class="srow"><span class="micro">Hour</span><input type="range" id="hour-slider" min="0" max="23" value="18"><span class="hourcell"><span class="lbl" id="hour-label"></span><button class="btn btn-primary" id="play"><svg id="play-ico" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg><span id="play-text">Play</span></button></span></div>
     </div>
   </div>
+
+  <!-- review sidebar / bottom sheet -->
+  <div id="side" class="glass{% if not period %} first{% endif %}">
+    <button class="handle" id="sheet-handle" aria-label="Toggle review list" hidden><span></span></button>
+    {% if not period %}
+    <div id="first">
+      <div class="t">No period has been run yet</div>
+      <div class="d">The map shows town boundaries only. Run the first period to see every transformer sorted into within limits or review needed.</div>
+      <button class="btn btn-primary" id="first-run" style="margin-top:8px">Run the first period</button>
+    </div>
+    {% else %}
+    <div class="head" id="side-head"><span class="t" id="side-title">Review needed</span><span class="n" id="red-count">0</span><span class="scope" id="side-scope" hidden></span></div>
+    <div class="scroll">
+      <div id="hot" hidden>
+        <div class="hh"><span class="micro">Highest at</span><span style="font-size:11px;color:var(--ink-60)" id="hot-clock"></span><span class="badge-modeled" id="hot-modeled" style="font-size:9px;padding:1px 6px" hidden>Modeled</span></div>
+        <div class="rows" id="hot-rows"></div>
+      </div>
+      <div id="review-rows"></div>
+    </div>
+    <div class="foot">
+      <form id="finalize-form" method="post" action="{{ url_for('finalize', period_id=period.period_id) }}" style="margin:0">
+        <input type="hidden" name="reviewer" value="{{ reviewer_name }}">
+        <button type="submit" class="btn btn-primary btn-block" id="finalize" style="margin:0" disabled>{{ 'Report is final' if period.status == 'final' else 'Finalize report' }}</button>
+      </form>
+      <span class="why" id="finalize-why"></span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- period + run (bottom center) -->
+  <div id="runrow" class="glass">
+    {% if periods %}
+    <label id="period-label">Period
+      <select id="period-select">{% for p in periods %}<option value="{{ p }}" {% if period and p == period.period_id %}selected{% endif %}>Week ending {{ p }}</option>{% endfor %}</select>
+    </label>
+    <span class="vr"></span>
+    {% endif %}
+    <div id="runbox">
+      <button id="run-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg><span id="run-pill-text">Run a monitoring period</span></button>
+      <div id="run-running" hidden>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2.5" stroke-linecap="round" style="animation:cm-spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg>
+        <span id="run-step">Running, step 1 of 15</span>
+        <span class="track"><span id="run-bar" style="width:7%"></span></span>
+      </div>
+      <div id="run-failed" hidden>
+        <span style="width:8px;height:8px;border-radius:50%;background:#D7263D"></span><span id="run-failed-text">Run failed</span>
+        <button class="see" id="run-see">See alert</button>
+        <button class="x" id="run-dismiss" aria-label="Dismiss"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div id="run-card" class="glass-card" hidden>
+        <div class="title">Run a monitoring period</div>
+        <div style="font-size:12px;color:var(--ink-60);margin-top:3px">{{ playbook.period_days }} days ending on the date you pick. Rerunning a period replaces its draft results.</div>
+        <form id="run-form" method="post" action="{{ url_for('start_run') }}" style="display:flex;gap:8px;align-items:end;margin-top:12px">
+          <label style="flex:1;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-60);display:grid;gap:4px">Period end date
+            <input type="date" class="input" id="period_end" name="period_end" value="{{ default_end }}" style="font-size:13px;min-height:34px;background:rgba(255,255,255,.5)"></label>
+          <button type="submit" class="btn btn-primary" style="height:34px">Run now</button>
+        </form>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">
+          {% for name, f in feeds.items() %}<span class="feedchip" style="color:{{ '#1B7F4B' if f.present else '#D7263D' }};border-color:{{ 'rgba(27,127,75,.5)' if f.present else 'rgba(215,38,61,.6)' }}"><i></i>{{ f.file }} · {{ 'present' if f.present else 'missing' }}</span>{% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- legend + status -->
+  <div id="legend" class="glass">
+    <div class="row">
+      <label class="f" title="Show transformers within limits"><input type="checkbox" id="f-ok" checked><i class="g"></i>Within limits <span class="muted" id="green-total">0</span></label>
+      <label class="f" title="Show transformers that need review"><input type="checkbox" id="f-red" checked><i class="r"></i>Review needed <span class="muted" id="red-total">0</span></label>
+    </div>
+    <div class="muted" id="status-line">Checking the scheduler...</div>
+  </div>
+  <!-- map controls -->
+  <div id="controls">
+    <div id="zoom" class="glass"><button class="icon-btn" id="zoom-in" aria-label="Zoom in"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><span class="sep"></span><button class="icon-btn" id="zoom-out" aria-label="Zoom out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button></div>
+    <div id="base" class="glass"><button id="base-sat" class="on">Satellite</button><button id="base-streets">Streets</button></div>
+  </div>
 </div>
-<p class="small muted">Satellite imagery (Esri) and street tiles (OpenStreetMap) load over the internet; the dots and boundaries are drawn from this tool's own data. Boundaries shown are the current boundary feed{% if boundaries and boundaries.metadata %} ({{ boundaries.metadata.approved_version }}){% endif %}.</p>
-</div>
+
 <script>
+const PERIOD = {{ (period.period_id if period else none)|tojson }};
+const PERIOD_STATUS = {{ (period.status if period else none)|tojson }};
 const POINTS = {{ points|tojson }};
 const BOUNDARIES = {{ boundaries|tojson }};
-const FOCUS = {{ focus_area|tojson }};
-const map = L.map('map').setView([42.44, -76.5], 10);
-const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom: 18, attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community'});
-const labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {maxZoom: 18, attribution: 'Labels &copy; Esri'});
-const streets = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18, attribution: '&copy; OpenStreetMap contributors'});
-const satelliteGroup = L.layerGroup([satellite, labels]).addTo(map);
-L.control.layers({'Satellite': satelliteGroup, 'Streets': streets}, null, {position: 'topright', collapsed: false}).addTo(map);
-if (BOUNDARIES) {
-  L.geoJSON(BOUNDARIES, {style: {color: '#ffffff', weight: 1.5, fillOpacity: 0.03, dashArray: '5 4', opacity: 0.85},
-    onEachFeature: (f, l) => l.bindTooltip((f.properties && f.properties.name) || '', {sticky: true})}).addTo(map);
+const DISTRICTS_RAW = {{ districts|tojson }};
+const DATES = {{ dates|tojson }};
+const FACTORS = {{ (seasonal.monthly_factors or {})|tojson }};
+const LATEST_ALERT = {{ latest_alert|tojson }};
+const SCHED = {{ sched|tojson }};
+const LAST_RUN = {{ (last_run and {'status': last_run.status, 'finished_at': last_run.finished_at, 'started_at': last_run.started_at})|tojson }};
+const REVIEWER = {{ (reviewer_name or '')|tojson }};
+const RUN_URL = {{ url_for('api_start_run')|tojson }};
+const GREEN = '#1B7F4B', RED = '#D7263D', AMBER = '#F4B400';
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const $ = id => document.getElementById(id);
+const fmt1 = v => Number(v).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
+const fmt2 = v => Number(v).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const pct = v => Math.round(v * 100) + '% of rating';
+const shortName = n => (n || '').replace(/^(City of|Town of|Village of) /, '');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+
+const DISTRICTS = DISTRICTS_RAW.map(d => ({ ...d, fullName: d.name, name: shortName(d.name) })).sort((a, b) => a.name.localeCompare(b.name));
+const S = { district: '', popup: null, running: false, runStep: 0, runFailed: null, alertsOpen: false, mode: 'recorded', metric: 'util',
+  dateIdx: +$('date-slider').value || 0, month: 1, hour: 18, playing: false, base: 'sat', sheetOpen: false, firstLaunch: !PERIOD, loads: {}, modeled: false, factor: 1 };
+const wide = () => window.innerWidth >= 1000;
+const phone = () => window.innerWidth < 600;
+const reds = POINTS.filter(p => p.status === 'review_needed');
+
+// ---- map ----
+const map = L.map('map', { zoomControl: false, attributionControl: true, fadeAnimation: false }).setView([42.44, -76.5], 10);
+map.createPane('heat');
+const heatPane = map.getPane('heat');
+heatPane.style.zIndex = '350';
+heatPane.style.pointerEvents = 'none';
+const sat = L.layerGroup([
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' }),
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: .8 })]).addTo(map);
+const streets = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap contributors' });
+const boundaryLayers = {};
+if (BOUNDARIES) L.geoJSON(BOUNDARIES, { style: { color: '#fff', weight: 1.5, fillOpacity: .03, dashArray: '5 4', opacity: .85 }, onEachFeature: (f, l) => { boundaryLayers[f.properties.area_id] = l; l.bindTooltip(f.properties.name, { sticky: true }); } }).addTo(map);
+// maxZoom is the map zoom where a point reaches full strength. A dedicated pane keeps the
+// canvas in CSS pixels, so Windows display scaling and Chrome zoom do not shift it off the map.
+const heat = L.heatLayer([], { pane: 'heat', radius: 28, blur: 20, maxZoom: 10, minOpacity: 0.45, max: 1, gradient: { .15: '#1a237e', .35: GREEN, .6: AMBER, .8: '#ff6d00', 1: RED } });
+function settleHeat() {
+  if (!map.hasLayer(heat) || !heat._canvas) return;
+  L.DomUtil.removeClass(heat._canvas, 'leaflet-zoom-animated');
+  heat.redraw();
 }
-const fmt = (v, d=2) => (v === null || v === undefined) ? '-' : Number(v).toLocaleString(undefined, {maximumFractionDigits: d, minimumFractionDigits: d});
-const pct = v => (v === null || v === undefined) ? '-' : Math.round(v * 100) + '%';
+map.on('moveend', settleHeat);
+const dots = L.layerGroup().addTo(map);
 const markers = {};
-const focused = [];
 POINTS.forEach(p => {
   const red = p.status === 'review_needed';
-  const mine = !FOCUS || p.area_id === FOCUS;
-  if (mine) focused.push(p);
-  const m = L.circleMarker([p.lat, p.lon], {radius: red ? 11 : 8, color: '#fff', weight: 2, fillColor: red ? '#d7263d' : '#1b7f4b', fillOpacity: mine ? 0.95 : 0.15}).addTo(map);
-  const rows = [
-    ['Area', p.area], ['Status', red ? 'Review needed' : 'Within limits'], ['Why', red ? ('Rule ' + p.rule + ': ' + p.reason) : 'All checks passed'],
-    ['Stability', p.stability.replace('_', ' ')],
-    ['Rated max', fmt(p.rating, 1) + ' ' + p.unit],
-    ['Period peak', fmt(p.period_peak, 1) + ' ' + p.unit + ' (' + pct(p.period_peak_ratio) + ' of rating)'],
-    ['Cpk vs rating', p.cpk === null ? 'not calculated' : fmt(p.cpk) + ' (' + fmt(p.cpk_ci_low) + ' to ' + fmt(p.cpk_ci_high) + ')'],
-    ['Projected peak', p.projected_peak === null ? 'not projected' : fmt(p.projected_peak, 1) + ' ' + p.unit + ' (' + pct(p.forecast_ratio) + ' of rating)'],
-  ];
-  if (p.signals.length) rows.push(['Chart signals', p.signals.join('<br>')]);
-  if (p.assumption_flags && p.assumption_flags.length) rows.push(['Assumptions', p.assumption_flags.join('<br>')]);
-  rows.push(['Disposition', p.disposition || 'none recorded']);
-  const html = '<b>' + p.id + '</b> ' + p.name + '<table>' + rows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') + '</table>' +
-    '<a class="popbtn" href="' + p.url + '">Open full review</a>';
-  m.bindPopup(html, {maxWidth: 360});
-  m.bindTooltip(p.id + (red ? ' (review)' : ''));
-  markers[p.id] = m;
+  const m = L.circleMarker([p.lat, p.lon], { radius: red ? 5.5 : 4, color: '#fff', weight: 2, fillColor: red ? RED : GREEN, fillOpacity: .95 });
+  m.on('click', e => { L.DomEvent.stopPropagation(e); openPopup(p); });
+  m.bindTooltip(p.id + (red ? ' · review needed' : ''));
+  markers[p.id] = m; dots.addLayer(m);
 });
-function focusPoint(id) { const m = markers[id]; if (!m) return; map.setView(m.getLatLng(), Math.max(map.getZoom(), 12)); m.openPopup(); }
-const fit = focused.length ? focused : POINTS;
-if (fit.length) { map.fitBounds(L.latLngBounds(fit.map(p => [p.lat, p.lon])).pad(0.15)); }
-setTimeout(() => map.invalidateSize(), 200);
+const bPts = BOUNDARIES ? (BOUNDARIES.features || []).flatMap(f => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).flatMap(p => p[0]).map(c => [c[1], c[0]])) : [];
+const countyBounds = POINTS.length ? L.latLngBounds(POINTS.map(p => [p.lat, p.lon])).pad(.08) : (bPts.length ? L.latLngBounds(bPts) : null);
+const fitPad = () => wide()
+  ? { paddingTopLeft: [248, S.district ? 270 : 120], paddingBottomRight: [332, 80] }
+  : { paddingTopLeft: [16, S.district ? 220 : 130], paddingBottomRight: [16, 170] };
+if (countyBounds) map.fitBounds(countyBounds, fitPad());
+map.on('move zoom', positionPopup);
+map.on('click', () => { closePopup(); setAlerts(false); });
+let userMoved = false;
+map.getContainer().addEventListener('mousedown', () => { userMoved = true; }); map.getContainer().addEventListener('wheel', () => { userMoved = true; }, { passive: true }); map.getContainer().addEventListener('touchstart', () => { userMoved = true; }, { passive: true });
+function refitCounty() { map.invalidateSize(); if (countyBounds && !S.district && !userMoved) map.fitBounds(countyBounds, fitPad()); }
+setTimeout(refitCounty, 300); setTimeout(refitCounty, 1200);
+window.addEventListener('load', refitCounty);
+new ResizeObserver(() => refitCounty()).observe(document.getElementById('root'));
+
+// ---- layout ----
+function applyLayout() {
+  document.body.classList.toggle('wide', wide()); document.body.classList.toggle('narrow', !wide()); document.body.classList.toggle('phone', phone());
+  $('run-pill-text').textContent = wide() ? 'Run a monitoring period' : 'Run';
+  $('sheet-handle').hidden = wide();
+  map.invalidateSize();
+}
+window.addEventListener('resize', () => { applyLayout(); renderDistricts(); });
+
+// ---- status filter (legend checkboxes: check one, both or neither) ----
+const visible = p => (p.status === 'review_needed' ? $('f-red').checked : $('f-ok').checked);
+function applyFilter() {
+  POINTS.forEach(p => { const m = markers[p.id]; const show = visible(p); if (show && !dots.hasLayer(m)) dots.addLayer(m); if (!show && dots.hasLayer(m)) dots.removeLayer(m); });
+  if (S.popup && !visible(S.popup)) closePopup();
+  renderHeat();
+}
+$('f-ok').onchange = applyFilter; $('f-red').onchange = applyFilter;
+
+// ---- districts ----
+function renderDistricts() {
+  const rows = [{ id: '', name: 'Whole county', sub: POINTS.length + ' transformers', red: reds.length }].concat(
+    DISTRICTS.map(d => ({ id: d.id, name: d.name, sub: d.kind + ' · ' + POINTS.filter(p => p.area === d.id).length, red: reds.filter(p => p.area === d.id).length })));
+  $('district-list').innerHTML = rows.map(d => `<li><button class="drow${d.id === S.district ? ' on' : ''}" data-id="${esc(d.id)}" aria-current="${d.id === S.district ? 'true' : 'false'}"><span class="dash" aria-hidden="true"></span><span class="txt"><span class="nm">${esc(d.name)}</span><span class="sub">${esc(d.sub)}</span>${d.red ? `<span class="red"><i></i>${d.red}</span>` : ''}</span></button></li>`).join('');
+  $('chips').innerHTML = rows.map(d => `<button class="chip${d.id === S.district ? ' on' : ''}" data-id="${esc(d.id)}">${esc(d.name)}${d.red ? `<span class="red"><i></i>${d.red}</span>` : ''}</button>`).join('');
+  document.querySelectorAll('.drow,.chip').forEach(b => b.onclick = () => selectDistrict(b.dataset.id));
+}
+function selectDistrict(id) {
+  stopPlay();
+  const d = DISTRICTS.find(x => x.id === id);
+  S.district = id; closePopup();
+  POINTS.forEach(p => markers[p.id].setStyle({ fillOpacity: !id || p.area === id ? .95 : .25, opacity: !id || p.area === id ? 1 : .3 }));
+  Object.entries(boundaryLayers).forEach(([k, l]) => l.setStyle({ opacity: !id || k === id ? .85 : .3, weight: k === id ? 2.5 : 1.5 }));
+  if (d) { if (!map.hasLayer(heat)) heat.addTo(map); map.fitBounds(d.bbox, fitPad()); settleHeat(); }
+  else { if (map.hasLayer(heat)) map.removeLayer(heat); if (countyBounds) map.fitBounds(countyBounds, fitPad()); }
+  $('heat').hidden = !d || S.firstLaunch;
+  if (d) $('heat-name').textContent = d.fullName;
+  renderDistricts(); renderSidebar();
+  if (d) fetchLoads(); else renderHeat();
+}
+
+// ---- heat ----
+async function fetchLoads() {
+  if (!S.district || S.firstLaunch) return;
+  const url = S.mode === 'seasonal' ? '/api/heat/seasonal?month=' + S.month : '/api/heat/recorded?date=' + (DATES[S.dateIdx] || '');
+  try { const j = await (await fetch(url)).json(); S.loads = j.loads || {}; S.modeled = !!j.modeled; S.factor = j.factor || 1; } catch (e) { S.loads = {}; }
+  renderHeat();
+}
+const loadAt = (p, h) => { const a = S.loads[p.id]; if (!a) return null; const v = a[h]; return (v === null || v === undefined) ? null : v; };
+function labels() {
+  const h = S.hour;
+  $('hour-label').textContent = String(h).padStart(2, '0') + ':00' + (h >= 17 && h <= 21 ? ', evening peak hours' : h <= 5 ? ', overnight' : '');
+  $('month-label').textContent = MONTHS[S.month - 1] + ', ×' + Number(FACTORS[String(S.month)] ?? 1).toFixed(2) + ' of recorded level';
+  $('date-label').textContent = DATES.length ? DATES[S.dateIdx] + ' (' + (S.dateIdx + 1) + ' of ' + DATES.length + ' recorded days)' : 'no recorded days';
+  const clock = (S.mode === 'seasonal' ? MONTHS[S.month - 1] + ', typical day' : (DATES[S.dateIdx] || '')) + '  ' + String(h).padStart(2, '0') + ':00';
+  $('clock').textContent = clock; $('hot-clock').textContent = clock;
+  $('row-date').hidden = S.mode === 'seasonal'; $('row-month').hidden = S.mode !== 'seasonal';
+  $('badge-modeled').hidden = S.mode !== 'seasonal'; $('badge-recorded').hidden = S.mode === 'seasonal'; $('hot-modeled').hidden = S.mode !== 'seasonal';
+  $('m-rec').classList.toggle('on', S.mode === 'recorded'); $('m-sea').classList.toggle('on', S.mode === 'seasonal');
+  $('x-util').classList.toggle('on', S.metric === 'util'); $('x-load').classList.toggle('on', S.metric === 'load');
+}
+function renderHeat() {
+  labels();
+  if (!S.district) { heat._latlngs = []; if (map.hasLayer(heat)) heat.setLatLngs([]); renderHotspots([]); return; }
+  const inView = POINTS.filter(p => p.area === S.district && visible(p));
+  const vals = inView.map(p => [p, loadAt(p, S.hour)]).filter(x => x[1] !== null);
+  const maxLoad = Math.max(1, ...vals.map(x => x[1]));
+  const pts = vals.map(([p, v]) => [p.lat, p.lon, S.metric === 'util' ? Math.min(v / p.rating, 1.2) : v / maxLoad]);
+  if (map.hasLayer(heat)) heat.setLatLngs(pts); else heat._latlngs = pts;
+  renderHotspots(vals, maxLoad);
+}
+function renderHotspots(vals, maxLoad) {
+  $('hot').hidden = !S.district || S.firstLaunch;
+  if (!S.district) return;
+  const rows = vals.sort((a, b) => b[1] / (S.metric === 'util' ? b[0].rating : 1) - a[1] / (S.metric === 'util' ? a[0].rating : 1)).slice(0, 8);
+  $('hot-rows').innerHTML = rows.map(([p, v]) => { const u = v / p.rating; const w = S.metric === 'util' ? Math.min(100, u * 100) : 100 * v / maxLoad; const color = u >= .9 ? RED : u >= .7 ? AMBER : GREEN;
+    return `<a href="${esc(p.url)}"><span><b style="font-weight:600">${esc(p.id)}</b> <span class="muted">${esc(p.name)}</span></span><span style="white-space:nowrap">${S.metric === 'util' ? Math.round(u * 100) + '% of rating' : fmt1(v) + ' ' + esc(p.unit)}</span><span class="bar"><span style="width:${w}%;background:${color}"></span></span></a>`; }).join('') || '<span class="muted" style="font-size:12px">no data at this hour</span>';
+}
+$('m-rec').onclick = () => { S.mode = 'recorded'; fetchLoads(); }; $('m-sea').onclick = () => { S.mode = 'seasonal'; fetchLoads(); };
+$('x-util').onclick = () => { S.metric = 'util'; renderHeat(); }; $('x-load').onclick = () => { S.metric = 'load'; renderHeat(); };
+$('hour-slider').oninput = e => { S.hour = +e.target.value; renderHeat(); };
+let fetchTimer = null;
+$('date-slider').oninput = e => { S.dateIdx = +e.target.value; labels(); clearTimeout(fetchTimer); fetchTimer = setTimeout(fetchLoads, 120); };
+$('month-slider').oninput = e => { S.month = +e.target.value; labels(); clearTimeout(fetchTimer); fetchTimer = setTimeout(fetchLoads, 120); };
+let playT = null;
+function stopPlay() { clearInterval(playT); playT = null; S.playing = false; $('play-text').textContent = 'Play'; $('play-ico').innerHTML = '<polygon points="6 3 20 12 6 21 6 3"/>'; }
+$('play').onclick = () => {
+  if (S.playing) return stopPlay();
+  S.playing = true; $('play-text').textContent = 'Pause'; $('play-ico').innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+  playT = setInterval(() => { let h = S.hour + 1; if (h > 23) { h = 0; if (S.mode === 'seasonal') { S.month = S.month % 12 + 1; $('month-slider').value = S.month; } else if (DATES.length) { S.dateIdx = (S.dateIdx + 1) % DATES.length; $('date-slider').value = S.dateIdx; } S.hour = h; $('hour-slider').value = h; fetchLoads(); return; } S.hour = h; $('hour-slider').value = h; renderHeat(); }, 700);
+};
+
+// ---- sidebar ----
+function renderSidebar() {
+  if (S.firstLaunch) { $('green-total').textContent = '0'; $('red-total').textContent = '0'; return; }
+  const redsIn = S.district ? reds.filter(p => p.area === S.district) : reds;
+  const sel = DISTRICTS.find(d => d.id === S.district);
+  // district selected: the sidebar shows hotspots only; whole county: the review list only
+  $('side-title').textContent = sel ? 'Hotspots now' : 'Review needed';
+  $('red-count').textContent = redsIn.length; $('red-count').hidden = !!sel;
+  $('side-scope').hidden = !sel; if (sel) $('side-scope').textContent = 'in ' + sel.fullName;
+  $('review-rows').hidden = !!sel;
+  $('review-rows').innerHTML = (sel ? [] : redsIn).map(p => `<div class="rrow${S.popup && S.popup.id === p.id ? ' on' : ''}" data-id="${esc(p.id)}"><button class="main" data-id="${esc(p.id)}"><span class="l1"><span class="dot"></span><span class="id">${esc(p.id)}</span><span class="nm">${esc(p.name)} · ${esc(shortName(p.area_name) || p.area)}</span></span><span class="why">${esc(p.reason)}</span>${p.disposition ? `<span class="disp">${esc(p.disposition)}</span>` : ''}</button><a class="go" href="${esc(p.url)}" aria-label="Open full review"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>`).join('');
+  document.querySelectorAll('.rrow .main').forEach(b => b.onclick = () => { const p = POINTS.find(x => x.id === b.dataset.id); if (!visible(p)) { $('f-red').checked = true; applyFilter(); } map.setView([p.lat, p.lon], Math.max(map.getZoom(), 13), { animate: false }); S.sheetOpen = false; applySheet(); openPopup(p); });
+  $('green-total').textContent = POINTS.length - reds.length; $('red-total').textContent = reds.length;
+  const undecided = reds.filter(p => !p.disposition).length;
+  const fin = $('finalize');
+  if (PERIOD_STATUS === 'final') { fin.disabled = true; $('finalize-why').textContent = 'Finalized; rerun the period to review again'; }
+  else { fin.disabled = undecided > 0 || !REVIEWER; $('finalize-why').textContent = undecided > 0 ? undecided + ' red cases still need a decision before the report can be finalized' : (REVIEWER ? 'Every red case has a decision' : 'Set the reviewer name in Setup to finalize'); }
+}
+function applySheet() { $('side').classList.toggle('open', S.sheetOpen && !wide()); }
+$('sheet-handle').onclick = () => { S.sheetOpen = !S.sheetOpen; applySheet(); };
+const sideHead = $('side-head'); if (sideHead) sideHead.onclick = () => { if (!wide()) { S.sheetOpen = !S.sheetOpen; applySheet(); } };
+const finForm = $('finalize-form'); if (finForm) finForm.onsubmit = e => { if ($('finalize').disabled) e.preventDefault(); };
+
+// ---- popup ----
+function openPopup(p) {
+  S.popup = p; const red = p.status === 'review_needed';
+  $('pp-id').textContent = p.id; $('pp-sub').textContent = p.name + ' · ' + (shortName(p.area_name) || p.area);
+  $('pp-chip').style.color = red ? RED : GREEN; $('pp-status').textContent = red ? 'Review needed' : 'Within limits';
+  $('pp-rated').textContent = fmt1(p.rating) + ' ' + p.unit;
+  $('pp-peak').textContent = p.period_peak === null ? '-' : fmt1(p.period_peak) + ' ' + p.unit + ' (' + pct(p.period_peak_ratio) + ')';
+  $('pp-cpk').textContent = p.cpk === null ? 'not calculated: ' + p.stability.replace(/_/g, ' ') : fmt2(p.cpk) + ' (' + fmt2(p.cpk_ci_low) + ' to ' + fmt2(p.cpk_ci_high) + ')';
+  $('pp-proj').textContent = p.projected_peak === null ? 'not projected' : fmt1(p.projected_peak) + ' ' + p.unit + ' (' + pct(p.forecast_ratio) + ')';
+  $('pp-rule').textContent = red ? 'Rule ' + p.rule + ' · ' + p.reason : 'None · all checks passed';
+  $('pp-dec').textContent = p.disposition || 'none recorded';
+  $('pp-link').href = p.url;
+  $('pp-summary-text').textContent = ''; $('pp-summary-src').className = ''; $('pp-summary-src').innerHTML = '';
+  $('pp-chart').innerHTML = '<span class="muted" style="font-size:11px;padding:6px;display:block">Loading control chart…</span>';
+  $('popup').hidden = false; positionPopup();
+  document.querySelectorAll('.rrow').forEach(r => r.classList.toggle('on', r.dataset.id === p.id));
+  setTimeout(fitPopup, 30);
+  loadPopupExtras(p);
+}
+const setSummary = (text, kind) => {
+  $('pp-summary-text').textContent = text;
+  const src = $('pp-summary-src');
+  src.className = kind === 'ai' ? 'ai' : '';
+  src.innerHTML = kind === 'pending' ? '<span class="spin"></span>Writing a summary with Claude Haiku' : kind === 'ai' ? 'Written by Claude Haiku · check the chart' : 'Rule-based summary';
+};
+async function loadPopupExtras(p) {
+  const base = '/api/periods/' + encodeURIComponent(PERIOD) + '/transformers/' + encodeURIComponent(p.id);
+  let j;
+  try { j = await (await fetch(base + '/mini')).json(); } catch (e) { if (S.popup === p) $('pp-chart').innerHTML = '<span class="muted" style="font-size:11px">Chart unavailable</span>'; return; }
+  if (S.popup !== p) return;
+  $('pp-chart').innerHTML = j.svg;
+  if (j.ai) setSummary(j.ai.text, 'ai');
+  else { setSummary(j.rule_summary, j.ai_on ? 'pending' : 'rule'); }
+  setTimeout(fitPopup, 30);
+  if (j.ai || !j.ai_on) return;
+  try {
+    const r = await fetch(base + '/summary'); const k = await r.json();
+    if (S.popup !== p) return;
+    if (r.ok && k.text) setSummary(k.text, 'ai'); else setSummary(j.rule_summary, 'rule');
+  } catch (e) { if (S.popup === p) setSummary(j.rule_summary, 'rule'); }
+  setTimeout(fitPopup, 30);
+}
+// Pan the map just enough that the whole popup sits clear of the header, heat strip, panels and bottom pill.
+function fitPopup() {
+  if (!S.popup || $('popup').hidden) return;
+  const r = $('popup').getBoundingClientRect(), vis = el => el && !el.hidden && el.offsetParent !== null, box = el => el.getBoundingClientRect();
+  const overlapsX = b => b.left < r.right && b.right > r.left;
+  let top = 12, bottom = window.innerHeight - 12, left = 12, right = window.innerWidth - 12;
+  if (!bar.classList.contains('hidden-bar')) top = box(bar).bottom + 12;
+  if (vis($('heat')) && overlapsX(box($('heat')))) top = Math.max(top, box($('heat')).bottom + 12);
+  if (vis($('chips'))) top = Math.max(top, box($('chips')).bottom + 12);
+  if (wide()) { if (vis($('districts'))) left = box($('districts')).right + 12; right = box($('side')).left - 12; }
+  else bottom = Math.min(bottom, box($('side')).top - 12);
+  [$('runrow'), $('legend')].forEach(el => { if (vis(el) && overlapsX(box(el))) bottom = Math.min(bottom, box(el).top - 12); });
+  let dx = 0, dy = 0;
+  if (r.top < top) dy = top - r.top; else if (r.bottom > bottom) dy = Math.max(bottom - r.bottom, top - r.top);
+  if (r.width <= right - left) { if (r.left < left) dx = left - r.left; else if (r.right > right) dx = right - r.right; }
+  if (dx || dy) map.panBy([-dx, -dy], { animate: true, duration: .25 });
+}
+function positionPopup() { if (!S.popup) return; const pt = map.latLngToContainerPoint([S.popup.lat, S.popup.lon]); $('popup').style.left = pt.x + 'px'; $('popup').style.top = pt.y + 'px'; }
+function closePopup() { S.popup = null; $('popup').hidden = true; document.querySelectorAll('.rrow').forEach(r => r.classList.remove('on')); }
+$('pp-close').onclick = closePopup;
+
+// ---- run box ----
+const runbox = $('runbox');
+const setRunOpen = on => { $('run-card').hidden = !on || S.running || !wide(); };
+runbox.onmouseenter = () => setRunOpen(true); runbox.onmouseleave = () => setRunOpen(false);
+runbox.addEventListener('focusin', () => setRunOpen(true)); runbox.addEventListener('focusout', e => { if (!runbox.contains(e.relatedTarget)) setRunOpen(false); });
+$('run-pill').onclick = () => { if (wide()) setRunOpen($('run-card').hidden); else startRun($('period_end').value); };
+const firstRun = $('first-run'); if (firstRun) firstRun.onclick = () => startRun($('period_end').value);
+$('run-form').onsubmit = e => { e.preventDefault(); startRun($('period_end').value); };
+function showRunState() {
+  $('run-pill').hidden = S.running || !!S.runFailed; $('run-running').hidden = !S.running; $('run-failed').hidden = !S.runFailed; $('dim').hidden = !S.running;
+  if (S.runFailed) $('run-failed-text').textContent = S.runFailed;
+  $('run-step').textContent = 'Running, step ' + S.runStep + ' of 15'; $('run-bar').style.width = Math.round(S.runStep / 15 * 100) + '%';
+}
+async function startRun(periodEnd) {
+  if (S.running) return;
+  S.running = true; S.runStep = 1; S.runFailed = null; setRunOpen(false); showRunState();
+  let runId = null;
+  try {
+    const r = await fetch(RUN_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ period_end: periodEnd }) });
+    const j = await r.json(); if (!r.ok) throw new Error(j.error || 'could not start'); runId = j.run_id;
+  } catch (e) { S.running = false; S.runFailed = 'Run failed: ' + e.message; showRunState(); return; }
+  const poll = async () => {
+    try {
+      const j = await (await fetch('/api/runs/' + encodeURIComponent(runId))).json();
+      S.runStep = Math.max(1, j.current_step || 1); showRunState();
+      if (j.status === 'success') { location.href = '/periods/' + encodeURIComponent(j.period_id) + '/map'; return; }
+      if (j.status === 'failed') { S.running = false; S.runFailed = 'Run failed: ' + (j.headline || j.error || 'see alert'); showRunState(); refreshStatus(); return; }
+    } catch (e) { /* keep polling */ }
+    setTimeout(poll, 2000);
+  };
+  setTimeout(poll, 1500);
+}
+$('run-dismiss').onclick = () => { S.runFailed = null; showRunState(); };
+$('run-see').onclick = () => setAlerts(true);
+
+// ---- alerts ----
+let latestAlert = LATEST_ALERT;
+function fmtWhen(iso) { if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return iso; const now = new Date(); const sameDay = d.toDateString() === now.toDateString(); return (sameDay ? 'today' : d.toLocaleDateString(undefined, { weekday: 'short' })) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
+function renderAlert() {
+  const a = latestAlert;
+  $('al-when').textContent = a ? fmtWhen(a.when) : ''; $('al-head').textContent = a ? a.headline : 'No unacknowledged alerts.';
+  $('al-rows').hidden = !a; if (a) { $('al-happened').textContent = a.happened; $('al-todo').textContent = a.todo; }
+}
+function setAlerts(on) { S.alertsOpen = on; $('alerts-card').hidden = !on; if (on) renderAlert(); }
+$('bell').onclick = e => { e.stopPropagation(); setAlerts(!S.alertsOpen); };
+$('alerts-card').onclick = e => e.stopPropagation();
+
+// ---- status line ----
+function fmtRun(iso) { if (!iso) return null; const d = new Date(iso); if (isNaN(d)) return iso; return d.toLocaleDateString(undefined, { weekday: 'short' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
+function renderStatus(sched, last) {
+  const parts = [];
+  parts.push(last && (last.finished_at || last.started_at) ? 'Last run ' + fmtRun(last.finished_at || last.started_at) + (last.status === 'failed' ? ' (failed)' : '') : 'No runs yet');
+  if (sched && sched.available) { parts.push('next ' + (sched.next_run ? fmtRun(sched.next_run) : '-')); parts.push(sched.is_paused ? 'scheduler paused' : 'scheduler active'); }
+  else parts.push('scheduler not running');
+  $('status-line').textContent = parts.join(' · ');
+}
+async function refreshStatus() {
+  try { const j = await (await fetch('/api/status')).json(); renderStatus(j.scheduler, j.last_run); latestAlert = j.latest_alert; const n = j.unacknowledged_alerts || 0; $('alert-count').textContent = n; $('alert-count').hidden = !n; $('al-count').textContent = n; if (S.alertsOpen) renderAlert(); } catch (e) {}
+}
+
+// ---- header hide/show (the switch slides up the header; a small tab brings it back) ----
+const bar = $('bar');
+function setCollapsed(on, remember = true) {
+  bar.classList.toggle('hidden-bar', on);
+  $('bar-show').hidden = !on;
+  const t = $('bar-toggle'); t.classList.toggle('theme-switch--on', !on); t.setAttribute('aria-checked', String(!on));
+  if (on) { setRunOpen(false); setAlerts(false); }
+  if (remember) { try { localStorage.setItem('capmon.barHidden', on ? '1' : '0'); } catch (e) {} }
+}
+$('bar-toggle').onclick = () => setCollapsed(true);
+$('bar-show').onclick = () => setCollapsed(false);
+try { if (localStorage.getItem('capmon.barHidden') === '1') setCollapsed(true, false); } catch (e) {}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !S.alertsOpen && $('run-card').hidden && !S.popup) setCollapsed(true); });
+
+// ---- furniture ----
+$('zoom-in').onclick = () => { userMoved = true; map.zoomIn(); }; $('zoom-out').onclick = () => { userMoved = true; map.zoomOut(); };
+$('base-sat').onclick = () => { if (S.base === 'sat') return; map.removeLayer(streets); sat.addTo(map); S.base = 'sat'; $('base-sat').classList.add('on'); $('base-streets').classList.remove('on'); };
+$('base-streets').onclick = () => { if (S.base === 'streets') return; map.removeLayer(sat); streets.addTo(map); S.base = 'streets'; $('base-streets').classList.add('on'); $('base-sat').classList.remove('on'); };
+const ps = $('period-select'); if (ps) ps.onchange = () => { location.href = '/periods/' + encodeURIComponent(ps.value) + '/map'; };
+$('reviewer-initials').textContent = (REVIEWER || '').split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+document.addEventListener('click', e => { if (!$('alerts-card').contains(e.target) && e.target !== $('bell') && !$('bell').contains(e.target)) setAlerts(false); });
+
+// ---- boot ----
+applyLayout(); renderDistricts(); renderSidebar(); labels(); renderStatus(SCHED, LAST_RUN); showRunState(); applySheet();
 </script>
-{% endblock %}
+</body>
+</html>

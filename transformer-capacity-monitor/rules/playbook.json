@@ -49,5 +49,25 @@
   "retries": {
     "max_attempts": 3,
     "delay_seconds": 2
+  },
+  "seasonal_model": {
+    "_note": "MODELED, not measured. Monthly multipliers applied to each transformer's recorded daily-peak level for the heatmap's seasonal view. Winter is highest because heating (and heat pumps) drive peak load in Tompkins County; replace with the utility's own monthly peak ratios once a year of readings exists.",
+    "reference_months": "the recorded window (multiplier 1.0 = average of the recorded daily peaks)",
+    "monthly_factors": {
+      "1": 1.35,
+      "2": 1.3,
+      "3": 1.15,
+      "4": 0.95,
+      "5": 0.85,
+      "6": 0.92,
+      "7": 1.02,
+      "8": 1.0,
+      "9": 0.9,
+      "10": 0.95,
+      "11": 1.12,
+      "12": 1.3
+    },
+    "winter_evening_boost": 0.06,
+    "winter_evening_note": "In Dec-Feb the 17:00-21:00 hours get an extra boost (heating plus early darkness) on top of the monthly factor."
   }
 }
