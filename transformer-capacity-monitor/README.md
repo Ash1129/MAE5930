@@ -6,8 +6,10 @@ chart. For stable transformers it measures headroom below the nameplate rating w
 95% interval, then projects heat-pump demand growth. A fixed decision table flags transformers for review.
 A named reviewer records a disposition on each flagged transformer before the period report can be finalized.
 
-No AI is used. The tool never changes equipment or operating settings. All data in this repository is
-SYNTHETIC.
+Every statistic and review decision is a fixed rule. An optional setting, off by default, asks the
+local `claude` CLI to reword alerts and transformer summaries in plain language. That text is display
+only and never changes a result. The tool never changes equipment or operating settings. All data in
+this repository is SYNTHETIC.
 
 | Read this | For |
 |---|---|

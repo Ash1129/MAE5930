@@ -2,7 +2,7 @@
 
 A fixed-rules tool that logs transformer loads, checks load stability with control charts, measures
 capacity headroom against each transformer's rated maximum, applies the heat-pump growth forecast,
-and prepares a report that a named grid-planning reviewer approves. No AI is used. It never changes
+and prepares a report that a named grid-planning reviewer approves. Every statistic and review decision is a fixed rule; the only AI is an optional, off-by-default rewrite of alert and summary text for display. It never changes
 equipment or operating settings.
 
 ## Everyday use (three steps)

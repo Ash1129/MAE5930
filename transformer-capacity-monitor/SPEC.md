@@ -133,7 +133,9 @@ the numbers it prints. All three datasets are SYNTHETIC and produced by `scripts
 ## 9. Out of scope
 - Defaults: logins, real customer data, a second statistic before the first one is tested.
 - The tool never changes equipment, switching or operating settings. It only prepares a report for a person.
-- No AI or model calls anywhere. Every step is a fixed rule.
+- No AI in the statistics or the review decision. Every pipeline step is a fixed rule. The only model
+  call is an optional, off-by-default plain-language rewrite of alert and summary text in the review
+  app (`capacity_monitor/ai_explain.py`). Its output is display only, and the rule-based text is always shown.
 - No load-flow, voltage or thermal-ageing modelling. Capacity means the nameplate kVA rating only.
 - No per-customer forecasting. Heat-pump growth is applied by area share.
 - No fitted seasonal model. The heatmap's monthly factors are labeled assumptions, not estimates.

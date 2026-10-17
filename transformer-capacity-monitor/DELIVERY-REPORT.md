@@ -1,7 +1,7 @@
 # Delivery report: Transformer capacity monitoring (Tompkins County)
 
 Built 2026-10-16 to the contract in DELIVERY.md. Fixed-rules pipeline, Apache Airflow scheduler,
-small browser review app. **No AI model is used anywhere.**
+small browser review app. **No AI model takes part in any statistic or review decision.** An optional, off-by-default Claude CLI rewrite of alert and summary text exists for display only (see below).
 
 ## Status: DEMO ONLY (real processing and scheduler verified; real feeds and approved thresholds pending)
 
