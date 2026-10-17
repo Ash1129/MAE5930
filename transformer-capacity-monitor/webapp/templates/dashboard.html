@@ -19,14 +19,14 @@
   .band h2{font-size:18px;margin:0;white-space:nowrap;flex:none}
   .band .hint{color:var(--muted);font-size:13px;margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .band .grow{margin-left:auto}
-  .pies{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 10px 8px;overflow:hidden}
-  .pie{width:100%;min-width:0;min-height:0;height:100%;margin:0;display:flex;align-items:center;gap:8px;overflow:hidden}
-  .pie .svg{flex:none;width:min(84px,28%);aspect-ratio:1;max-height:100%;display:flex;align-items:center;justify-content:center}
+  .pies{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding:0 4px 2px;overflow:hidden}
+  .pie{width:100%;min-width:0;min-height:0;height:100%;margin:0;display:flex;align-items:center;justify-content:center;gap:4px;overflow:hidden}
+  .pie .svg{flex:none;height:100%;width:auto;aspect-ratio:1;max-width:68%;display:flex;align-items:center;justify-content:center}
   .pie .svg svg{width:100%;height:100%;display:block}
-  .pie figcaption{flex:1 1 auto;min-width:0}
-  .pie h3{font-size:13px;line-height:1.2;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .pie ul{list-style:none;margin:0;padding:0;display:grid;gap:1px}
-  .pie a{color:var(--text);text-decoration:none;display:flex;align-items:center;gap:6px;font-size:12px;line-height:1.25;border-radius:6px;padding:0 4px;white-space:nowrap;overflow:hidden}
+  .pie figcaption{flex:0 1 auto;min-width:0}
+  .pie h3{font-size:13px;line-height:1.15;margin:0 0 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pie ul{list-style:none;margin:0;padding:0;display:grid;gap:0}
+  .pie a{color:var(--text);text-decoration:none;display:flex;align-items:center;gap:5px;font-size:12px;line-height:1.2;border-radius:6px;padding:0 2px;white-space:nowrap;overflow:hidden}
   .pie a:hover,.pie a.on{background:rgba(var(--ink-rgb),.06);color:var(--text)}
   .pie a.on{box-shadow:inset 0 0 0 1px var(--accent)}
   .pie i{width:9px;height:9px;border-radius:50%;flex:none}
@@ -50,10 +50,11 @@
   .area-btn{appearance:none;position:relative;min-width:168px;padding:4px 28px 4px 10px;border:1px solid var(--line-16);border-radius:8px;background:transparent;color:var(--ink-90);font:inherit;font-size:14px;line-height:1.3;text-align:left;cursor:pointer}
   .area-btn::after{content:"";position:absolute;right:10px;top:50%;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--ink-60);transform:translateY(-30%)}
   .area-btn[aria-expanded="true"]{border-color:var(--accent)}
-  .area-list{position:fixed;z-index:40;margin:0;padding:4px;list-style:none;background:#f8f7f6;color:var(--ink-90);border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,.18);max-height:min(360px,60vh);overflow:auto}
+  .area-list{position:fixed;z-index:40;margin:0;padding:4px;list-style:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,.28);max-height:min(360px,60vh);overflow:auto}
   .area-list a{display:block;padding:7px 10px;border-radius:6px;color:var(--ink-90);text-decoration:none;font-size:14px;line-height:1.35}
-  .area-list a:hover{background:rgba(var(--ink-rgb),.06)}
-  .area-list a[aria-selected="true"]{background:rgba(182,130,53,.18)}
+  .area-list a:hover{background:rgba(var(--ink-rgb),.08)}
+  .area-list a[aria-selected="true"]{background:rgba(182,130,53,.22);color:var(--ink)}
+  :root[data-theme="dark"] .area-list a[aria-selected="true"]{background:rgba(201,150,74,.28)}
   @media (max-width:640px){
     body:has(#board){height:auto;overflow:auto;display:block}
     body:has(#board) main{height:auto;overflow:visible}
@@ -61,6 +62,8 @@
     #board > .band{min-height:200px}
     .controls{grid-template-columns:1fr 1fr;min-height:240px}
     .pies{grid-template-columns:1fr}
+    .pie{justify-content:flex-start}
+    .pie .svg{height:auto;width:min(120px,42%);max-width:none}
   }
 </style>
 {% endblock %}
