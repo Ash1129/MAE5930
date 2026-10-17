@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
 from flask import Flask, abort, flash, redirect, render_template, request, send_from_directory, url_for  # noqa: E402
 
 from capacity_monitor import ai_explain, airflow_client, config, explain, heat, thermal  # noqa: E402
-from capacity_monitor.charts import imr_svg, mini_imr_svg, rating_svg, review_chart_caption, review_chart_svg  # noqa: E402
+from capacity_monitor.charts import mini_imr_svg, review_chart_caption, review_chart_svg, review_headroom_caption, review_headroom_svg  # noqa: E402
 from capacity_monitor.guards import check_text  # noqa: E402
 from capacity_monitor.report import write_report  # noqa: E402
 from capacity_monitor.run import execute_run, new_run_id  # noqa: E402
@@ -317,8 +317,6 @@ def transformer_detail(period_id, tid):
     r = store.get_transformer_result(period_id, tid)
     if not period or not r:
         abort(404)
-    svg = imr_svg(r["chart"], period["period"]["start"], r["unit"], r["rated_max"])
-    headroom = rating_svg(r["chart"], period["period"]["start"], r["rated_max"])
     pb = config.load_playbook()
     cap, fc = r["capacity"], pb["forecast"]["near_rating_ratio"]
     # same order and flags as before, worded for a non-statistician; the index of the item that matches the decision rule
@@ -345,7 +343,8 @@ def transformer_detail(period_id, tid):
                            chart_caption=review_chart_caption(r["chart"], r["unit"]), checklist=checklist, cause=cause, why=explain.why_flagged(r, pb),
                            decisions=DECISIONS, decision_chips=DECISION_CHIPS, review_started_at=now_iso(), playbook=pb, summary=summary, case=case,
                            back=url_for("period_map", period_id=period_id) if request.args.get("from") == "map" else None,
-                           svg=svg, headroom=headroom)
+                           headroom_svg=review_headroom_svg(r["chart"], period["period"]["start"], r["rated_max"], pb["forecast"]["near_rating_ratio"]),
+                           headroom_caption=review_headroom_caption(r["chart"], period["period"]["start"], r["rated_max"], pb["forecast"]["near_rating_ratio"]))
 
 
 @app.post("/periods/<period_id>/transformers/<tid>/disposition")

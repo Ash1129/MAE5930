@@ -266,3 +266,80 @@ def review_chart_caption(chart: dict, unit: str = "kVA") -> str:
     if status == "zero_variation":
         return "Every daily peak is the same value, so no normal range can be drawn; check the meter or the feed."
     return f"Every day this week sat inside the normal range{rng}, so the pattern hasn't changed. The gap up to the black line is the room left today."
+
+
+def review_headroom_svg(chart: dict, period_start: str, rating: float | None, review_ratio: float = 0.9) -> str:
+    """Daily peak as a percent of the rated maximum, in the review page's style (light ground, inline attributes).
+
+    Rating at 100% as a 2px ink line, the review line (review_ratio) dashed red, 70% dashed accent as a guide,
+    this period shaded; days at or above the review line are red.
+    """
+    dates, vals = chart.get("dates") or [], chart.get("values") or []
+    W, H, L, R, TOP, BOT = 900, 260, 52, 886, 10, 230
+    if not dates or not rating or rating <= 0:
+        return f'<svg viewBox="0 0 {W} 60" role="img" aria-label="No readings" style="width:100%;height:auto;display:block"><text x="{L}" y="34" font-size="12" fill="rgba(29,36,48,.6)">No readings to chart</text></svg>'
+    pcts = [None if v is None else 100.0 * float(v) / float(rating) for v in vals]
+    have = [p for p in pcts if p is not None]
+    if not have:
+        return review_headroom_svg({"dates": [], "values": []}, period_start, rating)
+    review_pct = review_ratio * 100.0
+    lo = min(min(have), 70.0) - 6.0
+    hi = max(max(have), 100.0) + 6.0
+    step = _nice_step(hi - lo)
+    n = max(len(dates) - 1, 1)
+    x = lambda i: L + (R - L) * i / n  # noqa: E731
+    y = lambda v: TOP + (hi - v) / (hi - lo) * (BOT - TOP)  # noqa: E731
+    ink = "rgba(29,36,48,"
+    out = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="Daily peak as a percent of the rating" style="width:100%;height:auto;display:block;font-family:Lora,Georgia,serif">']
+    first = next((i for i, d in enumerate(dates) if d >= period_start), None)
+    if first is not None:
+        x0 = x(first) - (6 if first else 0)
+        out.append(f'<rect x="{x0:.1f}" y="{TOP}" width="{max(x(len(dates) - 1) - x0 + 6, 4):.1f}" height="{BOT - TOP}" fill="rgba(182,130,53,.16)"/>')
+    t = (lo // step + 1) * step
+    while t < hi:
+        out.append(f'<line x1="{L - 4}" x2="{L}" y1="{y(t):.1f}" y2="{y(t):.1f}" stroke="{ink}.25)"/>')
+        out.append(f'<text x="{40}" y="{y(t) + 4:.1f}" text-anchor="end" font-size="11" fill="{ink}.55)">{t:g}%</text>')
+        t += step
+    out.append(f'<line x1="{L - 4}" x2="{R + 4}" y1="{y(70):.1f}" y2="{y(70):.1f}" stroke="#b68235" stroke-width="1" stroke-dasharray="2 3" opacity=".9"/>')
+    out.append(f'<line x1="{L - 4}" x2="{R + 4}" y1="{y(review_pct):.1f}" y2="{y(review_pct):.1f}" stroke="#D7263D" stroke-width="1.2" stroke-dasharray="5 4"/>')
+    out.append(f'<text x="{R}" y="{y(review_pct) + 14:.1f}" text-anchor="end" font-size="11" fill="#9e1428">review line {review_pct:g}%</text>')
+    out.append(f'<line x1="{L - 4}" x2="{R + 4}" y1="{y(100):.1f}" y2="{y(100):.1f}" stroke="{ink}.85)" stroke-width="2"/>')
+    out.append(f'<text x="{R}" y="{y(100) - 6:.1f}" text-anchor="end" font-size="11" fill="{ink}.75)">rating {rating:,.0f} = 100%</text>')
+    pts = [(i, p) for i, p in enumerate(pcts) if p is not None]
+    out.append('<path d="' + " ".join(("M" if k == 0 else "L") + f"{x(i):.1f} {y(p):.1f}" for k, (i, p) in enumerate(pts)) + f'" fill="none" stroke="{ink}.7)" stroke-width="1.4"/>')
+    for i, p in pts:
+        d = dates[i]
+        if p >= review_pct:
+            out.append(f'<circle cx="{x(i):.1f}" cy="{y(p):.1f}" r="3.8" fill="#D7263D"><title>{escape(d)}: {p:.0f}% of rating</title></circle>')
+        elif first is not None and i >= first:
+            out.append(f'<circle cx="{x(i):.1f}" cy="{y(p):.1f}" r="3.5" fill="#7d5411"><title>{escape(d)}: {p:.0f}% of rating</title></circle>')
+        else:
+            out.append(f'<circle cx="{x(i):.1f}" cy="{y(p):.1f}" r="2.4" fill="{ink}.6)"><title>{escape(d)}: {p:.0f}% of rating</title></circle>')
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    k = min(5, len(dates))
+    idx = sorted({round(j * n / (k - 1)) for j in range(k)}) if k > 1 else [0]
+    for j, i in enumerate(idx):
+        d = dates[i]
+        anchor = "start" if j == 0 else "end" if j == len(idx) - 1 else "middle"
+        out.append(f'<text x="{x(i):.1f}" y="250" text-anchor="{anchor}" font-size="11" fill="{ink}.55)">{months[int(d[5:7]) - 1]} {int(d[8:10])}</text>')
+    out.append("</svg>")
+    return "".join(out)
+
+
+def review_headroom_caption(chart: dict, period_start: str, rating: float | None, review_ratio: float = 0.9) -> str:
+    """One plain sentence under the headroom chart."""
+    dates, vals = chart.get("dates") or [], chart.get("values") or []
+    if not dates or not rating:
+        return ""
+    week = [(d, v) for d, v in zip(dates, vals) if d >= period_start and v is not None]
+    over = sum(1 for _, v in week if v >= rating)
+    near = sum(1 for _, v in week if v >= review_ratio * rating) - over
+    peak = max((v for _, v in week), default=None)
+    if peak is None:
+        return "No readings this week."
+    head = f"This week's highest day reached {100 * peak / rating:.0f}% of the rating."
+    if over:
+        return head + f" {over} day{'s' if over != 1 else ''} reached or passed the rating itself" + (f" and {near} more sat above the {review_ratio:.0%} review line." if near else ".")
+    if near:
+        return head + f" {near} day{'s' if near != 1 else ''} sat above the {review_ratio:.0%} review line, none reached the rating."
+    return head + f" Every day stayed under the {review_ratio:.0%} review line."

@@ -225,19 +225,21 @@
     </div>
     <div class="panel">{{ chart_svg|safe }}</div>
     <div class="caption">{{ chart_caption }}</div>
-    <details class="charts-more">
-      <summary>{{ chev }}Full control chart and headroom against the rating</summary>
-      <div class="in">
-        <h4>Control chart</h4>
-        <p class="note">One daily peak, so this is an I-MR chart: the peak, then how much it jumped from the day before. The shaded band is this week. The black line is the rated maximum. Red points sit outside limits taken from the days before this week. X-R, X-S, p, u and c charts need several readings in each sample, or many transformers, so they are not drawn for one unit.</p>
-        <div class="panel paper">{{ svg|safe }}</div>
-        {% if headroom %}
-        <h4>Headroom against the rating</h4>
-        <p class="note">The same peaks, as a percent of the nameplate. 70%, 90% and 100% are reference lines, not control limits. A red point is at or above 90%.</p>
-        <div class="panel paper">{{ headroom|safe }}</div>
-        {% endif %}
-      </div>
-    </details>
+  </div>
+
+  <div class="chart">
+    <div class="hd">
+      <h3>Daily peak against the {{ r.rated_max|num(0) }} {{ r.unit }} rating</h3>
+      <span class="legend">
+        <span><span style="width:14px;height:2px;background:rgba(var(--ink-rgb),.85)"></span>Rating = 100%</span>
+        <span><span style="width:14px;height:0;border-top:1.5px dashed #D7263D"></span>Review line {{ (near * 100)|round|int }}%</span>
+        <span><span style="width:14px;height:0;border-top:1.5px dashed #b68235"></span>70%</span>
+        <span><span style="width:12px;height:10px;background:rgba(182,130,53,.18)"></span>This week</span>
+        <span><span style="width:8px;height:8px;border-radius:50%;background:#D7263D"></span>At or above the review line</span>
+      </span>
+    </div>
+    <div class="panel">{{ headroom_svg|safe }}</div>
+    <div class="caption">{{ headroom_caption }} The reference lines mark the nameplate and the review threshold; they are not control limits.</div>
   </div>
 
   <div class="two">
