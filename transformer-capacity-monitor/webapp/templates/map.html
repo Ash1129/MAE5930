@@ -223,7 +223,7 @@
   #controls{position:absolute;right:332px;bottom:16px;z-index:30;display:flex;flex-direction:column;align-items:flex-end}
   #zoom{display:flex;flex-direction:column;width:40px;flex:none;border-radius:12px;overflow:hidden} #zoom button{width:40px;height:40px;flex:none;border-radius:0;box-sizing:border-box} #zoom .sep{height:1px;background:var(--ink-line)}
 
-  /* first-click tour */
+  /* tour shown when the map opens */
   #tutorial{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:24px;background:rgba(20,18,16,.45)}
   #tutorial[hidden]{display:none}
   #tutorial .card{width:min(440px,100%);box-sizing:border-box;padding:22px 22px 18px;border-radius:16px;background:var(--panel,#f7f4ee);color:var(--ink-90);border:1px solid rgba(var(--ink-rgb),.12);box-shadow:0 16px 50px rgba(0,0,0,.28)}
@@ -755,23 +755,10 @@ applyLayout(); renderDistricts(); renderSidebar(); labels(); renderStatus(SCHED,
 
 function closeTutorial() {
   $('tutorial').hidden = true;
-  try { localStorage.setItem('capmon.tutorial', '1'); } catch (e) {}
 }
 $('tutorial-ok').onclick = closeTutorial;
-try {
-  if (!localStorage.getItem('capmon.tutorial')) {
-    const arm = e => {
-      if (e.target.closest && e.target.closest('#tutorial')) return;
-      e.preventDefault();
-      e.stopPropagation();
-      document.removeEventListener('pointerdown', arm, true);
-      document.addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); }, { capture: true, once: true });
-      $('tutorial').hidden = false;
-      $('tutorial-ok').focus();
-    };
-    document.addEventListener('pointerdown', arm, true);
-  }
-} catch (e) {}
+$('tutorial').hidden = false;
+$('tutorial-ok').focus();
 </script>
 </body>
 </html>
