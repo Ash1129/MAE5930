@@ -2,7 +2,7 @@
 {% block content %}
 <p><a href="{{ url_for('period_detail', period_id=period.period_id) }}">&larr; Period {{ period.period_id }}</a></p>
 <div class="card">
-<h1>{{ r.transformer_id }} <span class="muted">{{ r.name }}</span> <span class="tag {{ 'bad' if r.status == 'review_needed' else 'ok' }}">{{ r.status.replace('_',' ') }}</span></h1>
+<h1>{{ r.transformer_id|tid }} <span class="muted">{{ r.name }}</span> <span class="tag {{ 'bad' if r.status == 'review_needed' else 'ok' }}">{{ r.status.replace('_',' ') }}</span></h1>
 <div class="summary" id="summary">
   <p id="summary-text">{{ summary.ai.text if summary.ai else summary.rule }}</p>
   <span class="summary-src{{ ' ai' if summary.ai else '' }}" id="summary-src">{% if summary.ai %}Written by Claude Haiku · check the chart{% elif summary.ai_on %}<span class="spin"></span>Writing a summary with Claude Haiku{% else %}Rule-based summary{% endif %}</span>
@@ -14,6 +14,16 @@
   .summary-src.ai{color:var(--accent-700)}
   .summary-src .spin{width:10px;height:10px;border:1.5px solid rgba(201,150,74,.3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
+  .facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 18px}
+  .facts div{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:0}
+  .facts span{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .facts b{display:block;font-size:26px;line-height:1.15;font-weight:600;margin-top:2px}
+  .facts small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .chart-block{margin:0 0 8px}
+  .chart-block h2{margin-bottom:4px}
+  .chart-block .small{margin:0 0 8px}
+  .paper svg{width:100%;height:auto;display:block}
+  @media (max-width:720px){.facts{grid-template-columns:1fr 1fr}}
 </style>
 {% if summary.ai_on and not summary.ai %}
 <script>
@@ -24,11 +34,49 @@ fetch({{ summary.url|tojson }}).then(r => r.ok ? r.json() : null).then(j => {
 }).catch(() => { const src = document.getElementById('summary-src'); src.className = 'summary-src'; src.textContent = 'Rule-based summary'; });
 </script>
 {% endif %}
+<div class="facts">
+  <div>
+    <span>This week's peak</span>
+    <b class="{{ 'bad' if r.capacity.period_peak_ratio is not none and r.capacity.period_peak_ratio >= 0.9 else '' }}">{{ r.capacity.period_peak_ratio|pct }}</b>
+    <small>{{ r.capacity.period_peak|num(1) }} {{ r.unit }} of {{ r.rated_max|num(1) }}</small>
+  </div>
+  <div>
+    <span>Forecast peak</span>
+    <b class="{{ 'bad' if r.capacity.forecast_ratio is not none and r.capacity.forecast_ratio >= 0.9 else '' }}">{{ r.capacity.forecast_ratio|pct }}</b>
+    <small>{% if r.capacity.projected_peak is not none %}{{ r.capacity.projected_peak|num(1) }} {{ r.unit }}{% else %}not projected{% endif %}</small>
+  </div>
+  <div>
+    <span>Cpk vs rating</span>
+    <b class="{{ 'bad' if r.capacity.cpk is not none and r.capacity.cpk < 1 else '' }}">{% if r.capacity.cpk is not none %}{{ r.capacity.cpk|num }}{% else %}-{% endif %}</b>
+    <small>{% if r.capacity.cpk is not none %}interval {{ r.capacity.cpk_ci_low|num }} to {{ r.capacity.cpk_ci_high|num }}{% else %}{{ r.capacity.note }}{% endif %}</small>
+  </div>
+  <div>
+    <span>Load pattern</span>
+    <b>{{ r.stability.replace('_',' ') }}</b>
+    <small>{{ r.area_name }}</small>
+  </div>
+</div>
+{% if r.status == 'review_needed' %}<p><b>Why it needs a person:</b> rule {{ r.decision.rule }} · {{ r.decision.reason }}</p>{% endif %}
+
+<section class="chart-block">
+<h2>Control chart</h2>
+<p class="small">One daily peak, so this is an I-MR chart: the peak, then how much it jumped from the day before. The shaded band is this week. The black line is the rated maximum. Red points sit outside limits taken from the days before this week. X-R, X-S, p, u and c charts need several readings in each sample, or many transformers, so they are not drawn for one unit.</p>
+<div class="paper">{{ svg|safe }}</div>
+</section>
+{% if headroom %}
+<section class="chart-block">
+<h2>Headroom against the rating</h2>
+<p class="small">The same peaks, as a percent of the nameplate. 70%, 90% and 100% are reference lines, not control limits. A red point is at or above 90%.</p>
+<div class="paper">{{ headroom|safe }}</div>
+</section>
+{% endif %}
+{% if r.chart.signals %}<h3>Chart signals</h3><table><tr><th>Rule</th><th>Date</th><th>Value</th><th>In period</th></tr>{% for s in r.chart.signals %}<tr><td>{{ s.rule }}</td><td>{{ s.date }}</td><td>{{ s.value|num(1) }}</td><td>{{ 'yes' if s.in_period else 'no (history)' }}</td></tr>{% endfor %}</table>{% endif %}
+
 <div class="grid">
 <div>
 <h3>Checklist (playbook {{ playbook.version }})</h3>
 <table>{% for item, flagged in checklist %}<tr><td>{% if flagged %}<span class="tag bad">check</span>{% else %}<span class="tag ok">ok</span>{% endif %}</td><td class="small">{{ item }}</td></tr>{% endfor %}</table>
-<p class="small"><b>Why flagged:</b> rule {{ r.decision.rule }} ({{ r.decision.condition }}): {{ r.decision.reason }}</p>
+<p class="small"><b>Playbook condition:</b> rule {{ r.decision.rule }} · {{ r.decision.condition }}</p>
 </div>
 <div>
 <h3>Results</h3>
@@ -43,9 +91,6 @@ fetch({{ summary.url|tojson }}).then(r => r.ok ? r.json() : null).then(j => {
 </dl>
 </div>
 </div>
-{% if r.chart.signals %}<h3>Chart signals</h3><table><tr><th>Rule</th><th>Date</th><th>Value</th><th>In period</th></tr>{% for s in r.chart.signals %}<tr><td>{{ s.rule }}</td><td>{{ s.date }}</td><td>{{ s.value|num(1) }}</td><td>{{ 'yes' if s.in_period else 'no (history)' }}</td></tr>{% endfor %}</table>{% endif %}
-<h3>Control chart (shaded = this period; black line = rated maximum)</h3>
-<div class="paper">{{ svg|safe }}</div>
 <details><summary>Forecast assumptions</summary><pre>{{ r.projection.assumptions|tojson(indent=1) }}</pre></details>
 <details><summary>Source readings in the period (last {{ period_readings|length }} of {{ r.period_readings|length }})</summary>
 <table><tr><th>Timestamp</th><th>Load</th><th>Unit</th></tr>{% for x in period_readings %}<tr><td>{{ x.timestamp }}</td><td>{{ x.load|num(2) }}</td><td>{{ x.unit }}</td></tr>{% endfor %}</table></details>

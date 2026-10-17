@@ -84,36 +84,14 @@
   #bar-show{position:absolute;top:12px;left:16px;z-index:41;background:#1a1919;color:#f3f1e8;border-color:#f3f1e8;box-shadow:0 6px 20px rgba(0,0,0,.3)}
   #alerts-card{position:absolute;top:46px;right:0;width:320px;padding:16px;z-index:50;box-sizing:border-box;color:var(--ink-90)}
   #reviewer{font-size:12px}
-  /* run row controls */
-  #period-label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-60);white-space:nowrap}
-  #period-select{font:inherit;font-size:13px;color:var(--ink-90);background:transparent;border:1px solid rgba(29,36,48,.18);border-radius:8px;padding:4px 8px;font-variant-numeric:tabular-nums}
-  #runbox{position:relative}
-  #run-pill{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:5px;background:#1a1919;color:#f3f1e8;font-family:var(--font-heading);font-weight:600;font-size:15px;white-space:nowrap;box-sizing:border-box;transition:opacity .15s}
-  #run-pill:hover{opacity:.85}
-  #run-pill svg{color:#e1ad66}
-  #run-running{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 14px 0 10px;border-radius:999px;border:1px solid rgba(29,36,48,.18);background:rgba(255,255,255,.5);font-size:13px;white-space:nowrap;box-sizing:border-box}
-  #run-running .track{width:80px;height:4px;border-radius:2px;background:rgba(29,36,48,.12);overflow:hidden;display:inline-block}
-  #run-running .track span{display:block;height:100%;background:var(--color-accent);transition:width .4s}
-  #run-failed{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 6px 0 12px;border-radius:999px;border:1px solid #D7263D;background:rgba(215,38,61,.1);color:#9e1428;font-size:13px;white-space:nowrap;box-sizing:border-box}
-  #run-failed .see{all:unset;cursor:pointer;padding:3px 9px;border-radius:999px;color:#9e1428;text-decoration:underline;text-underline-offset:3px}
-  #run-failed .x{all:unset;cursor:pointer;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;color:#9e1428} #run-failed .x:hover{background:rgba(215,38,61,.12)}
-  #run-card{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);width:340px;padding:16px;z-index:50;box-sizing:border-box}
-  #run-card .title{font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1.1}
-  .feedchip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid}
-  .feedchip i{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
   .vr{width:1px;height:26px;background:rgba(29,36,48,.18);flex:none}
-
-  /* period + run row */
-  #runrow{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:30;height:48px;display:flex;align-items:center;gap:12px;padding:0 8px 0 14px;border-radius:999px;box-sizing:border-box;max-width:calc(100% - 640px)}
-  #runrow .vr{height:24px}
-  body.narrow #runrow{top:124px;left:50%;transform:translateX(-50%);right:auto;max-width:calc(100% - 32px);height:44px;padding:0 6px 0 12px}
   body.phone #bar .brand{font-size:18px}
   body.narrow #heat{top:180px}
 
-  /* District names stay visible. Hiding them until hover, and hiding the top chips above
-     1000px, made Chrome at 100% zoom (and Windows display scaling) show only the map.
-     The same rules apply on macOS and Windows. */
-  #districts{position:absolute;left:10px;top:116px;bottom:72px;z-index:20;overflow:auto;max-width:250px}
+  /* The left list is the district control on a wide screen. The top chip row only
+     appears when that list is hidden, so the two never show the same towns at once. */
+  #districts{position:absolute;left:10px;top:72px;bottom:72px;z-index:20;overflow:auto;max-width:250px}
+  body.wide #chips{display:none}
   #districts .dtitle{display:inline-block;font-family:var(--font-heading);font-weight:700;font-size:18px;letter-spacing:.02em;color:var(--ink-90);background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.45);border-radius:10px;padding:4px 12px;margin:0 0 6px 2px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18)}
   #district-list{list-style:none;margin:0;padding:6px 5px;display:flex;flex-direction:column;gap:1px;border:1px solid rgba(255,255,255,.45);border-radius:14px;background:rgba(255,255,255,.78);box-shadow:0 6px 22px rgba(0,0,0,.18)}
   .drow{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:3px;font-size:12px;line-height:1.3;color:rgba(29,36,48,.82);box-sizing:border-box;min-height:22px}
@@ -126,14 +104,14 @@
   .drow.on{color:var(--ink-90)} .drow.on .nm{font-weight:600}
   .drow.on .dash{background:var(--ink-90);width:16px}
   .drow:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px;border-radius:6px}
-  #chips{position:absolute;top:62px;left:16px;right:332px;z-index:26;display:flex;gap:6px;overflow-x:auto;padding:0;scrollbar-width:none} #chips::-webkit-scrollbar{display:none}
+  #chips{position:absolute;top:62px;left:16px;right:16px;z-index:26;display:flex;gap:6px;overflow-x:auto;padding:0;scrollbar-width:none} #chips::-webkit-scrollbar{display:none}
   .chip{all:unset;cursor:pointer;flex:none;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:999px;font-size:13px;white-space:nowrap;background:rgba(255,255,255,.62);color:var(--ink-90);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(255,255,255,.35);box-shadow:0 4px 14px rgba(0,0,0,.2);box-sizing:border-box}
   .chip.on{background:rgba(29,36,48,.9);color:#fff}
   .chip .red{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#b01d30} .chip.on .red{color:#ffb3bd}
   .chip .red i{width:6px;height:6px;border-radius:50%;background:#D7263D;display:inline-block}
 
   /* heat strip */
-  #heat{position:absolute;top:112px;left:270px;right:332px;z-index:20;padding:12px 16px;box-sizing:border-box}
+  #heat{position:absolute;top:62px;left:270px;right:332px;z-index:20;padding:12px 16px;box-sizing:border-box}
   #heat .head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
   #heat .dname{font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1;margin-right:4px}
   #heat .clock{margin-left:auto;font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1}
@@ -177,24 +155,22 @@
   #first .d{font-size:13px;color:var(--ink-60);max-width:220px;text-wrap:pretty}
 
   /* popup */
-  #popup{position:absolute;transform:translate(-50%,calc(-100% - 18px));width:340px;z-index:30;padding:14px 16px 16px;box-sizing:border-box}
+  #popup{position:absolute;transform:translate(-50%,calc(-100% - 18px));width:340px;z-index:36;max-height:calc(100% - 88px);display:flex;flex-direction:column;overflow:hidden;padding:14px 16px 16px;box-sizing:border-box;pointer-events:auto}
   #popup .top{display:flex;align-items:flex-start;gap:10px}
   #popup .id{font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.1}
   #popup .sub{color:var(--ink-60);font-size:12px;margin-top:2px}
   #popup .chip{all:unset;display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.02em;padding:3px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap;box-sizing:border-box}
   #popup .chip i{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
   #popup .close{all:unset;cursor:pointer;width:24px;height:24px;display:grid;place-items:center;border-radius:6px;color:var(--ink-60)} #popup .close:hover{background:rgba(29,36,48,.08)}
-  #popup .grid{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;font-size:13px;margin-top:12px;padding-top:10px;border-top:1px solid var(--ink-line)}
-  #popup .grid .k{color:var(--ink-60)}
+  #popup .top,#pp-summary,#pp-link{flex:none}
   #pp-summary{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid rgba(29,36,48,.08)}
-  #pp-summary p{margin:0;font-size:13px;line-height:1.45;color:var(--ink-90);text-wrap:pretty}
+  #pp-summary p{margin:0;font-size:13px;line-height:1.45;color:var(--ink-90);text-wrap:pretty;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   #pp-summary-src{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-60)}
   #pp-summary-src.ai{color:var(--color-accent-700)}
   #pp-summary-src .spin{width:10px;height:10px;border:1.5px solid rgba(182,130,53,.3);border-top-color:var(--color-accent);border-radius:50%;animation:cm-spin .8s linear infinite}
-  #pp-chart{margin-top:10px;min-height:166px;border-radius:10px;background:rgba(255,255,255,.7);padding:6px 6px 2px}
-  #pp-chart svg{display:block}
-  #popup .grid{font-size:12.5px}
-  .estimate{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#8a6200;margin-left:4px}
+  #pp-chart{margin-top:10px;min-height:0;flex:1 1 auto;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(255,255,255,.7);padding:4px 6px}
+  #pp-chart svg{display:block;max-width:100%;max-height:100%;width:auto;height:auto}
+  #pp-link{margin-top:12px;text-decoration:none;position:relative;z-index:1}
 
   /* furniture */
   #legend{position:absolute;left:16px;bottom:16px;z-index:20;max-width:calc(50% - 270px);display:flex;flex-direction:column;gap:6px;padding:10px 14px;border-radius:14px;font-size:12px;box-sizing:border-box}
@@ -206,13 +182,10 @@
   #legend .f input:checked::after{content:"";width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
   #legend .f input:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
   #legend .f:has(input:not(:checked)){opacity:.55}
-  #legend .prow{display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px solid var(--ink-line);margin-top:2px}
-  #legend .prow #period-label{font-size:12px}
   #legend .g{width:8px;height:8px;border-radius:50%;background:#1B7F4B;box-shadow:0 0 0 2px #fff;display:inline-block;flex:none} #legend .r{width:11px;height:11px;border-radius:50%;background:#D7263D;box-shadow:0 0 0 2px #fff;display:inline-block;flex:none}
-  #controls{position:absolute;right:16px;bottom:16px;z-index:20;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
-  #zoom{display:flex;flex-direction:column;border-radius:12px;overflow:hidden} #zoom button{width:36px;height:36px;border-radius:0} #zoom .sep{height:1px;background:var(--ink-line)}
-  #base{display:flex;border-radius:12px;overflow:hidden;font-size:12px}
-  #base button{all:unset;cursor:pointer;padding:0 12px;height:32px;color:var(--ink-75)} #base button+button{border-left:1px solid var(--ink-line)} #base button.on{color:var(--color-accent-700);box-shadow:inset 0 0 0 1px var(--color-accent)}
+  /* Sit left of the review panel. On a wide screen the panel covers the bottom-right corner. */
+  #controls{position:absolute;right:332px;bottom:16px;z-index:30;display:flex;flex-direction:column;align-items:flex-end}
+  #zoom{display:flex;flex-direction:column;width:40px;flex:none;border-radius:12px;overflow:hidden} #zoom button{width:40px;height:40px;flex:none;border-radius:0;box-sizing:border-box} #zoom .sep{height:1px;background:var(--ink-line)}
 
   /* narrow */
   body.narrow #districts{display:none}
@@ -220,11 +193,10 @@
   body.narrow #heat{top:180px;left:16px;right:16px}
   body.narrow #side{top:auto;right:0;left:0;bottom:0;width:auto;height:140px;border-radius:20px 20px 0 0}
   body.narrow #side.first{height:220px} body.narrow #side.open{height:62%}
+  body.narrow #controls{right:16px}
   body.narrow #legend,body.narrow #controls{bottom:152px} body.narrow #side.first~#legend,body.narrow #side.first~#controls{bottom:232px} body.narrow #side.open~#legend,body.narrow #side.open~#controls{bottom:calc(62% + 12px)}
   body.narrow #reviewer,body.narrow .brand .county,body.narrow #nav,body.narrow #bar .vr{display:none}
-  body.phone #period-label,body.phone #runrow .vr{display:none}
   body.narrow #bar{height:52px;padding-left:16px;gap:10px}
-  body.narrow #run-card{display:none}
   body.phone #status-line{display:none}
   body.phone #legend{max-width:calc(100% - 150px);padding:8px 10px} body.phone #legend .row{flex-wrap:wrap;gap:4px 10px}
 </style>
@@ -243,15 +215,7 @@
     </div>
     <div id="pp-summary"><p id="pp-summary-text"></p><span id="pp-summary-src"></span></div>
     <div id="pp-chart"></div>
-    <div class="grid">
-      <span class="k">Rated maximum</span><span id="pp-rated"></span>
-      <span class="k">Period peak</span><span id="pp-peak"></span>
-      <span class="k">Cpk</span><span id="pp-cpk"></span>
-      <span class="k">Projected peak</span><span><span id="pp-proj"></span><span class="estimate">estimate</span></span>
-      <span class="k">Rule</span><span id="pp-rule"></span>
-      <span class="k">Decision</span><span id="pp-dec"></span>
-    </div>
-    <a id="pp-link" href="#" class="btn btn-primary btn-block" style="margin-top:12px;text-decoration:none">Open full review <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+    <a id="pp-link" href="#" class="btn btn-primary btn-block">Open full review <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
   </div>
 
   <!-- site header (after ashwinprajeeth.com: brand left, nav, tools right, hairline under) -->
@@ -319,7 +283,10 @@
     <div id="first">
       <div class="t">No period has been run yet</div>
       <div class="d">The map shows town boundaries only. Run the first period to see every transformer sorted into within limits or review needed.</div>
-      <button class="btn btn-primary" id="first-run" style="margin-top:8px">Run the first period</button>
+      <form method="post" action="{{ url_for('start_run') }}" style="margin-top:8px">
+        <input type="hidden" name="period_end" value="{{ default_end }}">
+        <button class="btn btn-primary" type="submit">Run the first period</button>
+      </form>
     </div>
     {% else %}
     <div class="head" id="side-head"><span class="t" id="side-title">Review needed</span><span class="n" id="red-count">0</span><span class="scope" id="side-scope" hidden></span></div>
@@ -340,41 +307,6 @@
     {% endif %}
   </div>
 
-  <!-- period + run (bottom center) -->
-  <div id="runrow" class="glass">
-    {% if periods %}
-    <label id="period-label">Period
-      <select id="period-select">{% for p in periods %}<option value="{{ p }}" {% if period and p == period.period_id %}selected{% endif %}>Week ending {{ p }}</option>{% endfor %}</select>
-    </label>
-    <span class="vr"></span>
-    {% endif %}
-    <div id="runbox">
-      <button id="run-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg><span id="run-pill-text">Run a monitoring period</span></button>
-      <div id="run-running" hidden>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2.5" stroke-linecap="round" style="animation:cm-spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg>
-        <span id="run-step">Running, step 1 of 15</span>
-        <span class="track"><span id="run-bar" style="width:7%"></span></span>
-      </div>
-      <div id="run-failed" hidden>
-        <span style="width:8px;height:8px;border-radius:50%;background:#D7263D"></span><span id="run-failed-text">Run failed</span>
-        <button class="see" id="run-see">See alert</button>
-        <button class="x" id="run-dismiss" aria-label="Dismiss"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-      </div>
-      <div id="run-card" class="glass-card" hidden>
-        <div class="title">Run a monitoring period</div>
-        <div style="font-size:12px;color:var(--ink-60);margin-top:3px">{{ playbook.period_days }} days ending on the date you pick. Rerunning a period replaces its draft results.</div>
-        <form id="run-form" method="post" action="{{ url_for('start_run') }}" style="display:flex;gap:8px;align-items:end;margin-top:12px">
-          <label style="flex:1;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-60);display:grid;gap:4px">Period end date
-            <input type="date" class="input" id="period_end" name="period_end" value="{{ default_end }}" style="font-size:13px;min-height:34px;background:rgba(255,255,255,.5)"></label>
-          <button type="submit" class="btn btn-primary" style="height:34px">Run now</button>
-        </form>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">
-          {% for name, f in feeds.items() %}<span class="feedchip" style="color:{{ '#1B7F4B' if f.present else '#D7263D' }};border-color:{{ 'rgba(27,127,75,.5)' if f.present else 'rgba(215,38,61,.6)' }}"><i></i>{{ f.file }} · {{ 'present' if f.present else 'missing' }}</span>{% endfor %}
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- legend + status -->
   <div id="legend" class="glass">
     <div class="row">
@@ -386,7 +318,6 @@
   <!-- map controls -->
   <div id="controls">
     <div id="zoom" class="glass"><button class="icon-btn" id="zoom-in" aria-label="Zoom in"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><span class="sep"></span><button class="icon-btn" id="zoom-out" aria-label="Zoom out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button></div>
-    <div id="base" class="glass"><button id="base-sat" class="on">Satellite</button><button id="base-streets">Streets</button></div>
   </div>
 </div>
 
@@ -402,19 +333,17 @@ const LATEST_ALERT = {{ latest_alert|tojson }};
 const SCHED = {{ sched|tojson }};
 const LAST_RUN = {{ (last_run and {'status': last_run.status, 'finished_at': last_run.finished_at, 'started_at': last_run.started_at})|tojson }};
 const REVIEWER = {{ (reviewer_name or '')|tojson }};
-const RUN_URL = {{ url_for('api_start_run')|tojson }};
 const GREEN = '#1B7F4B', RED = '#D7263D', AMBER = '#F4B400';
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const $ = id => document.getElementById(id);
 const fmt1 = v => Number(v).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
-const fmt2 = v => Number(v).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-const pct = v => Math.round(v * 100) + '% of rating';
 const shortName = n => (n || '').replace(/^(City of|Town of|Village of) /, '');
+const showId = id => String(id ?? '').replace(/^T-/, '');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 
 const DISTRICTS = DISTRICTS_RAW.map(d => ({ ...d, fullName: d.name, name: shortName(d.name) })).sort((a, b) => a.name.localeCompare(b.name));
-const S = { district: '', popup: null, running: false, runStep: 0, runFailed: null, alertsOpen: false, mode: 'recorded', metric: 'util',
-  dateIdx: +$('date-slider').value || 0, month: 1, hour: 18, playing: false, base: 'sat', sheetOpen: false, firstLaunch: !PERIOD, loads: {}, modeled: false, factor: 1 };
+const S = { district: '', popup: null, alertsOpen: false, mode: 'recorded', metric: 'util',
+  dateIdx: +$('date-slider').value || 0, month: 1, hour: 18, playing: false, sheetOpen: false, firstLaunch: !PERIOD, loads: {}, modeled: false, factor: 1 };
 const wide = () => window.innerWidth >= 1000;
 const phone = () => window.innerWidth < 600;
 const reds = POINTS.filter(p => p.status === 'review_needed');
@@ -425,10 +354,10 @@ map.createPane('heat');
 const heatPane = map.getPane('heat');
 heatPane.style.zIndex = '350';
 heatPane.style.pointerEvents = 'none';
-const sat = L.layerGroup([
+L.layerGroup([
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' }),
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: .8 })]).addTo(map);
-const streets = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap contributors' });
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: .8 })
+]).addTo(map);
 const boundaryLayers = {};
 if (BOUNDARIES) L.geoJSON(BOUNDARIES, { style: { color: '#fff', weight: 1.5, fillOpacity: .03, dashArray: '5 4', opacity: .85 }, onEachFeature: (f, l) => { boundaryLayers[f.properties.area_id] = l; l.bindTooltip(f.properties.name, { sticky: true }); } }).addTo(map);
 // maxZoom is the map zoom where a point reaches full strength. A dedicated pane keeps the
@@ -440,19 +369,20 @@ function settleHeat() {
   heat.redraw();
 }
 map.on('moveend', settleHeat);
+map.on('moveend', () => { if (S.popup && !$('popup').hidden) fitPopup(); });
 const dots = L.layerGroup().addTo(map);
 const markers = {};
 POINTS.forEach(p => {
   const red = p.status === 'review_needed';
   const m = L.circleMarker([p.lat, p.lon], { radius: red ? 5.5 : 4, color: '#fff', weight: 2, fillColor: red ? RED : GREEN, fillOpacity: .95 });
   m.on('click', e => { L.DomEvent.stopPropagation(e); openPopup(p); });
-  m.bindTooltip(p.id + (red ? ' · review needed' : ''));
+  m.bindTooltip(showId(p.id) + (red ? ' · review needed' : ''));
   markers[p.id] = m; dots.addLayer(m);
 });
 const bPts = BOUNDARIES ? (BOUNDARIES.features || []).flatMap(f => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).flatMap(p => p[0]).map(c => [c[1], c[0]])) : [];
 const countyBounds = POINTS.length ? L.latLngBounds(POINTS.map(p => [p.lat, p.lon])).pad(.08) : (bPts.length ? L.latLngBounds(bPts) : null);
 const fitPad = () => wide()
-  ? { paddingTopLeft: [248, S.district ? 270 : 120], paddingBottomRight: [332, 80] }
+  ? { paddingTopLeft: [248, S.district ? 220 : 120], paddingBottomRight: [332, 80] }
   : { paddingTopLeft: [16, S.district ? 220 : 130], paddingBottomRight: [16, 170] };
 if (countyBounds) map.fitBounds(countyBounds, fitPad());
 map.on('move zoom', positionPopup);
@@ -467,7 +397,6 @@ new ResizeObserver(() => refitCounty()).observe(document.getElementById('root'))
 // ---- layout ----
 function applyLayout() {
   document.body.classList.toggle('wide', wide()); document.body.classList.toggle('narrow', !wide()); document.body.classList.toggle('phone', phone());
-  $('run-pill-text').textContent = wide() ? 'Run a monitoring period' : 'Run';
   $('sheet-handle').hidden = wide();
   map.invalidateSize();
 }
@@ -539,7 +468,7 @@ function renderHotspots(vals, maxLoad) {
   if (!S.district) return;
   const rows = vals.sort((a, b) => b[1] / (S.metric === 'util' ? b[0].rating : 1) - a[1] / (S.metric === 'util' ? a[0].rating : 1)).slice(0, 8);
   $('hot-rows').innerHTML = rows.map(([p, v]) => { const u = v / p.rating; const w = S.metric === 'util' ? Math.min(100, u * 100) : 100 * v / maxLoad; const color = u >= .9 ? RED : u >= .7 ? AMBER : GREEN;
-    return `<a href="${esc(p.url)}"><span><b style="font-weight:600">${esc(p.id)}</b> <span class="muted">${esc(p.name)}</span></span><span style="white-space:nowrap">${S.metric === 'util' ? Math.round(u * 100) + '% of rating' : fmt1(v) + ' ' + esc(p.unit)}</span><span class="bar"><span style="width:${w}%;background:${color}"></span></span></a>`; }).join('') || '<span class="muted" style="font-size:12px">no data at this hour</span>';
+    return `<a href="${esc(p.url)}"><span><b style="font-weight:600">${esc(showId(p.id))}</b> <span class="muted">${esc(p.name)}</span></span><span style="white-space:nowrap">${S.metric === 'util' ? Math.round(u * 100) + '% of rating' : fmt1(v) + ' ' + esc(p.unit)}</span><span class="bar"><span style="width:${w}%;background:${color}"></span></span></a>`; }).join('') || '<span class="muted" style="font-size:12px">no data at this hour</span>';
 }
 $('m-rec').onclick = () => { S.mode = 'recorded'; fetchLoads(); }; $('m-sea').onclick = () => { S.mode = 'seasonal'; fetchLoads(); };
 $('x-util').onclick = () => { S.metric = 'util'; renderHeat(); }; $('x-load').onclick = () => { S.metric = 'load'; renderHeat(); };
@@ -558,6 +487,7 @@ $('play').onclick = () => {
 // ---- sidebar ----
 function renderSidebar() {
   if (S.firstLaunch) { $('green-total').textContent = '0'; $('red-total').textContent = '0'; return; }
+  const inArea = S.district ? POINTS.filter(p => p.area === S.district) : POINTS;
   const redsIn = S.district ? reds.filter(p => p.area === S.district) : reds;
   const sel = DISTRICTS.find(d => d.id === S.district);
   // district selected: the sidebar shows hotspots only; whole county: the review list only
@@ -565,9 +495,9 @@ function renderSidebar() {
   $('red-count').textContent = redsIn.length; $('red-count').hidden = !!sel;
   $('side-scope').hidden = !sel; if (sel) $('side-scope').textContent = 'in ' + sel.fullName;
   $('review-rows').hidden = !!sel;
-  $('review-rows').innerHTML = (sel ? [] : redsIn).map(p => `<div class="rrow${S.popup && S.popup.id === p.id ? ' on' : ''}" data-id="${esc(p.id)}"><button class="main" data-id="${esc(p.id)}"><span class="l1"><span class="dot"></span><span class="id">${esc(p.id)}</span><span class="nm">${esc(p.name)} · ${esc(shortName(p.area_name) || p.area)}</span></span><span class="why">${esc(p.reason)}</span>${p.disposition ? `<span class="disp">${esc(p.disposition)}</span>` : ''}</button><a class="go" href="${esc(p.url)}" aria-label="Open full review"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>`).join('');
+  $('review-rows').innerHTML = (sel ? [] : redsIn).map(p => `<div class="rrow${S.popup && S.popup.id === p.id ? ' on' : ''}" data-id="${esc(p.id)}"><button class="main" data-id="${esc(p.id)}"><span class="l1"><span class="dot"></span><span class="id">${esc(showId(p.id))}</span><span class="nm">${esc(p.name)} · ${esc(shortName(p.area_name) || p.area)}</span></span><span class="why">${esc(p.reason)}</span>${p.disposition ? `<span class="disp">${esc(p.disposition)}</span>` : ''}</button><a class="go" href="${esc(p.url)}" aria-label="Open full review"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>`).join('');
   document.querySelectorAll('.rrow .main').forEach(b => b.onclick = () => { const p = POINTS.find(x => x.id === b.dataset.id); if (!visible(p)) { $('f-red').checked = true; applyFilter(); } map.setView([p.lat, p.lon], Math.max(map.getZoom(), 13), { animate: false }); S.sheetOpen = false; applySheet(); openPopup(p); });
-  $('green-total').textContent = POINTS.length - reds.length; $('red-total').textContent = reds.length;
+  $('green-total').textContent = inArea.length - redsIn.length; $('red-total').textContent = redsIn.length;
   const undecided = reds.filter(p => !p.disposition).length;
   const fin = $('finalize');
   if (PERIOD_STATUS === 'final') { fin.disabled = true; $('finalize-why').textContent = 'Finalized; rerun the period to review again'; }
@@ -581,14 +511,8 @@ const finForm = $('finalize-form'); if (finForm) finForm.onsubmit = e => { if ($
 // ---- popup ----
 function openPopup(p) {
   S.popup = p; const red = p.status === 'review_needed';
-  $('pp-id').textContent = p.id; $('pp-sub').textContent = p.name + ' · ' + (shortName(p.area_name) || p.area);
+  $('pp-id').textContent = showId(p.id); $('pp-sub').textContent = p.name + ' · ' + (shortName(p.area_name) || p.area);
   $('pp-chip').style.color = red ? RED : GREEN; $('pp-status').textContent = red ? 'Review needed' : 'Within limits';
-  $('pp-rated').textContent = fmt1(p.rating) + ' ' + p.unit;
-  $('pp-peak').textContent = p.period_peak === null ? '-' : fmt1(p.period_peak) + ' ' + p.unit + ' (' + pct(p.period_peak_ratio) + ')';
-  $('pp-cpk').textContent = p.cpk === null ? 'not calculated: ' + p.stability.replace(/_/g, ' ') : fmt2(p.cpk) + ' (' + fmt2(p.cpk_ci_low) + ' to ' + fmt2(p.cpk_ci_high) + ')';
-  $('pp-proj').textContent = p.projected_peak === null ? 'not projected' : fmt1(p.projected_peak) + ' ' + p.unit + ' (' + pct(p.forecast_ratio) + ')';
-  $('pp-rule').textContent = red ? 'Rule ' + p.rule + ' · ' + p.reason : 'None · all checks passed';
-  $('pp-dec').textContent = p.disposition || 'none recorded';
   $('pp-link').href = p.url;
   $('pp-summary-text').textContent = ''; $('pp-summary-src').className = ''; $('pp-summary-src').innerHTML = '';
   $('pp-chart').innerHTML = '<span class="muted" style="font-size:11px;padding:6px;display:block">Loading control chart…</span>';
@@ -620,61 +544,40 @@ async function loadPopupExtras(p) {
   } catch (e) { if (S.popup === p) setSummary(j.rule_summary, 'rule'); }
   setTimeout(fitPopup, 30);
 }
-// Pan the map just enough that the whole popup sits clear of the header, heat strip, panels and bottom pill.
+// Keep the whole card, including the review button, inside the free area. A tall card
+// shrinks and the chart scrolls, so the button is clickable without zooming the map.
+let fittingPopup = false;
 function fitPopup() {
-  if (!S.popup || $('popup').hidden) return;
-  const r = $('popup').getBoundingClientRect(), vis = el => el && !el.hidden && el.offsetParent !== null, box = el => el.getBoundingClientRect();
-  const overlapsX = b => b.left < r.right && b.right > r.left;
-  let top = 12, bottom = window.innerHeight - 12, left = 12, right = window.innerWidth - 12;
-  if (!bar.classList.contains('hidden-bar')) top = box(bar).bottom + 12;
-  if (vis($('heat')) && overlapsX(box($('heat')))) top = Math.max(top, box($('heat')).bottom + 12);
-  if (vis($('chips'))) top = Math.max(top, box($('chips')).bottom + 12);
-  if (wide()) { if (vis($('districts'))) left = box($('districts')).right + 12; right = box($('side')).left - 12; }
-  else bottom = Math.min(bottom, box($('side')).top - 12);
-  [$('runrow'), $('legend')].forEach(el => { if (vis(el) && overlapsX(box(el))) bottom = Math.min(bottom, box(el).top - 12); });
+  if (fittingPopup || !S.popup || $('popup').hidden) return;
+  const popup = $('popup');
+  const vis = el => el && !el.hidden && el.offsetParent !== null, box = el => el.getBoundingClientRect();
+  const place = popup.getBoundingClientRect();
+  const overlapsX = b => b.left < place.right + 20 && b.right > place.left - 20;
+  let top = 8, bottom = window.innerHeight - 8, left = 8, right = window.innerWidth - 8;
+  if (!bar.classList.contains('hidden-bar')) top = box(bar).bottom + 8;
+  const avoid = el => {
+    if (!vis(el) || !overlapsX(box(el))) return;
+    const b = box(el);
+    if (b.top > window.innerHeight * 0.5) bottom = Math.min(bottom, b.top - 8);
+    else top = Math.max(top, b.bottom + 8);
+  };
+  [$('heat'), $('chips'), $('legend'), $('controls')].forEach(avoid);
+  if (wide()) { if (vis($('districts'))) left = box($('districts')).right + 8; if (vis($('side'))) right = Math.min(right, box($('side')).left - 8); }
+  else if (vis($('side')) && $('side').classList.contains('open')) bottom = Math.min(bottom, box($('side')).top - 8);
+  popup.style.maxHeight = Math.max(160, bottom - top) + 'px';
+  const r = popup.getBoundingClientRect();
   let dx = 0, dy = 0;
-  if (r.top < top) dy = top - r.top; else if (r.bottom > bottom) dy = Math.max(bottom - r.bottom, top - r.top);
+  if (r.top < top) dy = top - r.top;
+  else if (r.bottom > bottom) dy = bottom - r.bottom;
   if (r.width <= right - left) { if (r.left < left) dx = left - r.left; else if (r.right > right) dx = right - r.right; }
-  if (dx || dy) map.panBy([-dx, -dy], { animate: true, duration: .25 });
+  if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+  fittingPopup = true;
+  map.panBy([-dx, -dy], { animate: true, duration: .25 });
+  map.once('moveend', () => { fittingPopup = false; });
 }
 function positionPopup() { if (!S.popup) return; const pt = map.latLngToContainerPoint([S.popup.lat, S.popup.lon]); $('popup').style.left = pt.x + 'px'; $('popup').style.top = pt.y + 'px'; }
 function closePopup() { S.popup = null; $('popup').hidden = true; document.querySelectorAll('.rrow').forEach(r => r.classList.remove('on')); }
 $('pp-close').onclick = closePopup;
-
-// ---- run box ----
-const runbox = $('runbox');
-const setRunOpen = on => { $('run-card').hidden = !on || S.running || !wide(); };
-runbox.onmouseenter = () => setRunOpen(true); runbox.onmouseleave = () => setRunOpen(false);
-runbox.addEventListener('focusin', () => setRunOpen(true)); runbox.addEventListener('focusout', e => { if (!runbox.contains(e.relatedTarget)) setRunOpen(false); });
-$('run-pill').onclick = () => { if (wide()) setRunOpen($('run-card').hidden); else startRun($('period_end').value); };
-const firstRun = $('first-run'); if (firstRun) firstRun.onclick = () => startRun($('period_end').value);
-$('run-form').onsubmit = e => { e.preventDefault(); startRun($('period_end').value); };
-function showRunState() {
-  $('run-pill').hidden = S.running || !!S.runFailed; $('run-running').hidden = !S.running; $('run-failed').hidden = !S.runFailed; $('dim').hidden = !S.running;
-  if (S.runFailed) $('run-failed-text').textContent = S.runFailed;
-  $('run-step').textContent = 'Running, step ' + S.runStep + ' of 15'; $('run-bar').style.width = Math.round(S.runStep / 15 * 100) + '%';
-}
-async function startRun(periodEnd) {
-  if (S.running) return;
-  S.running = true; S.runStep = 1; S.runFailed = null; setRunOpen(false); showRunState();
-  let runId = null;
-  try {
-    const r = await fetch(RUN_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ period_end: periodEnd }) });
-    const j = await r.json(); if (!r.ok) throw new Error(j.error || 'could not start'); runId = j.run_id;
-  } catch (e) { S.running = false; S.runFailed = 'Run failed: ' + e.message; showRunState(); return; }
-  const poll = async () => {
-    try {
-      const j = await (await fetch('/api/runs/' + encodeURIComponent(runId))).json();
-      S.runStep = Math.max(1, j.current_step || 1); showRunState();
-      if (j.status === 'success') { location.href = '/periods/' + encodeURIComponent(j.period_id) + '/map'; return; }
-      if (j.status === 'failed') { S.running = false; S.runFailed = 'Run failed: ' + (j.headline || j.error || 'see alert'); showRunState(); refreshStatus(); return; }
-    } catch (e) { /* keep polling */ }
-    setTimeout(poll, 2000);
-  };
-  setTimeout(poll, 1500);
-}
-$('run-dismiss').onclick = () => { S.runFailed = null; showRunState(); };
-$('run-see').onclick = () => setAlerts(true);
 
 // ---- alerts ----
 let latestAlert = LATEST_ALERT;
@@ -707,24 +610,21 @@ function setCollapsed(on, remember = true) {
   bar.classList.toggle('hidden-bar', on);
   $('bar-show').hidden = !on;
   const t = $('bar-toggle'); t.classList.toggle('theme-switch--on', !on); t.setAttribute('aria-checked', String(!on));
-  if (on) { setRunOpen(false); setAlerts(false); }
+  if (on) setAlerts(false);
   if (remember) { try { localStorage.setItem('capmon.barHidden', on ? '1' : '0'); } catch (e) {} }
 }
 $('bar-toggle').onclick = () => setCollapsed(true);
 $('bar-show').onclick = () => setCollapsed(false);
 try { if (localStorage.getItem('capmon.barHidden') === '1') setCollapsed(true, false); } catch (e) {}
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !S.alertsOpen && $('run-card').hidden && !S.popup) setCollapsed(true); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !S.alertsOpen && !S.popup) setCollapsed(true); });
 
 // ---- furniture ----
 $('zoom-in').onclick = () => { userMoved = true; map.zoomIn(); }; $('zoom-out').onclick = () => { userMoved = true; map.zoomOut(); };
-$('base-sat').onclick = () => { if (S.base === 'sat') return; map.removeLayer(streets); sat.addTo(map); S.base = 'sat'; $('base-sat').classList.add('on'); $('base-streets').classList.remove('on'); };
-$('base-streets').onclick = () => { if (S.base === 'streets') return; map.removeLayer(sat); streets.addTo(map); S.base = 'streets'; $('base-streets').classList.add('on'); $('base-sat').classList.remove('on'); };
-const ps = $('period-select'); if (ps) ps.onchange = () => { location.href = '/periods/' + encodeURIComponent(ps.value) + '/map'; };
 $('reviewer-initials').textContent = (REVIEWER || '').split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
 document.addEventListener('click', e => { if (!$('alerts-card').contains(e.target) && e.target !== $('bell') && !$('bell').contains(e.target)) setAlerts(false); });
 
 // ---- boot ----
-applyLayout(); renderDistricts(); renderSidebar(); labels(); renderStatus(SCHED, LAST_RUN); showRunState(); applySheet();
+applyLayout(); renderDistricts(); renderSidebar(); labels(); renderStatus(SCHED, LAST_RUN); applySheet();
 </script>
 </body>
 </html>

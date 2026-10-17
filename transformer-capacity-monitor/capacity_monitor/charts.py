@@ -85,6 +85,36 @@ def imr_svg(chart: dict, period_start: str, unit: str = "", rating: float | None
     return f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{h1 + h2 + 50}" viewBox="0 0 {width} {h1 + h2 + 50}">{style}\n{body}\n</svg>'
 
 
+def rating_svg(chart: dict, period_start: str, rating: float | None, width: int = 860) -> str:
+    """Daily peak as a percent of the nameplate. The 70, 90 and 100 lines are reference marks, not control limits."""
+    dates = chart.get("dates") or []
+    values = chart.get("values") or []
+    if not dates or not rating or rating <= 0:
+        return ""
+    pcts = [None if v is None else 100.0 * float(v) / float(rating) for v in values]
+    if not any(v is not None for v in pcts):
+        return ""
+    near = {d for d, v in zip(dates, pcts) if v is not None and v >= 90}
+    height = 210
+    lines = [("Rated max", 100.0, "rating"), ("90%", 90.0, "limit"), ("70%", 70.0, "guide")]
+    body = _panel(dates, pcts, lines, near, period_start, "Daily peak as percent of rated maximum", "%", width, height, 24)
+    style = """
+    <style>
+      .title{font:600 13px system-ui,sans-serif;fill:#333}
+      .tick{font:11px system-ui,sans-serif;fill:#666}
+      .limit-label{font:10px system-ui,sans-serif;fill:#555}
+      .axis{stroke:#999;stroke-width:1}
+      .series{fill:none;stroke:#1f5fa8;stroke-width:1.5}
+      .pt{fill:#1f5fa8}
+      .signal{fill:#d7263d;stroke:#7a0010;stroke-width:1}
+      .limit{stroke:#d7263d;stroke-width:1;stroke-dasharray:5 4}
+      .guide{stroke:#b68235;stroke-width:1;stroke-dasharray:2 3}
+      .rating{stroke:#111;stroke-width:2}
+      .period{fill:#ffe9a8;opacity:.45}
+    </style>"""
+    return f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height + 36}" viewBox="0 0 {width} {height + 36}">{style}\n{body}\n</svg>'
+
+
 def mini_imr_svg(chart: dict, period_start: str, unit: str = "", rating: float | None = None, width: int = 308) -> str:
     """Compact I-MR chart for the map popup. Inline attributes only (no <style>), so it cannot leak CSS into the page.
 
