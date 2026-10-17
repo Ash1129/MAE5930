@@ -130,12 +130,6 @@
     "data/capacity_monitor.sqlite3": {
       "checksum": "68848f53379f818b5ecaa9df25854d62"
     },
-    "data/capacity_monitor.sqlite3-shm": {
-      "checksum": "b7c14ec6110fa820ca6b65f5aec85911"
-    },
-    "data/capacity_monitor.sqlite3-wal": {
-      "checksum": "d41d8cd98f00b204e9800998ecf8427e"
-    },
     "data/feeds/ambient.csv": {
       "checksum": "2921aa4616e57aee730ad6cdf5f13bbd"
     },

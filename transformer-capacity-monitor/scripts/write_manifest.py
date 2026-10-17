@@ -44,6 +44,8 @@ write_api_manifest_json(
         ".pytest_cache/**",
         "data/work/**",
         "data/reports/*/history/**",
+        "data/*.sqlite3-wal",
+        "data/*.sqlite3-shm",
         "scripts/write_manifest.py",
     ],
 )
