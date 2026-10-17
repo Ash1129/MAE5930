@@ -1,0 +1,317 @@
+{
+  "version": 1,
+  "locale": "Chinese (Simplified)_China.936",
+  "metadata": {
+    "appmode": "python-api",
+    "entrypoint": "app:app"
+  },
+  "python": {
+    "version": "3.12",
+    "package_manager": {
+      "name": "pip",
+      "version": "25.0.1",
+      "package_file": "requirements.txt"
+    }
+  },
+  "environment": {
+    "python": {
+      "requires": "==3.12"
+    }
+  },
+  "files": {
+    "requirements.txt": {
+      "checksum": "67895d5983daec3c887f6460d6641eec"
+    },
+    ".env.example": {
+      "checksum": "0aa888e6b7ab114626f0fe8a0df9187e"
+    },
+    ".gitignore": {
+      "checksum": "fd9518eadffa286d7201b216463aae17"
+    },
+    ".python-version": {
+      "checksum": "61939823fbcc7e8de3b61ab105331baf"
+    },
+    "BUILD.md": {
+      "checksum": "ead23ffb035a8ca27def77e714202198"
+    },
+    "CONTRACT.yaml": {
+      "checksum": "700ac83b9b7a2a72da15913b391ec0d1"
+    },
+    "DELIVERY-REPORT.md": {
+      "checksum": "2556acf328293309880a885b7d5abc5f"
+    },
+    "DELIVERY.md": {
+      "checksum": "a3fe85f3666094583a9379476e7be821"
+    },
+    "DEPLOY.md": {
+      "checksum": "1d3dceaa751b71cad10fefad173eba1f"
+    },
+    "README-DEVELOPER.md": {
+      "checksum": "367ac4b3c87d4f0f92315abee5043227"
+    },
+    "README.md": {
+      "checksum": "9d693576b84e35ff1614fbdb21b8f89d"
+    },
+    "SPEC.md": {
+      "checksum": "99ded548757d7f3c06c62d415b1d58a9"
+    },
+    "START-HERE.md": {
+      "checksum": "a7a5ba9efc50aae7161ebaa934a960b8"
+    },
+    "Start Capacity Monitor.bat": {
+      "checksum": "6efaab532314207d6a3853a32520a708"
+    },
+    "Start Capacity Monitor.command": {
+      "checksum": "44eb17f9023763e97928d1e2abfe1c47"
+    },
+    "Stop Capacity Monitor.bat": {
+      "checksum": "7ec1c147b4360663f29415e7dbed099e"
+    },
+    "Stop Capacity Monitor.command": {
+      "checksum": "6a1481632de81f11c0ab4035de2565d9"
+    },
+    "airflow/ENGINEERING.md": {
+      "checksum": "557c43d012715e5878d61c789d25f410"
+    },
+    "airflow/dags/log_transformer_loads_and_monitor_capacity_again.py": {
+      "checksum": "ddf3e6959270a50e16bb342887d86520"
+    },
+    "app.py": {
+      "checksum": "44dfca8471e55127d4c2a1a5f897292f"
+    },
+    "capacity_monitor/__init__.py": {
+      "checksum": "68e76e4a565994bf1f0004d219faa8c6"
+    },
+    "capacity_monitor/ai_explain.py": {
+      "checksum": "716816f238d8089df1c6216a239567d6"
+    },
+    "capacity_monitor/airflow_client.py": {
+      "checksum": "cb28aa6894c9ba2e4891452fff552188"
+    },
+    "capacity_monitor/charts.py": {
+      "checksum": "6203bf1a68fdb902801335d79eb76621"
+    },
+    "capacity_monitor/config.py": {
+      "checksum": "c821f456ec55231eccb0b87792ac867d"
+    },
+    "capacity_monitor/explain.py": {
+      "checksum": "90f7dbb80dbdf7be3d2ea8dfbfa95492"
+    },
+    "capacity_monitor/guards.py": {
+      "checksum": "f17a1177e1f73499dc299d024c75be53"
+    },
+    "capacity_monitor/heat.py": {
+      "checksum": "5a975ee336e5ef268a90717b0e5f7409"
+    },
+    "capacity_monitor/notify.py": {
+      "checksum": "672585df8720a6d1373972bf7ce3d526"
+    },
+    "capacity_monitor/pipeline.py": {
+      "checksum": "e187b97392ddd59972015b168e310c01"
+    },
+    "capacity_monitor/report.py": {
+      "checksum": "051407068f60facabec68c81ae22bc1a"
+    },
+    "capacity_monitor/run.py": {
+      "checksum": "05e912822330ced8019d9ccb88caea6c"
+    },
+    "capacity_monitor/sources.py": {
+      "checksum": "9cbec557d040add75b3add61e32f216c"
+    },
+    "capacity_monitor/store.py": {
+      "checksum": "ee11e4276912e6f9dc7ad3c69234ce68"
+    },
+    "capacity_monitor/thermal.py": {
+      "checksum": "1302305d65e7f117b16f87af3c5f6496"
+    },
+    "data/README.md": {
+      "checksum": "10ba4dea6840827457312453f82a1bcb"
+    },
+    "data/capacity_monitor.sqlite3": {
+      "checksum": "68848f53379f818b5ecaa9df25854d62"
+    },
+    "data/capacity_monitor.sqlite3-shm": {
+      "checksum": "b7c14ec6110fa820ca6b65f5aec85911"
+    },
+    "data/capacity_monitor.sqlite3-wal": {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    "data/feeds/ambient.csv": {
+      "checksum": "2921aa4616e57aee730ad6cdf5f13bbd"
+    },
+    "data/feeds/assets.csv": {
+      "checksum": "cec3961a47ee25803195c694e257690b"
+    },
+    "data/feeds/boundaries.geojson": {
+      "checksum": "9b15d891919486572ba8456b1fcddc22"
+    },
+    "data/feeds/heat_pump_forecast.csv": {
+      "checksum": "8bec687c1eb970bcbc64678ea5d04cc9"
+    },
+    "data/feeds/readings.csv": {
+      "checksum": "4089d268ebb1bb85a3ea2db6c36483bb"
+    },
+    "data/reports/2026-10-15/report.html": {
+      "checksum": "b291fdefc5ca6d14f44b99efbb577fdf"
+    },
+    "data/reports/2026-10-15/report.json": {
+      "checksum": "3ea65529191a76d99b897b6cf94701f8"
+    },
+    "data/reports/2026-10-15/report.md": {
+      "checksum": "48afee7a53b27a3a8c43258321eab8b2"
+    },
+    "demo/README.md": {
+      "checksum": "7efbe90287a7288a515ba7864b9c91f9"
+    },
+    "deployme.ps1": {
+      "checksum": "e72f125e8eecd35701c612a5054282d3"
+    },
+    "deployme.sh": {
+      "checksum": "6c38f44a7203a9ac77ba7b23e48d68cf"
+    },
+    "design/LANDING-PAGE-BRIEF.md": {
+      "checksum": "05f0765098948df455f9cc1c888cfa4c"
+    },
+    "design/handoff/NOTE.md": {
+      "checksum": "bbe302bcdad292890dbd3015b96a8426"
+    },
+    "design/handoff/README.md": {
+      "checksum": "d088a95010d4d160a7790a359235fceb"
+    },
+    "design/handoff/SPEC.md": {
+      "checksum": "f270e6b4220b691ec811b37ffb781f14"
+    },
+    "design/handoff/design/Capacity Monitor Landing.dc.html": {
+      "checksum": "dca9602fa874a0fc8a4088a6d0e753d4"
+    },
+    "design/handoff/design/Component Sheet.dc.html": {
+      "checksum": "a142787ed8841dc135a55252fe81a96a"
+    },
+    "design/handoff/design/States Canvas.dc.html": {
+      "checksum": "530354ce37194d5f7498b0ab421d8ae0"
+    },
+    "design/handoff/tokens.css": {
+      "checksum": "167589a17f407c287f536cb57dc7f33e"
+    },
+    "evals/examples.csv": {
+      "checksum": "fe6b576f4e0b90eb86468cb4bc74819e"
+    },
+    "evals/results.md": {
+      "checksum": "115a125d0ef77d0ac6ed214809836eb4"
+    },
+    "manifestme.sh": {
+      "checksum": "a32aac3cdf9e8fb4010a91e30a104d62"
+    },
+    "rules/decision-table.csv": {
+      "checksum": "0561e39c9a9a39930b7efd249f454f16"
+    },
+    "rules/playbook.json": {
+      "checksum": "4b4ee6c238e136d9e7519871a0de4c0f"
+    },
+    "scripts/env.sh": {
+      "checksum": "d710f00147ea819e3d64a7c924e86236"
+    },
+    "scripts/make_synthetic_data.py": {
+      "checksum": "cc335a0867a5a85c81d91356f35ac10e"
+    },
+    "scripts/run_demo.py": {
+      "checksum": "1fdcd7acda4ed419e03da6d270e4b115"
+    },
+    "scripts/run_evals.py": {
+      "checksum": "249105b3d7961165472abb07c60a4e8a"
+    },
+    "scripts/setup_env.sh": {
+      "checksum": "0c321e897f8af7baeb511375f9310db1"
+    },
+    "scripts/start_airflow.sh": {
+      "checksum": "ff85c7103ea8d32592d84a5b58dd16d0"
+    },
+    "scripts/start_app.sh": {
+      "checksum": "fb69070e73662a1ed4a3c932b522f090"
+    },
+    "scripts/status.sh": {
+      "checksum": "9d7b0c75a4d6c2b49b996eb8ae802c18"
+    },
+    "scripts/stop.sh": {
+      "checksum": "37e210a4a70ed86f3e3dbf37755240db"
+    },
+    "testme.sh": {
+      "checksum": "95e676921bc04acd2a6d72a4362792c6"
+    },
+    "tests/conftest.py": {
+      "checksum": "46dca60aa0791ec634ebae5cb5071b0c"
+    },
+    "tests/test_ai_explain.py": {
+      "checksum": "f1e2fb7e675a57f8804f05f2733848a6"
+    },
+    "tests/test_explain.py": {
+      "checksum": "7976d2f0ab11754eb847612b1b74f4ea"
+    },
+    "tests/test_heat.py": {
+      "checksum": "bb5879d726ea5f681ea730ffbf38dac5"
+    },
+    "tests/test_pipeline.py": {
+      "checksum": "5747a44542f8266d602fa55fcb458b11"
+    },
+    "tests/test_popup.py": {
+      "checksum": "ad721c2c2014c1027a667d9a71f5286f"
+    },
+    "tests/test_runs.py": {
+      "checksum": "ee26e621a5c22c0f59db3f01db539aed"
+    },
+    "tests/test_thermal.py": {
+      "checksum": "b73dbab62a9885633118ac511a799e81"
+    },
+    "tests/test_viz.py": {
+      "checksum": "64f42c8bb26f3c99c4cc9cc65108071c"
+    },
+    "tests/test_webapp.py": {
+      "checksum": "2b5964ef9131bde43a90d57ef3c8e0ca"
+    },
+    "webapp/__init__.py": {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    "webapp/app.py": {
+      "checksum": "d466f5bbf45ab4a22b72ac2e6df0bfc4"
+    },
+    "webapp/static/tompkins-county.png": {
+      "checksum": "fb6c0bc73339e4f71e4d7484a8fec69f"
+    },
+    "webapp/templates/alerts.html": {
+      "checksum": "cf6fde669397c5636abc6216e342731e"
+    },
+    "webapp/templates/area.html": {
+      "checksum": "9343787baa2beb42885ec457d7ef541e"
+    },
+    "webapp/templates/base.html": {
+      "checksum": "f208b8c4db9819d5602306b80afefe3a"
+    },
+    "webapp/templates/dashboard.html": {
+      "checksum": "4442b0f7c7f547897fb2831a470a2c17"
+    },
+    "webapp/templates/light_base.html": {
+      "checksum": "1ef0e93bea3cd2a78d3161fb82859800"
+    },
+    "webapp/templates/map.html": {
+      "checksum": "de9b0a4919169f298a9344e4426e1995"
+    },
+    "webapp/templates/metrics.html": {
+      "checksum": "a2768ed84b1bde4d2df9bad49bb77702"
+    },
+    "webapp/templates/period.html": {
+      "checksum": "e7c4675c12d640e61bd6bda60aa2ce92"
+    },
+    "webapp/templates/run.html": {
+      "checksum": "f44322e813c96475e9e3bb09fd749a07"
+    },
+    "webapp/templates/setup.html": {
+      "checksum": "764a60374a8579472a6fff366a4e035b"
+    },
+    "webapp/templates/transformer.html": {
+      "checksum": "27f221637dbc55196324e52e99abb343"
+    },
+    "webapp/viz.py": {
+      "checksum": "e2c9ddc2f9b3317ab175cd93d42e3aab"
+    }
+  }
+}

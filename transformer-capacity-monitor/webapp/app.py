@@ -777,6 +777,12 @@ def api_run(run_id):
     return out
 
 
+@app.get("/health")
+def health():
+    """Posit Connect deploy check. No data, no login."""
+    return {"ok": True}
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("CAPMON_APP_PORT", "5055"))
     config.ensure_dirs()
