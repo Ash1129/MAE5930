@@ -453,7 +453,7 @@ window.addEventListener('resize', () => { applyLayout(); renderDistricts(); });
 // ---- status filter (legend buttons) ----
 const visible = p => (!S.filter || p.status === S.filter);
 function applyFilter() {
-  POINTS.forEach(p => { const show = visible(p); if (show && !dotLayer.hasLayer(p.marker)) dotLayer.addLayer(p.marker); if (!show && dotLayer.hasLayer(p.marker)) dotLayer.removeLayer(p.marker); });
+  POINTS.forEach(p => { const show = visible(p); if (show && !dots.hasLayer(p.marker)) dots.addLayer(p.marker); if (!show && dots.hasLayer(p.marker)) dots.removeLayer(p.marker); });
   if (S.popup && !visible(S.popup)) closePopup();
   $('f-ok').setAttribute('aria-pressed', String(S.filter === 'within_limits')); $('f-red').setAttribute('aria-pressed', String(S.filter === 'review_needed'));
   $('legend').classList.toggle('filtered', !!S.filter);
