@@ -2,7 +2,7 @@
 {% block title %}{{ area.area_name }}{% endblock %}
 {% block page_head %}
 <style>
-  .meter{height:8px;background:rgba(29,36,48,.08);border-radius:6px;width:110px;display:inline-block;vertical-align:middle;overflow:hidden}
+  .meter{height:8px;background:rgba(var(--ink-rgb),.08);border-radius:6px;width:110px;display:inline-block;vertical-align:middle;overflow:hidden}
   .meter i{display:block;height:100%;border-radius:6px;background:#1b7f4b}
   .meter.m-mid i{background:#9a5b00}
   .meter.m-high i{background:#d7263d}

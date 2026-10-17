@@ -10,7 +10,7 @@
   .seg{display:inline-flex;border:1px solid var(--line-16);border-radius:4px;overflow:hidden}
   .seg a{padding:7px 14px;font-size:13px;color:var(--ink-80);text-decoration:none;transition:background .15s}
   .seg a+a{border-left:1px solid var(--line-16)}
-  .seg a:hover{background:rgba(29,36,48,.04)}
+  .seg a:hover{background:rgba(var(--ink-rgb),.04)}
   .seg a[aria-current="true"]{color:var(--accent-700);box-shadow:inset 0 0 0 1px var(--accent)}
   .seg a span{color:var(--ink-60)}
   .empty{padding:64px 0;text-align:center;color:var(--ink-60)}
@@ -18,7 +18,7 @@
   .empty div{font-size:13px;margin-top:6px}
 
   article{display:grid;grid-template-columns:150px minmax(0,1fr) 170px;gap:0 28px;padding:26px 0;border-bottom:1px solid var(--line);transition:background .15s}
-  article:hover{background:rgba(29,36,48,.02)}
+  article:hover{background:rgba(var(--ink-rgb),.02)}
   article.acked{opacity:.7}
   .when{display:flex;flex-direction:column;gap:8px;font-size:13px}
   .when .dt{line-height:1.3} .when .dt div+div{color:var(--ink-60)}
