@@ -36,7 +36,11 @@ from webapp.viz import (  # noqa: E402
     summarize_results,
 )
 
-app = Flask(__name__, template_folder=str(Path(__file__).parent / "templates"))
+app = Flask(
+    __name__,
+    template_folder=str(Path(__file__).parent / "templates"),
+    static_folder=str(Path(__file__).parent / "static"),
+)
 app.secret_key = os.environ.get("CAPMON_SECRET", "local-review-app-not-for-internet")
 store = Store()
 _running: dict[str, threading.Thread] = {}

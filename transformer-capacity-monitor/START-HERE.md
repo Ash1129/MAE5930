@@ -7,11 +7,11 @@ equipment or operating settings.
 
 ## Everyday use (three steps)
 
-1. **Open the tool.** Double-click `Start Capacity Monitor.command` (or run `./scripts/start_app.sh` and
-   `./scripts/start_airflow.sh`). Your browser opens http://127.0.0.1:5055 on the **Map**: every transformer
+1. **Open the tool.** On a Mac, double-click `Start Capacity Monitor.command` (or run `./scripts/start_app.sh` and
+   `./scripts/start_airflow.sh`). On Windows, double-click `Start Capacity Monitor.bat`, or from this folder run
+   `.venv\Scripts\python.exe -m webapp.app`. Your browser opens http://127.0.0.1:5055 on the **Map**: every transformer
    as a dot, green for within limits and red for needing review; click a red dot for its numbers and
-   **Open full review**. Pick a district on the left to zoom in and see load by hour (recorded) or by month (a labeled model). Scheduled runs happen on their own on Monday, Wednesday and Friday at 06:00; to run one yourself,
-   pick a period end date at the top of the Map and press **Run now**. The **Dashboard** shows the scheduler, alerts and run history.
+   **Open full review**. Pick a district on the left to zoom in and see load by hour (recorded) or by month (a labeled model). Scheduled runs happen on their own on Monday, Wednesday and Friday at 06:00 when the Airflow scheduler is running (macOS or Linux; on Windows the review app runs the same analysis when you press **Run now**). The **Dashboard** shows the scheduler, alerts and run history.
 2. **Review the exceptions.** Open the period, press **Review** on each flagged transformer, read the
    checklist beside the chart and source readings, then choose **Approve conclusion**, **Request changes**
    or **Reject** (with a note). One case at a time; nothing is batch-approved.
@@ -21,15 +21,18 @@ equipment or operating settings.
 
 ## Reopen, stop, recover
 
-- **Reopen:** http://127.0.0.1:5055 while the tool is running; otherwise double-click the Start launcher again.
-- **Stop:** double-click `Stop Capacity Monitor.command` (or `./scripts/stop.sh`).
+- **Reopen:** http://127.0.0.1:5055 while the tool is running; otherwise double-click the Start launcher again
+  (`.command` on a Mac, `.bat` on Windows).
+- **Stop:** double-click `Stop Capacity Monitor.command` on a Mac, or `Stop Capacity Monitor.bat` on Windows
+  (or `./scripts/stop.sh` on a Mac).
 - **Pause scheduled runs:** the **Pause scheduled runs** button on the dashboard (Resume to continue).
 - **A run failed:** the dashboard and the Alerts page explain in plain words what happened and what to do
   (for example a missing feed or a boundary file for the wrong period). With AI explanations turned on in
   Setup, Claude also rewrites each alert. Fix the feed in `data/feeds/` and
   press **Run now** for the same period end date; the rerun replaces that period's draft.
-- **Something looks stuck:** `./scripts/status.sh` shows what is running; `./scripts/stop.sh` then the
-  Start launcher restarts everything. Logs are in `logs/`.
+- **Something looks stuck:** on a Mac, `./scripts/status.sh` shows what is running and `./scripts/stop.sh` then the
+  Start launcher restarts everything. On Windows, run `Stop Capacity Monitor.bat` and then the Start launcher.
+  Logs are in `logs/`.
 
 ## Feeding it real data
 

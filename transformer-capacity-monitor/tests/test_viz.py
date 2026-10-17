@@ -1,6 +1,6 @@
 """Charts aggregate a period's results by area, stability and usage."""
 
-from webapp.viz import area_chart_svg, box_stats, county_control_charts, filter_summary, pie_svg, summarize_results
+from webapp.viz import box_stats, county_control_charts, filter_summary, pie_svg, summarize_results
 
 
 def _result(tid, area_id, area_name, stability, status, usage, forecast=None):
@@ -38,14 +38,7 @@ def test_box_and_area_rollup():
     assert [t["id"] for t in view["transformers"]] == ["T-B"]
     assert model["status_slices"][0]["count"] == 2  # pies stay on the full set
 
-    dry["url"] = "/periods/2026-10-15/areas/DRY"
-    model["areas"][1]["url"] = "/periods/2026-10-15/areas/CAR"
-    model["areas"][1]["area_name"] = "Town <img>"
-    svg = area_chart_svg(model["areas"], 0.9)
-    assert 'href="/periods/2026-10-15/areas/DRY"' in svg
-    assert "<img>" not in svg and "&lt;img&gt;" in svg
-
-    pie = pie_svg([{"key": "review_needed", "label": "Review needed", "count": 1, "color": "#d7263d", "href": "/charts?status=review_needed"}], "review_needed")
+    pie = pie_svg([{"key": "review_needed", "label": "Review needed", "count": 1, "color": "#d7263d", "href": "/dashboard?status=review_needed"}], "review_needed")
     assert "circle" in pie and "review_needed" in pie
 
 

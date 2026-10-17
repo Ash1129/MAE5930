@@ -76,9 +76,9 @@
   #bar{position:absolute;top:0;left:0;right:0;z-index:40;background:var(--ground);color:var(--ink-90);border-bottom:1px solid var(--ink-line);box-shadow:0 6px 20px rgba(0,0,0,.18);transition:transform .25s}
   #bar.hidden-bar{transform:translateY(-100%)}
   .site-header__inner{height:56px;box-sizing:border-box;display:flex;align-items:center;gap:18px;padding:0 24px}
-  #bar .brand{display:flex;align-items:baseline;gap:8px;text-decoration:none;color:inherit;white-space:nowrap;margin-right:auto;flex:none}
+  #bar .brand{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;white-space:nowrap;margin-right:auto;flex:none}
   #bar .brand b{font-family:var(--font-heading);font-weight:600;font-size:21px;letter-spacing:-.01em}
-  #bar .brand .county{font-size:12px;color:var(--ink-60)}
+  #bar .brand .seal{display:block;width:32px;height:32px;flex:none}
   #bar .brand:hover{color:inherit}
   .site-nav{display:flex;align-items:center;gap:4px;font-size:13px}
   .site-nav a{text-decoration:none;color:rgba(var(--ink-rgb),.8);padding:6px 10px;border-radius:8px;white-space:nowrap;transition:background .15s}
@@ -210,7 +210,7 @@
   body.narrow #side.first{height:220px} body.narrow #side.open{height:62%}
   body.narrow #controls{right:16px}
   body.narrow #legend,body.narrow #controls{bottom:152px} body.narrow #side.first~#legend,body.narrow #side.first~#controls{bottom:232px} body.narrow #side.open~#legend,body.narrow #side.open~#controls{bottom:calc(62% + 12px)}
-  body.narrow #reviewer,body.narrow .brand .county,body.narrow #nav,body.narrow #bar .vr{display:none}
+  body.narrow #reviewer,body.narrow #nav,body.narrow #bar .vr{display:none}
   body.narrow .site-header__inner{padding:0 14px;gap:10px}
   body.phone #status-line{display:none}
   body.phone #legend{max-width:calc(100% - 150px);padding:8px 10px} body.phone #legend .row{flex-wrap:wrap;gap:4px 10px}
@@ -236,7 +236,7 @@
   <!-- site header (after ashwinprajeeth.com: brand left, nav, tools right, hairline under) -->
   <header id="bar" class="site-header">
     <div class="site-header__inner">
-      <a class="brand" href="{{ url_for('map_latest') }}"><b>Transformer Capacity Monitor</b><span class="county">Tompkins County</span></a>
+      <a class="brand" href="{{ url_for('map_latest') }}"><b>Transformer Capacity Monitor</b><img class="seal" src="{{ url_for('static', filename='tompkins-county.png') }}" alt="Tompkins County"></a>
       <nav id="nav" class="site-nav" aria-label="Main">
         <a href="{{ url_for('map_latest') }}" class="is-active" aria-current="page">Map</a>
         <a href="{{ url_for('dashboard') }}">Dashboard</a>
