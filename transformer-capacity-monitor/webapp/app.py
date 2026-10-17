@@ -419,13 +419,20 @@ def report_file(period_id, filename):
 # ---- map ---------------------------------------------------------------------------------
 
 @app.route("/")
+def home():
+    """The content root. With a finished period, the address stays /map."""
+    if not store.list_periods(limit=1):
+        return _render_map(None)
+    return redirect(url_for("map_latest"))
+
+
 @app.route("/map")
 def map_latest():
-    """Home page: the map of the latest period, or the first-launch map (boundaries only) before any run."""
+    """The map of the latest period. The address does not include the period id."""
     periods = store.list_periods(limit=1)
     if not periods:
         return _render_map(None)
-    return redirect(url_for("period_map", period_id=periods[0]["period_id"]))
+    return _render_map(periods[0]["period_id"])
 
 
 @app.route("/periods/<period_id>/map")
