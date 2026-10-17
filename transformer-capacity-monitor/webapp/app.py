@@ -581,7 +581,14 @@ def period_heatmap(period_id):
 def api_heat_recorded():
     date_iso = request.args.get("date", "")
     data = heat.recorded_day(date_iso)
-    return {"date": date_iso, "modeled": False, "loads": data, "transformers": len(data)}
+    pb = config.load_playbook()
+    amb = thermal.load_ambient(config.FEEDS_DIR / config.OPTIONAL_FEED_FILES["ambient"])
+    hours = [thermal.ambient_at(amb, f"{date_iso}T{h:02d}:00:00", thermal.params(pb)[0]["ambient_c"]) for h in range(24)]
+    recorded = sum(1 for _, ok in hours if ok)
+    hot = thermal.day_hot_spots(data, [a for a, _ in hours], thermal.asset_table(config.FEEDS_DIR / config.FEED_FILES["assets"]), pb, heat.previous_recorded_day(date_iso), date_iso)
+    return {"date": date_iso, "modeled": False, "loads": data, "transformers": len(data),
+            "hot_spot": hot, "hot_spot_modeled": True, "ambient": [round(a, 1) for a, _ in hours],
+            "ambient_source": "recorded ambient feed" if recorded == 24 else (f"ambient feed for {recorded} of 24 hours" if recorded else "fixed playbook ambient (no feed)")}
 
 
 @app.route("/api/heat/seasonal")
@@ -592,7 +599,12 @@ def api_heat_seasonal():
         abort(400)
     if not 1 <= month <= 12:
         abort(400)
-    return heat.seasonal_day(month)
+    pb = config.load_playbook()
+    out = heat.seasonal_day(month, pb)
+    # a typical day: the same loads as yesterday, so the oil starts warm
+    out["hot_spot"] = thermal.day_hot_spots(out["loads"], out["ambient"], thermal.asset_table(config.FEEDS_DIR / config.FEED_FILES["assets"]), pb, out["loads"], f"2000-{month:02d}-15")
+    out.update({"hot_spot_modeled": True, "ambient_source": "typical for the month and hour (playbook)"})
+    return out
 
 
 # ---- scheduler controls -------------------------------------------------------------------

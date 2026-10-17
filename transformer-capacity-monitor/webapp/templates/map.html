@@ -142,6 +142,7 @@
   #heat .head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
   #heat .dname{font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1;margin-right:4px}
   #heat .clock{margin-left:auto;font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1}
+  #heat .air{font-size:12px;color:var(--ink-60);white-space:nowrap} #heat .air b{font-family:var(--font-heading);font-weight:600;font-size:15px;color:var(--ink-90)}
   .badge-modeled{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:999px;background:#F4B400;color:#1D2430}
   .badge-recorded{font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid #1B7F4B;color:#1B7F4B}
   #heat .rows{display:grid;gap:6px;margin-top:10px}
@@ -303,7 +304,8 @@
     <div class="head">
       <span class="dname" id="heat-name"></span>
       <span class="seg"><button id="m-rec" class="on">Recorded</button><button id="m-sea">Seasonal model</button></span>
-      <span class="seg"><button id="x-util" class="on">Utilization</button><button id="x-load">Load</button></span>
+      <span class="seg"><button id="x-util" class="on">Utilization</button><button id="x-load">Load</button><button id="x-temp" title="Modeled winding hot spot from the load and the outside air">Temperature</button></span>
+      <span class="air" id="air" hidden></span>
       <span class="badge-modeled" id="badge-modeled" hidden>Modeled</span>
       <span class="badge-recorded" id="badge-recorded">Recorded</span>
       <span class="clock" id="clock"></span>
@@ -488,10 +490,13 @@ function selectDistrict(id) {
 async function fetchLoads() {
   if (!S.district || S.firstLaunch) return;
   const url = S.mode === 'seasonal' ? '/api/heat/seasonal?month=' + S.month : '/api/heat/recorded?date=' + (DATES[S.dateIdx] || '');
-  try { const j = await (await fetch(url)).json(); S.loads = j.loads || {}; S.modeled = !!j.modeled; S.factor = j.factor || 1; } catch (e) { S.loads = {}; }
+  try { const j = await (await fetch(url)).json(); S.loads = j.loads || {}; S.hot = j.hot_spot || {}; S.ambient = j.ambient || []; S.ambientSource = j.ambient_source || ''; S.modeled = !!j.modeled; S.factor = j.factor || 1; S.tempMult = j.temperature_multipliers || []; } catch (e) { S.loads = {}; S.hot = {}; S.ambient = []; }
   renderHeat();
 }
 const loadAt = (p, h) => { const a = S.loads[p.id]; if (!a) return null; const v = a[h]; return (v === null || v === undefined) ? null : v; };
+const hotAt = (p, h) => { const a = (S.hot || {})[p.id]; if (!a) return null; const v = a[h]; return (v === null || v === undefined) ? null : v; };
+const TEMP_LIMIT = {{ playbook.thermal_model.hot_spot_limit_c if playbook.thermal_model else 110 }};
+const tempColor = t => t >= TEMP_LIMIT ? RED : t >= 95 ? '#F28C28' : t >= 75 ? AMBER : t >= 50 ? GREEN : '#2b6cb0';
 function labels() {
   const h = S.hour;
   $('hour-label').textContent = String(h).padStart(2, '0') + ':00' + (h >= 17 && h <= 21 ? ', evening peak hours' : h <= 5 ? ', overnight' : '');
@@ -502,15 +507,18 @@ function labels() {
   $('row-date').hidden = S.mode === 'seasonal'; $('row-month').hidden = S.mode !== 'seasonal';
   $('badge-modeled').hidden = S.mode !== 'seasonal'; $('badge-recorded').hidden = S.mode === 'seasonal'; $('hot-modeled').hidden = S.mode !== 'seasonal';
   $('m-rec').classList.toggle('on', S.mode === 'recorded'); $('m-sea').classList.toggle('on', S.mode === 'seasonal');
-  $('x-util').classList.toggle('on', S.metric === 'util'); $('x-load').classList.toggle('on', S.metric === 'load');
+  $('x-util').classList.toggle('on', S.metric === 'util'); $('x-load').classList.toggle('on', S.metric === 'load'); $('x-temp').classList.toggle('on', S.metric === 'temp');
+  const amb = (S.ambient || [])[h]; $('air').hidden = amb === undefined || amb === null;
+  if (!$('air').hidden) { const m = (S.tempMult || [])[h]; $('air').innerHTML = 'Outside air <b>' + Math.round(amb) + ' °C</b> · ' + esc(S.mode === 'seasonal' ? 'typical for ' + MONTHS[S.month - 1] + ' at this hour' + (m ? ', heating load ×' + Number(m).toFixed(2) : '') : (S.ambientSource || '')); }
 }
 function renderHeat() {
   labels();
   if (!S.district) { heat._latlngs = []; if (map.hasLayer(heat)) heat.setLatLngs([]); renderHotspots([]); return; }
   const inView = POINTS.filter(p => p.area === S.district && visible(p));
-  const vals = inView.map(p => [p, loadAt(p, S.hour)]).filter(x => x[1] !== null);
+  const vals = inView.map(p => [p, S.metric === 'temp' ? hotAt(p, S.hour) : loadAt(p, S.hour)]).filter(x => x[1] !== null);
   const maxLoad = Math.max(1, ...vals.map(x => x[1]));
-  const pts = vals.map(([p, v]) => [p.lat, p.lon, S.metric === 'util' ? Math.min(v / p.rating, 1.2) : v / maxLoad]);
+  // temperature: 20 °C is cold, the hot-spot limit is full strength (same ramp as the review page)
+  const pts = vals.map(([p, v]) => [p.lat, p.lon, S.metric === 'temp' ? Math.min(Math.max((v - 20) / (TEMP_LIMIT - 20), 0.02), 1.2) : S.metric === 'util' ? Math.min(v / p.rating, 1.2) : v / maxLoad]);
   if (map.hasLayer(heat)) heat.setLatLngs(pts); else heat._latlngs = pts;
   renderHotspots(vals, maxLoad);
 }
@@ -518,11 +526,14 @@ function renderHotspots(vals, maxLoad) {
   $('hot').hidden = !S.district || S.firstLaunch;
   if (!S.district) return;
   const rows = vals.sort((a, b) => b[1] / (S.metric === 'util' ? b[0].rating : 1) - a[1] / (S.metric === 'util' ? a[0].rating : 1)).slice(0, 8);
-  $('hot-rows').innerHTML = rows.map(([p, v]) => { const u = v / p.rating; const w = S.metric === 'util' ? Math.min(100, u * 100) : 100 * v / maxLoad; const color = u >= .9 ? RED : u >= .7 ? AMBER : GREEN;
+  $('hot-rows').innerHTML = rows.map(([p, v]) => {
+    if (S.metric === 'temp') { const w = Math.min(100, Math.max(0, (v - 20) / (TEMP_LIMIT - 20) * 100)); return `<a href="${esc(p.url)}?from=map"><span><b style="font-weight:600">${esc(showId(p.id))}</b> <span class="muted">${esc(p.name)}</span></span><span style="white-space:nowrap">${Math.round(v)} °C hot spot</span><span class="bar"><span style="width:${w}%;background:${tempColor(v)}"></span></span></a>`; }
+    const u = v / p.rating; const w = S.metric === 'util' ? Math.min(100, u * 100) : 100 * v / maxLoad; const color = u >= .9 ? RED : u >= .7 ? AMBER : GREEN;
     return `<a href="${esc(p.url)}?from=map"><span><b style="font-weight:600">${esc(showId(p.id))}</b> <span class="muted">${esc(p.name)}</span></span><span style="white-space:nowrap">${S.metric === 'util' ? Math.round(u * 100) + '% of rating' : fmt1(v) + ' ' + esc(p.unit)}</span><span class="bar"><span style="width:${w}%;background:${color}"></span></span></a>`; }).join('') || '<span class="muted" style="font-size:12px">no data at this hour</span>';
+  $('hot-modeled').hidden = !(S.mode === 'seasonal' || S.metric === 'temp');
 }
 $('m-rec').onclick = () => { S.mode = 'recorded'; fetchLoads(); }; $('m-sea').onclick = () => { S.mode = 'seasonal'; fetchLoads(); };
-$('x-util').onclick = () => { S.metric = 'util'; renderHeat(); }; $('x-load').onclick = () => { S.metric = 'load'; renderHeat(); };
+$('x-util').onclick = () => { S.metric = 'util'; renderHeat(); }; $('x-load').onclick = () => { S.metric = 'load'; renderHeat(); }; $('x-temp').onclick = () => { S.metric = 'temp'; renderHeat(); };
 $('hour-slider').oninput = e => { S.hour = +e.target.value; renderHeat(); };
 let fetchTimer = null;
 $('date-slider').oninput = e => { S.dateIdx = +e.target.value; labels(); clearTimeout(fetchTimer); fetchTimer = setTimeout(fetchLoads, 120); };

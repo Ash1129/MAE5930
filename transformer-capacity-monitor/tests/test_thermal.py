@@ -63,3 +63,19 @@ def test_parameter_layering_and_ambient_lookup(tmp_path):
     assert ambient_at(load_ambient(tmp_path / "none.csv"), "2026-10-10T15:00:00-04:00", 20.0) == (20.0, False)
     out = simulate([{"timestamp": "2026-10-10T15:00:00-04:00", "load": 50.0}, {"timestamp": "2026-10-11T15:00:00-04:00", "load": 50.0}], 100.0, pb, kind="pole", ambient=amb)
     assert out["series"][0]["ambient_c"] == 14.0 and out["series"][1]["ambient_c"] == 15.0 and "1 of 2 hours" in out["sources"]["ambient"]
+
+
+def test_day_hot_spots_follow_the_outside_air():
+    from capacity_monitor.thermal import day_hot_spots
+
+    loads = {"T-X": [40.0] * 17 + [90.0] * 4 + [50.0] * 3}
+    assets = {"T-X": {"transformer_id": "T-X", "name": "pole", "rated_max": "100"}}
+    cold = day_hot_spots(loads, [-5.0] * 24, assets, {}, loads, "2026-01-15")
+    warm = day_hot_spots(loads, [22.0] * 24, assets, {}, loads, "2026-07-15")
+    assert len(cold["T-X"]) == 24 and all(v is not None for v in cold["T-X"])
+    # same loads, same unit: the hot spot moves one for one with the outside air, every hour
+    assert all(abs((w - c) - 27.0) < 0.2 for c, w in zip(cold["T-X"], warm["T-X"]))
+    # the evening block is the hottest part of the day
+    assert max(cold["T-X"][17:21]) == max(cold["T-X"])
+    # an unknown ambient hour falls back to the playbook value rather than failing
+    assert day_hot_spots(loads, [None] * 24, assets, {}, None, "2026-01-15")["T-X"][0] > -5

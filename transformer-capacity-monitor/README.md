@@ -53,7 +53,7 @@ Four feeds in `data/feeds/`. Their columns are defined in [`data/README.md`](dat
 | `assets.csv` | nameplate rating in kVA, location, customers served, declared area |
 | `boundaries.geojson` | town and village polygons with their approval dates |
 | `heat_pump_forecast.csv` | base and forecast heat-pump share by area, kW per heat pump |
-| `ambient.csv` (optional) | outside air temperature, hourly or daily; only the modeled 3D view reads it |
+| `ambient.csv` (optional) | outside air temperature, hourly or daily; read only by the modeled views (the review page's 3D cutaway and the map's Temperature heat view) |
 
 ## Parameters
 
@@ -69,6 +69,8 @@ until the utility approves its own.
 | `chart.run_rules` | 4 rules | beyond 3σ; 2 of 3 beyond 2σ; 8 in a row on one side; moving range above its UCL |
 | `chart.inspect_rules` | 8 in a row; 2 of 3 beyond 2σ | a pattern rule firing in the period means **inspect now** (red), not just review |
 | `chart.inspect_outliers_at` | 3 | this many days with an isolated outlier in the period also means inspect now; fewer is **review needed** (amber) |
+| `seasonal_model.temperature_response` | 2.5 %/°C below 15 °C; 1.5 %/°C above 22 °C | how the map's MODELED seasonal load follows the typical outside air through the day; scaled so a day averages 1.0 |
+| `thermal_model.monthly_ambient_c`, `diurnal_swing_c` | typical Ithaca means; 5 °C swing | the seasonal view's outside air for each month and hour (the recorded view uses `ambient.csv`) |
 | `capability.cpk_review_below` | 1.33 | Cpk below this needs review |
 | `capability.cpk_ci_low_review_below` | 1.33 | a lower 95% bound below this needs review |
 | `capability.mr_effective_df_factor` | 0.62 | effective degrees of freedom of the MR-bar sigma, as a share of n − 1 |

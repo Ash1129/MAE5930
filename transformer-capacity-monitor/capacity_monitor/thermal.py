@@ -181,3 +181,50 @@ def simulate(readings: list[dict], rating: float, playbook: dict | None = None, 
         "note": "IEEE C57.91 exponential model; an estimate for the 3D view only, not used by any rule.",
         "modeled": True,
     }
+
+
+def asset_table(path: Path) -> dict:
+    """{transformer_id: asset row} read fresh, for the map's temperature view."""
+    out = {}
+    if not path.exists():
+        return out
+    with open(path, "r", encoding="utf-8", newline="") as fh:
+        for row in csv.DictReader(fh):
+            tid = (row.get("transformer_id") or "").strip()
+            if tid:
+                out[tid] = row
+    return out
+
+
+def day_hot_spots(loads: dict, ambient_hours: list, assets: dict, playbook: dict | None,
+                  previous: dict | None = None, date_iso: str = "") -> dict:
+    """{tid: [24 hot-spot °C or None]} for one day of hourly loads ({tid: [24 loads]}).
+
+    ambient_hours: 24 outside-air values (None falls back to the playbook ambient). The previous day's
+    loads, when given, warm the oil up first so hour 0 is not a cold start.
+    """
+    out = {}
+    pb_amb = params(playbook)[0]["ambient_c"]
+    amb = [pb_amb if a is None else float(a) for a in (ambient_hours or [None] * 24)]
+    fake = {"present": True, "hourly": {}, "daily": {}}
+    day = (date_iso or "2000-01-01")[:10]
+    for h, a in enumerate(amb):
+        fake["hourly"][f"{day}T{h:02d}"] = a
+        fake["hourly"][f"prev-day-{h:02d}"] = a  # warm-up hours reuse the same day's ambient
+    for tid, arr in loads.items():
+        row = assets.get(tid) or {}
+        try:
+            rating = float(row.get("rated_max") or 0)
+        except (TypeError, ValueError):
+            rating = 0.0
+        if rating <= 0 or not arr:
+            continue
+        warm = (previous or {}).get(tid) or []
+        readings = [{"timestamp": f"prev-day-{h:02d}", "load": v} for h, v in enumerate(warm) if v is not None]
+        readings += [{"timestamp": f"{day}T{h:02d}:00:00", "load": v} for h, v in enumerate(arr) if v is not None]
+        if not readings:
+            continue
+        res = simulate(readings, rating, playbook, kind=kind_of(row.get("name")), asset=row, ambient=fake)
+        by_hour = {s["timestamp"]: s["hot_spot_c"] for s in res["series"] if not s["timestamp"].startswith("prev")}
+        out[tid] = [by_hour.get(f"{day}T{h:02d}:00:00") for h in range(24)]
+    return out

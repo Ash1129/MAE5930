@@ -8,6 +8,7 @@ as such wherever it is shown.
 from __future__ import annotations
 
 import csv
+import math
 import threading
 from datetime import datetime
 
@@ -87,15 +88,53 @@ def recorded_day(date_iso: str) -> dict[str, list]:
     return _cache["by_date"].get(date_iso, {})
 
 
+def previous_recorded_day(date_iso: str) -> dict[str, list]:
+    """The recorded day just before date_iso (empty if none), used to warm the thermal model up."""
+    _ensure()
+    earlier = [d for d in _cache["dates"] if d < date_iso]
+    return _cache["by_date"].get(earlier[-1], {}) if earlier else {}
+
+
+def typical_ambient(month: int, playbook: dict) -> float:
+    monthly = (playbook.get("thermal_model") or {}).get("monthly_ambient_c") or {}
+    return float(monthly.get(str(month), (playbook.get("thermal_model") or {}).get("ambient_c", 20.0)))
+
+
+def typical_ambient_hours(month: int, playbook: dict) -> list[float]:
+    """MODELED outside air for each hour of a typical day: the month's mean plus a daily swing (coldest
+    before dawn, warmest at thermal_model.warmest_hour)."""
+    tm = playbook.get("thermal_model") or {}
+    mean = typical_ambient(month, playbook)
+    swing = float(tm.get("diurnal_swing_c", 0.0))
+    peak = int(tm.get("warmest_hour", 15))
+    return [round(mean + swing * math.cos((h - peak) / 24.0 * 2.0 * math.pi), 1) for h in range(24)]
+
+
+def temperature_multipliers(ambient_hours: list[float], playbook: dict) -> list[float]:
+    """MODELED load response to outside air, hour by hour: heating load below the heating base, cooling
+    load above the cooling base (seasonal_model.temperature_response). Scaled to average 1.0 over the
+    day, so the month's calibration holds and the temperature only moves load between hours."""
+    tr = (playbook.get("seasonal_model") or {}).get("temperature_response") or {}
+    hb, hp = float(tr.get("heating_base_c", 15.0)), float(tr.get("heating_pct_per_degree", 0.0)) / 100.0
+    cb, cp = float(tr.get("cooling_base_c", 22.0)), float(tr.get("cooling_pct_per_degree", 0.0)) / 100.0
+    demand = [1.0 + hp * max(0.0, hb - t) + cp * max(0.0, t - cb) for t in ambient_hours]
+    mean = sum(demand) / len(demand) if demand else 1.0
+    return [d / mean for d in demand]
+
+
 def seasonal_day(month: int, playbook: dict | None = None) -> dict:
-    """MODELED {tid: [24 loads]} for a typical day of the given month."""
+    """MODELED {tid: [24 loads]} for a typical day of the given month, with the load following that
+    month's typical outside air through the day."""
     _ensure()
     pb = playbook or config.load_playbook()
     sm = pb.get("seasonal_model", {})
     factor = float(sm.get("monthly_factors", {}).get(str(month), 1.0))
     boost = float(sm.get("winter_evening_boost", 0.0)) if month in (12, 1, 2) else 0.0
+    ambient = typical_ambient_hours(month, pb)
+    mult = temperature_multipliers(ambient, pb)
     out = {}
     for tid, shp in _cache["shape"].items():
         lvl = _cache["level"].get(tid, 0.0) * factor
-        out[tid] = [lvl * shp[h] * (1.0 + (boost if 17 <= h <= 21 else 0.0)) for h in range(24)]
-    return {"month": month, "factor": factor, "modeled": True, "loads": out}
+        out[tid] = [lvl * shp[h] * mult[h] * (1.0 + (boost if 17 <= h <= 21 else 0.0)) for h in range(24)]
+    return {"month": month, "factor": factor, "modeled": True, "loads": out,
+            "ambient": ambient, "typical_ambient_c": typical_ambient(month, pb), "temperature_multipliers": [round(m, 4) for m in mult]}
