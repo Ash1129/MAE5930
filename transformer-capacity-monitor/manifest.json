@@ -35,7 +35,7 @@
       "checksum": "ead23ffb035a8ca27def77e714202198"
     },
     "CONTRACT.yaml": {
-      "checksum": "700ac83b9b7a2a72da15913b391ec0d1"
+      "checksum": "4afc130d6b79a6ceb0453291722b262c"
     },
     "DELIVERY-REPORT.md": {
       "checksum": "2556acf328293309880a885b7d5abc5f"
@@ -47,13 +47,13 @@
       "checksum": "1d3dceaa751b71cad10fefad173eba1f"
     },
     "README-DEVELOPER.md": {
-      "checksum": "367ac4b3c87d4f0f92315abee5043227"
+      "checksum": "aeed01bc3bc4e88523e24f268aa5e8b5"
     },
     "README.md": {
-      "checksum": "9d693576b84e35ff1614fbdb21b8f89d"
+      "checksum": "696a53095ec0f963cf2e1ef18b1ac552"
     },
     "SPEC.md": {
-      "checksum": "99ded548757d7f3c06c62d415b1d58a9"
+      "checksum": "c5843a33cf77c5a1bff1796ea0d99b39"
     },
     "START-HERE.md": {
       "checksum": "a7a5ba9efc50aae7161ebaa934a960b8"
@@ -305,7 +305,19 @@
       "checksum": "27f221637dbc55196324e52e99abb343"
     },
     "webapp/viz.py": {
-      "checksum": "e2c9ddc2f9b3317ab175cd93d42e3aab"
+      "checksum": "4283d8b3a89fea3f62bec8a221ff505b"
+    },
+    "capacity_monitor/aggregate.py": {
+      "checksum": "3f60aa7295ccc4356599d845915a2648"
+    },
+    "tests/test_aggregate.py": {
+      "checksum": "dedfee340add1660ffc10e2db52588dd"
+    },
+    "METHODS.md": {
+      "checksum": "d543cac429691cf5d63b3a386a975172"
+    },
+    "TEMPLATE-AUDIT.md": {
+      "checksum": "1460507102e77853b7ba3f4d19e959b8"
     }
   }
 }

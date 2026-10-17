@@ -85,10 +85,10 @@ it is a candidate for removal.
 Where the statistics live: `capacity_monitor/pipeline.py`, in the plain functions `imr_chart`,
 `capacity_headroom`, `check_capability_assumptions`, `project_demand` and `needs_review`. They use the
 Python standard library only and no web framework. This differs from the template's `app/qc.py` path.
-These functions drive the per-transformer decisions. Additional dashboard calculations currently
-live in `webapp/viz.py`; [METHODS.md](METHODS.md) documents their formulas and limitations, plus
-the thermal and seasonal models. Moving the aggregate calculations out of the web layer and
-strengthening their numerical tests are the next statistics task.
+These functions drive the per-transformer decisions. Additional dashboard calculations now
+live in the framework-independent `capacity_monitor/aggregate.py`; [METHODS.md](METHODS.md) documents their formulas and limitations, plus
+the thermal and seasonal models. Numerical known-answer and edge-case tests live in `tests/test_aggregate.py`. The web layer
+only renders these chart results; assessing baseline policy and statistical assumptions remains open.
 
 ## 5. Delivery (rubric: working tool 25)
 - **Stack:** Python library (`capacity_monitor/`), Flask dashboard (`webapp/`), optional local Airflow scheduler.
@@ -111,8 +111,9 @@ strengthening their numerical tests are the next statistics task.
     It also shows Cpk with its 95% interval, the period peak as a percentage of rating, the projected peak
     as a percentage of rating, the matching decision-table rule, and the source readings.
   - **Dashboard and area views:** county/district summaries, review queues, and p, u and X-S charts.
-    Aggregate chart calculations currently live in `webapp/viz.py`; their formulas and assumptions are documented in `METHODS.md`. Extraction into plain
-    numerical functions and full known-answer/edge-case validation remain open (see audit).
+    Aggregate chart calculations live in `capacity_monitor/aggregate.py`; formulas and assumptions
+    are in `METHODS.md`, with numerical tests in `tests/test_aggregate.py`. Baseline policy and
+    statistical suitability remain open (see audit).
   - **Modeled thermal view:** estimated oil/hot-spot temperatures from loads, optional ambient data,
     asset thermal values or defaults; explanatory only, not measured temperatures or a dispatch order.
   - **Period report:** HTML, Markdown and JSON, finalized only after every flagged case has a disposition.

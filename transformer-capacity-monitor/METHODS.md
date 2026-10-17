@@ -1,15 +1,25 @@
 # Additional chart and model methods
 
-This documents the current implementation at `5fdfdbc`, not a completed statistical validation.
+This documents the aggregate-statistics extraction from `5fdfdbc`; it is not a completed validation
+of the statistical assumptions.
 Per-transformer I-MR, capability, forecast and decision methods are in [SPEC.md](SPEC.md),
 [README.md](README.md), and `capacity_monitor/pipeline.py`. The additional views below do not
 change the per-transformer decision-table outcome.
 
 ## Aggregate dashboard charts
 
-`webapp/viz.py:county_control_charts(results, period_start)` accepts transformer results and the
-first date of the review period. It returns SVG panels and counts of out-of-limit days inside the
-review period (`p_out`, `u_out`, `x_out`, `s_out`). A count is days, not transformers or signal events.
+`capacity_monitor/aggregate.py:county_control_statistics(results, period_start)` accepts plain
+transformer result dictionaries and the first review-period date. It performs no I/O and returns:
+
+- `p`, `u`, `x`, `s`: numerical `center` and `points` (date, value, ucl, lcl, out).
+- `p_out`, `u_out`, `x_out`, `s_out`: counts of out-of-limit days inside the review period;
+  a count is days, not transformers or signal events.
+- `status`: `computed` or `insufficient_data` (availability, not process stability).
+- `baseline_source`: `pre_period` or `all_dates_fallback`, with `baseline_dates`.
+
+`webapp/viz.py:county_control_charts` calls that function and renders SVG only. `box_stats(values)`
+also lives in the numerical module; it returns n/min/q1/median/q3/max, linearly interpolates quartiles
+at index p*(n-1), ignores None, and returns None for empty input. Its whiskers use the full range.
 
 For each day, the input contains each eligible transformer's daily peak divided by its rating.
 Calibration cases, invalid/nonpositive ratings and missing/nonfinite load ratios are excluded.
@@ -72,11 +82,14 @@ not establish comparability. Variable subgroup sizes also require review of the 
 
 ### Existing verification and remaining work
 
-`tests/test_viz.py` checks aggregation/filtering and that a planted changed week flags p/u/X panels.
-It does not independently verify all numerical limits, S-chart behavior, or all degenerate cases.
-The next statistics task should separate calculations from SVG rendering, add hand-computed numerical
-checks, test absent baseline/zero spread/single or missing observations, and assess the assumptions
-above. These formulas describe what the code currently does; they do not establish suitability.
+`tests/test_aggregate.py` checks hand-computed p/u/X/S limits and centers, variable subgroup size,
+period signal counts, missing/nonfinite observations, empty/single-date inputs, constant/single-member
+subgroups, explicit missing-baseline fallback, caller-input preservation, and box quartiles. It imports
+only the numerical module. `tests/test_viz.py` retains the rendering/aggregation integration checks.
+
+The saved 500-transformer report produced byte-for-byte identical SVGs and equal signal counts
+before and after extraction. The next statistical review should address baseline policy and subgroup/
+distribution assumptions. This refactor preserves existing formulas and does not establish suitability.
 
 ## Modeled thermal cutaway and map temperatures
 

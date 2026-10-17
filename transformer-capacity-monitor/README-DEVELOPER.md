@@ -65,9 +65,10 @@ demonstration. Do not regenerate the working feeds just to view it. Scenario dem
 
 ## Additional statistical and modeled views
 
-[METHODS.md](METHODS.md) documents the aggregate p/u/X-S calculations in `webapp/viz.py`, their
+[METHODS.md](METHODS.md) documents the aggregate p/u/X-S calculations in `capacity_monitor/aggregate.py`, their
 assumptions and current test coverage, plus thermal and seasonal model inputs, equations and defaults.
-Aggregate calculations still need extraction from SVG rendering and stronger numerical validation.
+The web layer renders these numerical results; `tests/test_aggregate.py` covers numerical known
+answers and edge cases. Baseline policy and subgroup/distribution assumptions still need review.
 
 ## Alert explanations
 

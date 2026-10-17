@@ -14,7 +14,7 @@ statistical validation. These deferred items are tracked, not blockers to pushin
 
 | Priority | Requirement and observed state | Next action |
 |---|---|---|
-| 1 | Valid QC analyses earn 25 points. Per-transformer analysis is in plain pipeline functions. New p/u/X-S dashboard charts combine calculations and SVG rendering in `webapp/viz.py`. The chart test checks flags but not numerical limits against hand-computed answers. | Extract aggregate calculations into framework-independent numerical functions. Add known-answer and constant/single/missing/no-baseline checks for each statistic. State assumptions and their practical limits. |
+| 1 | Valid QC analyses earn 25 points. Per-transformer analysis is in plain pipeline functions. The p/u/X-S calculations and quartiles are now in `capacity_monitor/aggregate.py`, with numerical known-answer and edge-case tests. | Extraction and numerical checks are complete. Next assess the baseline fallback and the binomial/Poisson/rational-subgroup assumptions documented in METHODS.md. |
 | 2 | The template requires explaining every printed number. SPEC previously omitted the new charts and contradicted the thermal visualization. These are now documented in METHODS.md. | Keep METHODS.md synchronized with the upcoming statistical changes; validate the methods separately. Do not equate modeled temperatures with measurements. |
 | 3 | Working public Posit Connect deployment is required. Publishing files exist and the team confirms deployment. Re-verification is deferred. | Verify the latest workflow, follow the public app redirect to a successful map, confirm saved counts, and put the tested public URL in README and delivery evidence. No need to run analysis for this check. |
 | 4 | Reproducibility requires a fresh clone. `requirements.txt` is pinned but `setup_env.sh` installs broad version ranges; `testme.sh` assumes Python/dependencies are ready. | Install from the pinned requirements, then check setup and launch in an isolated clean checkout. Preserve the saved feeds and database; verify 22/97/381 without Run now. |
@@ -30,7 +30,7 @@ statistical validation. These deferred items are tracked, not blockers to pushin
   explain the counting convention and assess the Poisson/equal-opportunity assumptions.
 - The X-S chart groups different transformers on a day. Explain whether these form rational subgroups;
   heterogeneous ratings, customer classes and shared weather can make conventional limits misleading.
-- `county_control_charts` currently falls back to all dates when no pre-period baseline exists.
+- `county_control_statistics` currently falls back to all dates when no pre-period baseline exists.
   An explicit insufficient-baseline result is preferable to silently fitting on review-period observations.
 - The modeled thermal functions live outside the web layer and have dedicated tests. The report should
   distinguish these illustrative estimates from validated asset-specific thermal forecasts.
@@ -76,3 +76,11 @@ statistical validation. These deferred items are tracked, not blockers to pushin
   check, Devpost verification, real-data validation, or approval of utility thresholds.
 - Older sections of DELIVERY-REPORT retain dated historical results; this audit's snapshot takes
   precedence for the current implementation. AI CLI access is optional and environment-specific.
+
+## Aggregate extraction follow-up
+
+Calculations and box quartiles now live in `capacity_monitor/aggregate.py`, without web imports,
+markup or I/O. The web wrapper preserves its existing output contract. Numerical tests cover p/u/X/S
+known answers and degenerate cases; saved-data SVGs and counts match the prior implementation exactly.
+The all-date fallback is retained and identified in the numerical metadata. This is architectural and
+numerical verification, not resolution of the modeling assumptions listed above.

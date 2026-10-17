@@ -102,7 +102,7 @@ The statistics are plain functions in `capacity_monitor/pipeline.py` that use th
 | `needs_review(facts, table)` | the results above | the first matching decision-table row: outcome, rule number, reason |
 
 These functions drive the per-transformer decisions. Additional aggregate dashboard charts currently
-calculate p, u and X-S statistics in `webapp/viz.py`; the modeled thermal view uses
+use plain p, u and X-S numerical functions in `capacity_monitor/aggregate.py`; the modeled thermal view uses
 `capacity_monitor/thermal.py`. Their formulas, inputs, assumptions, units and existing test evidence are documented in
 [METHODS.md](METHODS.md). Statistical validation work remains tracked in
 [TEMPLATE-AUDIT.md](TEMPLATE-AUDIT.md).

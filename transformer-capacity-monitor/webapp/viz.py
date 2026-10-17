@@ -10,6 +10,8 @@ import csv
 import math
 from html import escape
 
+from capacity_monitor.aggregate import box_stats, county_control_statistics
+
 STATUS_ORDER = ("within_limits", "review_needed", "inspect_now")
 STABILITY_ORDER = ("stable", "signal", "insufficient_history", "zero_variation")
 
@@ -27,31 +29,6 @@ STABILITY_COLOR = {
     "insufficient_history": "#9a5b00",
     "zero_variation": "#5d6675",
 }
-
-
-def _quantile(sorted_vals: list[float], p: float) -> float:
-    if len(sorted_vals) == 1:
-        return sorted_vals[0]
-    idx = p * (len(sorted_vals) - 1)
-    lo = int(idx)
-    hi = min(lo + 1, len(sorted_vals) - 1)
-    frac = idx - lo
-    return sorted_vals[lo] * (1 - frac) + sorted_vals[hi] * frac
-
-
-def box_stats(values: list[float]) -> dict | None:
-    """Min, quartiles and max. Whiskers are the full range so every reading stays visible."""
-    clean = sorted(v for v in values if v is not None)
-    if not clean:
-        return None
-    return {
-        "n": len(clean),
-        "min": clean[0],
-        "q1": _quantile(clean, 0.25),
-        "median": _quantile(clean, 0.5),
-        "q3": _quantile(clean, 0.75),
-        "max": clean[-1],
-    }
 
 
 def usage_band(ratio: float | None) -> str:
@@ -245,53 +222,7 @@ def pie_svg(slices: list[dict], active_key: str | None = None) -> str:
 # attribute data with a varying sample. X-S matches a large subgroup. X-R, np and c
 # need a small or a fixed sample, so they are not drawn.
 
-NEAR_RATIO = 0.9
 _EMPTY_CHART = '<p class="muted">Not enough daily peaks for this chart.</p>'
-
-
-def _c4(n: int) -> float:
-    """Unbiasing constant for a subgroup standard deviation."""
-    if n < 2:
-        return 1.0
-    return math.sqrt(2 / (n - 1)) * math.exp(math.lgamma(n / 2) - math.lgamma((n - 1) / 2))
-
-
-def _sample_sd(values: list[float]) -> float | None:
-    if len(values) < 2:
-        return None
-    mean = sum(values) / len(values)
-    return math.sqrt(sum((v - mean) ** 2 for v in values) / (len(values) - 1))
-
-
-def _day_buckets(results: list[dict]) -> dict[str, dict]:
-    days: dict[str, dict] = {}
-    for result in results:
-        if result.get("is_calibration"):
-            continue
-        chart = result.get("chart") or {}
-        try:
-            rating = float(result.get("rated_max"))
-        except (TypeError, ValueError):
-            continue
-        if rating <= 0:
-            continue
-        signals_on: dict[str, int] = {}
-        for signal in chart.get("signals") or []:
-            day = signal.get("date") or ""
-            signals_on[day] = signals_on.get(day, 0) + 1
-        for day, value in zip(chart.get("dates") or [], chart.get("values") or []):
-            if value is None:
-                continue
-            try:
-                ratio = float(value) / rating
-            except (TypeError, ValueError):
-                continue
-            if not math.isfinite(ratio):
-                continue
-            bucket = days.setdefault(day, {"ratios": [], "signals": 0})
-            bucket["ratios"].append(ratio)
-            bucket["signals"] += signals_on.get(day, 0)
-    return days
 
 
 def _shewhart_panel(points: list[dict], center: float | None, period_start: str, title: str, x: float, y: float, width: float, height: float) -> list[str]:
@@ -370,84 +301,18 @@ def _shewhart_svg(panels: list[tuple], period_start: str) -> str:
     return "".join(parts)
 
 
-def _beyond(value: float, ucl: float, lcl: float) -> bool:
-    return value > ucl + 1e-9 or value < lcl - 1e-9
-
-
 def county_control_charts(results: list[dict], period_start: str) -> dict:
-    """p, u and X-S charts. Limits come from days before the period."""
-    days = _day_buckets(results)
-    dates = sorted(days)
-    base = [d for d in dates if d < period_start] or dates
-    empty = {"p_svg": _EMPTY_CHART, "u_svg": _EMPTY_CHART, "xs_svg": _EMPTY_CHART, "p_out": 0, "u_out": 0, "x_out": 0, "s_out": 0}
-    if len(dates) < 2:
-        return empty
-
-    def counted(day: str) -> tuple[int, int, int, float | None, float | None]:
-        ratios = days[day]["ratios"]
-        n = len(ratios)
-        high = sum(1 for r in ratios if r >= NEAR_RATIO)
-        mean = sum(ratios) / n if n else None
-        return n, high, days[day]["signals"], mean, _sample_sd(ratios)
-
-    base_n = sum(counted(d)[0] for d in base)
-    if not base_n:
-        return empty
-    pbar = sum(counted(d)[1] for d in base) / base_n
-    ubar = sum(counted(d)[2] for d in base) / base_n
-    base_ratios = [r for d in base for r in days[d]["ratios"]]
-    xbar_bar = sum(base_ratios) / len(base_ratios)
-    base_s = [counted(d)[4] for d in base if counted(d)[4] is not None]
-    sbar = sum(base_s) / len(base_s) if base_s else 0.0
-
-    p_points, u_points, x_points, s_points = [], [], [], []
-    p_out = u_out = x_out = s_out = 0
-    for day in dates:
-        n, high, signals, mean, sd = counted(day)
-        if not n:
-            continue
-        in_period = day >= period_start
-        se_p = math.sqrt(max(pbar * (1 - pbar), 0) / n)
-        p_ucl, p_lcl = min(1.0, pbar + 3 * se_p), max(0.0, pbar - 3 * se_p)
-        p_value = high / n
-        p_hit = _beyond(p_value, p_ucl, p_lcl)
-        p_out += int(p_hit and in_period)
-        p_points.append({"date": day, "value": p_value * 100, "ucl": p_ucl * 100, "lcl": p_lcl * 100, "out": p_hit})
-
-        se_u = math.sqrt(max(ubar, 0) / n)
-        u_ucl, u_lcl = ubar + 3 * se_u, max(0.0, ubar - 3 * se_u)
-        u_value = signals / n
-        u_hit = _beyond(u_value, u_ucl, u_lcl)
-        u_out += int(u_hit and in_period)
-        u_points.append({"date": day, "value": u_value * 100, "ucl": u_ucl * 100, "lcl": u_lcl * 100, "out": u_hit})
-
-        if mean is None or sd is None or sbar <= 0 or n < 2:
-            continue
-        c4 = _c4(n)
-        sigma_factor = math.sqrt(max(1 - c4 * c4, 0)) / c4
-        a3 = 3 / (c4 * math.sqrt(n))
-        b4 = 1 + 3 * sigma_factor
-        b3 = max(0.0, 1 - 3 * sigma_factor)
-        x_ucl, x_lcl = (xbar_bar + a3 * sbar) * 100, (xbar_bar - a3 * sbar) * 100
-        x_value = mean * 100
-        x_hit = _beyond(x_value, x_ucl, x_lcl)
-        x_out += int(x_hit and in_period)
-        x_points.append({"date": day, "value": x_value, "ucl": x_ucl, "lcl": x_lcl, "out": x_hit})
-        s_ucl, s_lcl = b4 * sbar * 100, b3 * sbar * 100
-        s_value = sd * 100
-        s_hit = _beyond(s_value, s_ucl, s_lcl)
-        s_out += int(s_hit and in_period)
-        s_points.append({"date": day, "value": s_value, "ucl": s_ucl, "lcl": s_lcl, "out": s_hit})
+    """Render the numerical aggregate series without calculating control limits."""
+    stats = county_control_statistics(results, period_start)
+    def panel(key, title):
+        series = stats[key]
+        return series["points"], series["center"], title
 
     return {
-        "p_svg": _shewhart_svg([(p_points, pbar * 100, "% at or above 90% of rating")], period_start),
-        "u_svg": _shewhart_svg([(u_points, ubar * 100, "Signals per 100 transformers")], period_start),
-        "xs_svg": _shewhart_svg(
-            [(x_points, xbar_bar * 100, "X-bar, mean peak % of rating"), (s_points, sbar * 100, "S, spread")],
-            period_start,
-        ),
-        "p_out": p_out,
-        "u_out": u_out,
-        "x_out": x_out,
-        "s_out": s_out,
+        "p_svg": _shewhart_svg([panel("p", "% at or above 90% of rating")], period_start),
+        "u_svg": _shewhart_svg([panel("u", "Signals per 100 transformers")], period_start),
+        "xs_svg": _shewhart_svg([
+            panel("x", "X-bar, mean peak % of rating"), panel("s", "S, spread")
+        ], period_start),
+        **{key: stats[key] for key in ("p_out", "u_out", "x_out", "s_out")},
     }

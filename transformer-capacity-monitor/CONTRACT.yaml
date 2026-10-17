@@ -166,3 +166,20 @@ tasks:
       claims; added METHODS.md with chart/model formulas and assumptions. Ledger/link checks and
       git diff --check passed. pytest tests -q printed 44 passed in 5.19s. This audit
       does not mark deployment, clean-clone reproduction or submission complete.
+
+  - id: H-10
+    title: Extract dashboard numerical statistics from web rendering
+    points: "Supports H-03 statistical implementation; no additional rubric points"
+    status: done
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: ["capacity_monitor/aggregate.py", "webapp/viz.py", "tests/test_aggregate.py", "tests/test_viz.py", "SPEC.md", "METHODS.md", "README.md", "README-DEVELOPER.md", "TEMPLATE-AUDIT.md", "CONTRACT.yaml", "manifest.json"]
+    definition_of_done: >
+      pytest tests -q passes, including numerical known-answer and degenerate-case tests for the
+      aggregate charts; web rendering consumes numerical results and emits the same saved-data SVGs;
+      git diff --check passes. Saved feeds, database and reports are not regenerated.
+    result: >
+      pytest tests -q printed 53 passed in 5.11s. Known-answer/edge-case tests pass independently
+      of the web layer; SVGs and signal counts for the saved 500-transformer report match HEAD's
+      previous renderer exactly. No feeds, database or saved reports were regenerated. Baseline
+      fallback and statistical assumptions are preserved and documented for the next review.
