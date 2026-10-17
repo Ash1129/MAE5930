@@ -40,4 +40,26 @@ def test_thermal_api_returns_the_week(sandbox):
     j = client.get("/api/periods/2026-10-15/transformers/T-ENF-011/thermal").get_json()
     assert len(j["series"]) == 168 and j["kind"] == "pole" and j["peak"]["hot_spot_c"] > j["series"][0]["top_oil_c"]
     assert j["modeled"] is True and "hot_spot_limit_c" in j["params"]
+    # the synthetic set carries nameplate values for the labeled cases and an hourly ambient feed
+    assert j["sources"]["parameters"] == "nameplate (asset record)" and j["sources"]["ambient"].startswith("recorded ambient feed (every hour)")
+    assert len({s["ambient_c"] for s in j["series"]}) > 1
     assert client.get("/api/periods/2026-10-15/transformers/NOPE/thermal").status_code == 404
+
+
+def test_parameter_layering_and_ambient_lookup(tmp_path):
+    from capacity_monitor.thermal import ambient_at, load_ambient, params, simulate
+
+    pb = {"thermal_model": {"ambient_c": 15.0, "types": {"pole": {"loss_ratio_R": 4.5, "oil_time_constant_h": 1.8}}}}
+    p, src = params(pb, "pole", None)
+    assert p["loss_ratio_R"] == 4.5 and p["ambient_c"] == 15.0 and src.startswith("typical pole")
+    p, src = params(pb, "pole", {"loss_ratio": "3.9", "top_oil_rise_c": "", "hot_spot_rise_c": "x", "oil_time_constant_h": "2.2"})
+    assert p["loss_ratio_R"] == 3.9 and p["oil_time_constant_h"] == 2.2 and "nameplate for 2 of 4" in src
+    f = tmp_path / "ambient.csv"
+    f.write_text("timestamp,temp_c\n2026-10-10T05:00:00-04:00,4.0\n2026-10-10T15:00:00-04:00,14.0\nbad,row\n", encoding="utf-8")
+    amb = load_ambient(f)
+    assert ambient_at(amb, "2026-10-10T15:00:00-04:00", 20.0) == (14.0, True)
+    assert ambient_at(amb, "2026-10-10T20:00:00-04:00", 20.0) == (9.0, True)  # that day's mean
+    assert ambient_at(amb, "2026-10-11T20:00:00-04:00", 20.0) == (20.0, False)
+    assert ambient_at(load_ambient(tmp_path / "none.csv"), "2026-10-10T15:00:00-04:00", 20.0) == (20.0, False)
+    out = simulate([{"timestamp": "2026-10-10T15:00:00-04:00", "load": 50.0}, {"timestamp": "2026-10-11T15:00:00-04:00", "load": 50.0}], 100.0, pb, kind="pole", ambient=amb)
+    assert out["series"][0]["ambient_c"] == 14.0 and out["series"][1]["ambient_c"] == 15.0 and "1 of 2 hours" in out["sources"]["ambient"]

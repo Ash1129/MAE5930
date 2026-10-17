@@ -13,10 +13,12 @@
 <div class="grid">
 <div class="card"><h2>Feeds</h2><p class="small">Drop the four files into <code>{{ feeds_dir }}</code>. The synthetic set can be regenerated with <code>scripts/make_synthetic_data.py</code>.</p>
 <table>{% for name, f in feeds.items() %}<tr><td>{{ name }}</td><td><code>{{ f.file }}</code></td><td>{% if f.present %}<span class="tag ok">present</span> <span class="small muted">{{ f.bytes }} bytes, {{ f.modified }}</span>{% else %}<span class="tag bad">missing</span>{% endif %}</td></tr>{% endfor %}</table>
+<p class="small muted" style="margin-top:10px">Optional: {% for name, f in optional_feeds.items() %}<code>{{ f.file }}</code> {% if f.present %}<span class="tag ok">present</span> <span class="small muted">{{ f.bytes }} bytes, {{ f.modified }}</span>{% else %}<span class="tag muted">not provided</span> (the 3D view uses the playbook's fixed ambient){% endif %}{% endfor %}</p>
 <h3>Expected columns</h3>
 <ul class="small">
 <li>readings.csv: transformer_id, timestamp (ISO 8601), load, unit</li>
-<li>assets.csv: transformer_id, name, lat, lon, rated_max, unit, customers, area_id, effective_from, effective_to, notes</li>
+<li>assets.csv: transformer_id, name, lat, lon, rated_max, unit, customers, area_id, effective_from, effective_to, notes; optional nameplate columns for the modeled 3D view: top_oil_rise_c, hot_spot_rise_c, loss_ratio, oil_time_constant_h</li>
+<li>ambient.csv (optional): timestamp (ISO 8601) and temp_c for hourly outside air, or date and temp_c for daily. Used only by the modeled 3D view; the run does not need it.</li>
 <li>boundaries.geojson: FeatureCollection with metadata.valid_from / valid_to / approved_version; features with properties area_id, name, kind</li>
 <li>heat_pump_forecast.csv: forecast_version, area_id, horizon_label, households, hp_share_base, hp_share_forecast, kw_per_heat_pump, valid_from, valid_to, notes</li>
 </ul></div>

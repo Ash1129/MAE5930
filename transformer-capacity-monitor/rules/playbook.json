@@ -77,7 +77,7 @@
     "winter_evening_note": "In Dec-Feb the 17:00-21:00 hours get an extra boost (heating plus early darkness) on top of the monthly factor."
   },
   "thermal_model": {
-    "_note": "Parameters for the modeled 'inside the transformer' view (IEEE C57.91 exponential model). An estimate for the review page's 3D view only; no rule reads it.",
+    "_note": "Parameters for the modeled 'inside the transformer' view (IEEE C57.91 exponential model). An estimate for the review page's 3D view only; no rule reads it. Order of weight: nameplate columns on the asset record, then types[kind], then these values. Ambient comes from data/feeds/ambient.csv when present, else ambient_c.",
     "ambient_c": 20.0,
     "top_oil_rise_rated_c": 55.0,
     "hot_spot_rise_over_top_oil_rated_c": 25.0,
@@ -86,6 +86,22 @@
     "winding_exponent_m": 0.8,
     "oil_time_constant_h": 3.0,
     "hot_spot_limit_c": 110.0,
-    "hot_spot_emergency_c": 120.0
+    "hot_spot_emergency_c": 120.0,
+    "types": {
+      "pole": {
+        "_note": "typical small single-phase pole-mounted unit, ONAN",
+        "top_oil_rise_rated_c": 50.0,
+        "hot_spot_rise_over_top_oil_rated_c": 25.0,
+        "loss_ratio_R": 4.5,
+        "oil_time_constant_h": 1.8
+      },
+      "pad": {
+        "_note": "typical three-phase pad-mounted unit, ONAN",
+        "top_oil_rise_rated_c": 55.0,
+        "hot_spot_rise_over_top_oil_rated_c": 25.0,
+        "loss_ratio_R": 3.2,
+        "oil_time_constant_h": 3.0
+      }
+    }
   }
 }

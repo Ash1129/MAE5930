@@ -23,7 +23,7 @@ from capacity_monitor.charts import imr_svg, mini_imr_svg, rating_svg, review_ch
 from capacity_monitor.guards import check_text  # noqa: E402
 from capacity_monitor.report import write_report  # noqa: E402
 from capacity_monitor.run import execute_run, new_run_id  # noqa: E402
-from capacity_monitor.sources import feed_status, period_for  # noqa: E402
+from capacity_monitor.sources import feed_status, optional_feed_status, period_for  # noqa: E402
 from capacity_monitor.store import Store, now_iso  # noqa: E402
 from webapp.viz import (  # noqa: E402
     STATUS_LABEL,
@@ -630,7 +630,7 @@ def setup():
             flash("Saved.", "info")
         return redirect(url_for("setup"))
     env = {k: ("set" if os.environ.get(k) else "not set") for k in ("CAPMON_ALERT_TO", "CAPMON_SMTP_HOST", "CAPMON_SMTP_USER", "CAPMON_SMTP_PASSWORD")}
-    return render_template("setup.html", feeds=feed_status(), feeds_dir=str(config.FEEDS_DIR), playbook=config.load_playbook(), sched=airflow_client.status(), env=env, db=str(config.DB_PATH), reports=str(config.REPORTS_DIR), ai=ai_explain.status(store))
+    return render_template("setup.html", feeds=feed_status(), optional_feeds=optional_feed_status(), feeds_dir=str(config.FEEDS_DIR), playbook=config.load_playbook(), sched=airflow_client.status(), env=env, db=str(config.DB_PATH), reports=str(config.REPORTS_DIR), ai=ai_explain.status(store))
 
 
 @app.post("/alerts/<int:alert_id>/ack")
@@ -713,8 +713,11 @@ def api_transformer_thermal(period_id, tid):
     r = store.get_transformer_result(period_id, tid)
     if not r:
         abort(404)
-    out = thermal.simulate(r["period_readings"], r["rated_max"], config.load_playbook())
-    out.update({"transformer_id": tid, "rating": r["rated_max"], "unit": r["unit"], "kind": "pole" if "pole" in (r.get("name") or "").lower() else "pad"})
+    kind = thermal.kind_of(r.get("name"))
+    asset = thermal.asset_record(config.FEEDS_DIR / config.FEED_FILES["assets"], tid)
+    ambient = thermal.load_ambient(config.FEEDS_DIR / config.OPTIONAL_FEED_FILES["ambient"])
+    out = thermal.simulate(r["period_readings"], r["rated_max"], config.load_playbook(), kind=kind, asset=asset, ambient=ambient)
+    out.update({"transformer_id": tid, "rating": r["rated_max"], "unit": r["unit"], "kind": kind})
     return out
 
 
