@@ -97,14 +97,14 @@
   #run-failed{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 6px 0 12px;border-radius:999px;border:1px solid #D7263D;background:rgba(215,38,61,.1);color:#9e1428;font-size:13px;white-space:nowrap;box-sizing:border-box}
   #run-failed .see{all:unset;cursor:pointer;padding:3px 9px;border-radius:999px;color:#9e1428;text-decoration:underline;text-underline-offset:3px}
   #run-failed .x{all:unset;cursor:pointer;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;color:#9e1428} #run-failed .x:hover{background:rgba(215,38,61,.12)}
-  #run-card{position:absolute;top:44px;left:0;width:340px;padding:16px;z-index:50;box-sizing:border-box}
+  #run-card{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);width:340px;padding:16px;z-index:50;box-sizing:border-box}
   #run-card .title{font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1.1}
   .feedchip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid}
   .feedchip i{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
   .vr{width:1px;height:26px;background:rgba(29,36,48,.18);flex:none}
 
   /* period + run row */
-  #runrow{position:absolute;top:80px;left:50%;transform:translateX(-50%);z-index:30;height:48px;display:flex;align-items:center;gap:12px;padding:0 8px 0 14px;border-radius:999px;box-sizing:border-box;max-width:calc(100% - 420px)}
+  #runrow{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:30;height:48px;display:flex;align-items:center;gap:12px;padding:0 8px 0 14px;border-radius:999px;box-sizing:border-box;max-width:calc(100% - 640px)}
   #runrow .vr{height:24px}
   body.narrow #runrow{top:124px;left:50%;transform:translateX(-50%);right:auto;max-width:calc(100% - 32px);height:44px;padding:0 6px 0 12px}
   body.phone #bar .brand{font-size:18px}
@@ -136,7 +136,7 @@
   .chip .red i{width:6px;height:6px;border-radius:50%;background:#D7263D;display:inline-block}
 
   /* heat strip */
-  #heat{position:absolute;top:140px;left:64px;right:332px;z-index:20;padding:12px 16px;box-sizing:border-box}
+  #heat{position:absolute;top:80px;left:64px;right:332px;z-index:20;padding:12px 16px;box-sizing:border-box}
   #heat .head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
   #heat .dname{font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1;margin-right:4px}
   #heat .clock{margin-left:auto;font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1}
@@ -281,35 +281,6 @@
   </header>
   <button id="bar-show" class="icon-circle" aria-label="Show header" title="Show header" hidden><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
 
-  <!-- period + run (below the menu bar) -->
-  <div id="runrow" class="glass">
-    <div id="runbox">
-      <button id="run-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg><span id="run-pill-text">Run a monitoring period</span></button>
-      <div id="run-running" hidden>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2.5" stroke-linecap="round" style="animation:cm-spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg>
-        <span id="run-step">Running, step 1 of 15</span>
-        <span class="track"><span id="run-bar" style="width:7%"></span></span>
-      </div>
-      <div id="run-failed" hidden>
-        <span style="width:8px;height:8px;border-radius:50%;background:#D7263D"></span><span id="run-failed-text">Run failed</span>
-        <button class="see" id="run-see">See alert</button>
-        <button class="x" id="run-dismiss" aria-label="Dismiss"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-      </div>
-      <div id="run-card" class="glass-card" hidden>
-        <div class="title">Run a monitoring period</div>
-        <div style="font-size:12px;color:var(--ink-60);margin-top:3px">{{ playbook.period_days }} days ending on the date you pick. Rerunning a period replaces its draft results.</div>
-        <form id="run-form" method="post" action="{{ url_for('start_run') }}" style="display:flex;gap:8px;align-items:end;margin-top:12px">
-          <label style="flex:1;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-60);display:grid;gap:4px">Period end date
-            <input type="date" class="input" id="period_end" name="period_end" value="{{ default_end }}" style="font-size:13px;min-height:34px;background:rgba(255,255,255,.5)"></label>
-          <button type="submit" class="btn btn-primary" style="height:34px">Run now</button>
-        </form>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">
-          {% for name, f in feeds.items() %}<span class="feedchip" style="color:{{ '#1B7F4B' if f.present else '#D7263D' }};border-color:{{ 'rgba(27,127,75,.5)' if f.present else 'rgba(215,38,61,.6)' }}"><i></i>{{ f.file }} · {{ 'present' if f.present else 'missing' }}</span>{% endfor %}
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- districts (desktop) -->
   <nav id="districts" aria-label="Districts"><div class="dtitle">Districts</div><ul id="district-list"></ul></nav>
   <!-- districts (narrow chips) -->
@@ -360,6 +331,41 @@
     {% endif %}
   </div>
 
+  <!-- period + run (bottom center) -->
+  <div id="runrow" class="glass">
+    {% if periods %}
+    <label id="period-label">Period
+      <select id="period-select">{% for p in periods %}<option value="{{ p }}" {% if period and p == period.period_id %}selected{% endif %}>Week ending {{ p }}</option>{% endfor %}</select>
+    </label>
+    <span class="vr"></span>
+    {% endif %}
+    <div id="runbox">
+      <button id="run-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg><span id="run-pill-text">Run a monitoring period</span></button>
+      <div id="run-running" hidden>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2.5" stroke-linecap="round" style="animation:cm-spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg>
+        <span id="run-step">Running, step 1 of 15</span>
+        <span class="track"><span id="run-bar" style="width:7%"></span></span>
+      </div>
+      <div id="run-failed" hidden>
+        <span style="width:8px;height:8px;border-radius:50%;background:#D7263D"></span><span id="run-failed-text">Run failed</span>
+        <button class="see" id="run-see">See alert</button>
+        <button class="x" id="run-dismiss" aria-label="Dismiss"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div id="run-card" class="glass-card" hidden>
+        <div class="title">Run a monitoring period</div>
+        <div style="font-size:12px;color:var(--ink-60);margin-top:3px">{{ playbook.period_days }} days ending on the date you pick. Rerunning a period replaces its draft results.</div>
+        <form id="run-form" method="post" action="{{ url_for('start_run') }}" style="display:flex;gap:8px;align-items:end;margin-top:12px">
+          <label style="flex:1;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-60);display:grid;gap:4px">Period end date
+            <input type="date" class="input" id="period_end" name="period_end" value="{{ default_end }}" style="font-size:13px;min-height:34px;background:rgba(255,255,255,.5)"></label>
+          <button type="submit" class="btn btn-primary" style="height:34px">Run now</button>
+        </form>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">
+          {% for name, f in feeds.items() %}<span class="feedchip" style="color:{{ '#1B7F4B' if f.present else '#D7263D' }};border-color:{{ 'rgba(27,127,75,.5)' if f.present else 'rgba(215,38,61,.6)' }}"><i></i>{{ f.file }} · {{ 'present' if f.present else 'missing' }}</span>{% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- legend + status -->
   <div id="legend" class="glass">
     <div class="row">
@@ -368,11 +374,6 @@
       <span class="muted small" id="filter-hint">click to filter the map</span>
     </div>
     <div class="muted" id="status-line">Checking the scheduler...</div>
-    {% if periods %}<div class="prow">
-    <label id="period-label">Period
-      <select id="period-select">{% for p in periods %}<option value="{{ p }}" {% if period and p == period.period_id %}selected{% endif %}>Week ending {{ p }}</option>{% endfor %}</select>
-    </label>
-    </div>{% endif %}
   </div>
   <!-- map controls -->
   <div id="controls">
@@ -430,7 +431,7 @@ POINTS.forEach(p => {
 });
 const bPts = BOUNDARIES ? (BOUNDARIES.features || []).flatMap(f => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).flatMap(p => p[0]).map(c => [c[1], c[0]])) : [];
 const countyBounds = POINTS.length ? L.latLngBounds(POINTS.map(p => [p.lat, p.lon])).pad(.08) : (bPts.length ? L.latLngBounds(bPts) : null);
-const fitPad = () => wide() ? { paddingTopLeft: [70, 140], paddingBottomRight: [340, 60] } : { paddingTopLeft: [20, 180], paddingBottomRight: [20, 110] };
+const fitPad = () => wide() ? { paddingTopLeft: [70, 80], paddingBottomRight: [340, 80] } : { paddingTopLeft: [20, 130], paddingBottomRight: [20, 160] };
 if (countyBounds) map.fitBounds(countyBounds, fitPad());
 map.on('move zoom', positionPopup);
 map.on('click', () => { closePopup(); setAlerts(false); });
