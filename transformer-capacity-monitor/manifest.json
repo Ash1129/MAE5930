@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "locale": "Chinese (Simplified)_China.936",
+  "locale": "en_US.UTF-8",
   "metadata": {
     "appmode": "python-api",
     "entrypoint": "app:app"
   },
   "python": {
-    "version": "3.12",
+    "version": "3.12.4",
     "package_manager": {
       "name": "pip",
       "version": "25.0.1",
@@ -15,7 +15,7 @@
   },
   "environment": {
     "python": {
-      "requires": "==3.12"
+      "requires": "==3.12.4"
     }
   },
   "files": {

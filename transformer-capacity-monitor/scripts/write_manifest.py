@@ -27,7 +27,7 @@ environment = Environment.create_python_environment(
     ".",
     requirements_file="requirements.txt",
     python=sys.executable,
-    override_python_version="3.12",
+    override_python_version="3.12.4",
     app_file="app.py",
 )
 write_api_manifest_json(
