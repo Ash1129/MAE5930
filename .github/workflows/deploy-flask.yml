@@ -25,6 +25,7 @@ env:
   APP_DIR: transformer-capacity-monitor
   CONTENT_NAME: ${{ github.repository_owner }}-${{ github.event.repository.name }}-monitor
   CONTENT_TITLE: Transformer Capacity Monitor
+  CONTENT_GUID: 47dc2fbc-e6a2-4347-9ee8-0df3b67fa236
   HEALTH_PATH: '/health'
 
 jobs:
@@ -89,6 +90,7 @@ jobs:
           CONNECT_SERVER: ${{ secrets.CONNECT_SERVER }}
           CONNECT_API_KEY: ${{ secrets.CONNECT_API_KEY }}
           BUNDLE_DIR: ${{ env.APP_DIR }}
+          CONTENT_GUID: ${{ env.CONTENT_GUID }}
           POLL_BUDGET_SECONDS: '180'
         run: bash .github/scripts/connect-publish-async.sh
 
