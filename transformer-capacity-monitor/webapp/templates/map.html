@@ -392,6 +392,7 @@ const shortName = n => (n || '').replace(/^(City of|Town of|Village of) /, '');
 const showId = id => String(id ?? '').replace(/^T-/, '');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 
+const APP = {{ request.script_root|tojson }};
 const DISTRICTS = DISTRICTS_RAW.map(d => ({ ...d, fullName: d.name, name: shortName(d.name) })).sort((a, b) => a.name.localeCompare(b.name));
 const S = { district: '', popup: null, sideOpen: false, alertsOpen: false, mode: 'recorded', metric: 'util', tier: 'all',
   dateIdx: +$('date-slider').value || 0, month: 1, hour: 18, playing: false, sheetOpen: false, firstLaunch: !PERIOD, loads: {}, modeled: false, factor: 1 };
@@ -499,7 +500,7 @@ function selectDistrict(id) {
 // ---- heat ----
 async function fetchLoads() {
   if (!S.district || S.firstLaunch) return;
-  const url = S.mode === 'seasonal' ? '/api/heat/seasonal?month=' + S.month : '/api/heat/recorded?date=' + (DATES[S.dateIdx] || '');
+  const url = APP + (S.mode === 'seasonal' ? '/api/heat/seasonal?month=' + S.month : '/api/heat/recorded?date=' + (DATES[S.dateIdx] || ''));
   try { const j = await (await fetch(url)).json(); S.loads = j.loads || {}; S.hot = j.hot_spot || {}; S.ambient = j.ambient || []; S.ambientSource = j.ambient_source || ''; S.modeled = !!j.modeled; S.factor = j.factor || 1; S.tempMult = j.temperature_multipliers || []; } catch (e) { S.loads = {}; S.hot = {}; S.ambient = []; }
   renderHeat();
 }
@@ -616,7 +617,7 @@ const setSummary = (text, kind) => {
   src.innerHTML = kind === 'pending' ? '<span class="spin"></span>Writing a summary with Claude Haiku' : kind === 'ai' ? 'Written by Claude Haiku · check the chart' : 'Rule-based summary';
 };
 async function loadPopupExtras(p) {
-  const base = '/api/periods/' + encodeURIComponent(PERIOD) + '/transformers/' + encodeURIComponent(p.id);
+  const base = APP + '/api/periods/' + encodeURIComponent(PERIOD) + '/transformers/' + encodeURIComponent(p.id);
   let j;
   try { j = await (await fetch(base + '/mini')).json(); } catch (e) { if (S.popup === p) $('pp-chart').innerHTML = '<span class="muted" style="font-size:11px">Chart unavailable</span>'; return; }
   if (S.popup !== p) return;
@@ -696,7 +697,7 @@ function renderStatus(sched, last) {
   $('status-line').textContent = parts.join(' · ');
 }
 async function refreshStatus() {
-  try { const j = await (await fetch('/api/status')).json(); renderStatus(j.scheduler, j.last_run); latestAlert = j.latest_alert; const n = j.unacknowledged_alerts || 0; $('alert-count').textContent = n; $('alert-count').hidden = !n; $('al-count').textContent = n; if (S.alertsOpen) renderAlert(); } catch (e) {}
+  try { const j = await (await fetch(APP + '/api/status')).json(); renderStatus(j.scheduler, j.last_run); latestAlert = j.latest_alert; const n = j.unacknowledged_alerts || 0; $('alert-count').textContent = n; $('alert-count').hidden = !n; $('al-count').textContent = n; if (S.alertsOpen) renderAlert(); } catch (e) {}
 }
 
 // ---- header hide/show (the switch slides up the header; a small tab brings it back) ----
