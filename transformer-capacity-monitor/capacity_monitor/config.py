@@ -22,6 +22,10 @@ FEED_FILES = {
     "boundaries": "boundaries.geojson",
     "forecast": "heat_pump_forecast.csv",
 }
+# Optional feeds: read when present, never required by the run or the readiness sensor.
+OPTIONAL_FEED_FILES = {
+    "ambient": "ambient.csv",  # outside air temperature, hourly (timestamp,temp_c) or daily (date,temp_c); modeled 3D view only
+}
 
 # Step numbers and names exactly as in the architecture table.
 STEPS = [

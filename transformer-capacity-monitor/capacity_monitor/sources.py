@@ -130,6 +130,19 @@ def feed_status() -> dict:
     return out
 
 
+def optional_feed_status() -> dict:
+    """Same shape as feed_status() for the optional feeds; missing is fine."""
+    out = {}
+    for name, fname in config.OPTIONAL_FEED_FILES.items():
+        p = config.FEEDS_DIR / fname
+        if p.exists():
+            st = p.stat()
+            out[name] = {"file": fname, "present": True, "bytes": st.st_size, "modified": datetime.fromtimestamp(st.st_mtime).isoformat(timespec="seconds"), "optional": True}
+        else:
+            out[name] = {"file": fname, "present": False, "optional": True}
+    return out
+
+
 def feeds_ready() -> bool:
     return all(v["present"] for v in feed_status().values())
 

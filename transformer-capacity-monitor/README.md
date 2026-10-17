@@ -53,6 +53,7 @@ Four feeds in `data/feeds/`. Their columns are defined in [`data/README.md`](dat
 | `assets.csv` | nameplate rating in kVA, location, customers served, declared area |
 | `boundaries.geojson` | town and village polygons with their approval dates |
 | `heat_pump_forecast.csv` | base and forecast heat-pump share by area, kW per heat pump |
+| `ambient.csv` (optional) | outside air temperature, hourly or daily; only the modeled 3D view reads it |
 
 ## Parameters
 
@@ -99,7 +100,9 @@ The Airflow DAG and the Flask app only call these functions, store the results a
 - A review page per transformer with the I-MR chart, Cpk and its interval, assumption flags, the
   projection and its assumptions, the matching rule, and the source readings.
 - On that page, a 3D cutaway labeled MODELED: the oil and winding hot-spot temperatures the week's
-  hourly loads would produce under the IEEE C57.91 loading guide (`playbook.thermal_model`). The tool
+  hourly loads would produce under the IEEE C57.91 loading guide (`playbook.thermal_model`). It uses
+  nameplate thermal values from `assets.csv` when they are there, typical values for the unit kind
+  otherwise, and the optional `ambient.csv` feed for outside air; the page says which it used. The tool
   has no sensors inside the unit; this view is for understanding and feeds no rule.
 - A heatmap of hourly load per transformer for a recorded date, plus a seasonal view labeled MODELED.
 - A period report in `data/reports/<period end>/` as HTML, Markdown and JSON. It can be finalized only

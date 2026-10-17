@@ -15,6 +15,7 @@ uses. The copy in `data/feeds/` may be a larger `--count` run for the map; see s
 | `feeds/assets.csv` | one transformer | 12 | 3, then 6, 7, 10, 11 |
 | `feeds/boundaries.geojson` | one town, village or city polygon | 12 areas | 4, then 6, 7 |
 | `feeds/heat_pump_forecast.csv` | one area and one forecast version | 24 (12 areas × 2 versions) | 5, then 6, 7, 10 |
+| `feeds/ambient.csv` (optional) | one hour of outside air (`timestamp`, `temp_c`), or one day (`date`, `temp_c`) | 1,800 (75 days × 24) | none; the review page's modeled 3D view only |
 
 Outputs, not inputs: `reports/<period end>/report.{html,md,json}` and the run log in
 `capacity_monitor.sqlite3`. Both are git-ignored and rebuilt by each run.
