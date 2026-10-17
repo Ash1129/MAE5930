@@ -40,7 +40,8 @@ write_api_manifest_json(
         ".venv/**",
         "airflow_home/**",
         "logs/**",
-        "**/__pycache__",
+        "**/__pycache__/*",
+        "**/*.pyc",
         ".pytest_cache/**",
         "data/work/**",
         "data/reports/*/history/**",
@@ -61,6 +62,11 @@ def _payload(rel: str) -> bytes:
 
 manifest_path = Path("manifest.json")
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest["files"] = {
+    rel: info for rel, info in manifest["files"].items() if "__pycache__" not in rel.replace("\\", "/") and not rel.endswith(".pyc")
+}
+# Keep the published locale. This Windows machine would otherwise record its own code page.
+manifest["locale"] = "en_US.UTF-8"
 for rel, info in manifest["files"].items():
     info["checksum"] = hashlib.md5(_payload(rel)).hexdigest()
 manifest_path.write_bytes(json.dumps(manifest, indent=2).encode("utf-8") + b"\n")
