@@ -30,7 +30,7 @@ def build_report(store: Store, period_id: str) -> dict:
         raise ValueError(f"No results for period {period_id}")
     results = store.get_transformer_results(period_id)
     real = [r for r in results if not r["is_calibration"]]
-    exceptions = [r for r in real if r["status"] == "review_needed"]
+    exceptions = [r for r in real if r["status"] != "within_limits"]
     report = {
         "title": f"Transformer capacity monitoring report, period ending {period_id}",
         "generated_at": now_iso(),
@@ -81,7 +81,7 @@ def _markdown(rep: dict) -> str:
     L = [f"# {rep['title']}", "", f"Status: **{rep['report_status'].upper()}**" + (f" (finalized by {rep['finalized_by']} at {rep['finalized_at']})" if rep["finalized_by"] else " (not yet finalized by a reviewer)"), ""]
     L += [f"- Period: {rep['period']['start']} to {rep['period']['end']} ({rep['period']['days']} days); chart history from {rep['period']['history_start']}", f"- Run: {rep['run_id']} (reruns of this period: {rep['rerun_count']})", f"- Playbook version: {rep['playbook_version']}", f"- Generated: {rep['generated_at']}", ""]
     s = rep["summary"]
-    L += ["## Summary", "", f"| Transformers | Within limits | Review needed | Stable | Chart signal | Insufficient history |", "|---|---|---|---|---|---|", f"| {s.get('transformers',0)} | {s.get('within_limits',0)} | {s.get('review_needed',0)} | {s.get('stable',0)} | {s.get('signal',0)} | {s.get('insufficient_history',0)} |", ""]
+    L += ["## Summary", "", f"| Transformers | Within limits | Review needed | Inspect now | Stable | Chart signal | Insufficient history |", "|---|---|---|---|---|---|---|", f"| {s.get('transformers',0)} | {s.get('within_limits',0)} | {s.get('review_needed',0)} | {s.get('inspect_now',0)} | {s.get('stable',0)} | {s.get('signal',0)} | {s.get('insufficient_history',0)} |", ""]
     L += [f"Exceptions with a recorded disposition: {rep['exceptions_with_disposition']} of {rep['exceptions_total']}", ""]
     L += ["## Sources", ""] + [f"- {k}: `{v['path']}` ({v['rows']} rows, sha256 {v['sha256']}, modified {v['modified']})" for k, v in rep["sources"].items()] + [""]
     if rep["warnings"]:
@@ -93,7 +93,7 @@ def _markdown(rep: dict) -> str:
         L.append(f"| {t['transformer_id']} {t['name']} | {t['area']} | {_fmt(t['rated_max'],1)} {t['unit']} | {_fmt(t['period_peak'],1)} | {t['stability']} | {ci} | {_fmt(t['projected_peak'],1)} | {t['status']} | {(d['decision'] + ' by ' + d['reviewer']) if d else '-'} |")
     L.append("")
     for t in rep["transformers"]:
-        if t["status"] != "review_needed":
+        if t["status"] == "within_limits":
             continue
         L += [f"### {t['transformer_id']} {t['name']}", "", f"- Why flagged: rule {t['decision_rule']['rule']}: {t['decision_rule']['reason']}"]
         for sgn in t["chart_signals"]:
@@ -124,11 +124,11 @@ def _html(rep: dict, results_by_id: dict) -> str:
         )
     s = rep["summary"]
     return f"""<!doctype html><html><head><meta charset='utf-8'><title>{escape(rep['title'])}</title>
-<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Lora:wght@400;600&display=swap'><style>body{{font:14px/1.55 Lora,Georgia,serif;margin:0;padding:32px clamp(20px,5vw,72px);max-width:1100px;background:#1a1919;color:#f3f1e8}} h1,h2,h3{{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;line-height:1.15}} h1{{font-size:34px}} a{{color:#e1ad66}} .tag{{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;letter-spacing:.03em;border:1px solid currentColor;vertical-align:middle}} .within_limits{{color:#57b57f}} .review_needed{{color:#ff6b7a}} section.t{{border-top:1px solid rgba(243,241,232,.12);padding:12px 0}} .status{{font-weight:600;color:#e1ad66}} ul{{padding-left:20px}} pre{{background:#262525;border:1px solid rgba(243,241,232,.12);padding:12px;border-radius:4px;overflow:auto;font-size:12px}} details summary{{cursor:pointer;color:#e1ad66}} svg{{background:#f6f4ee;border-radius:8px;padding:8px;max-width:100%}} small{{color:#aeaba3}}</style></head><body>
+<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Lora:wght@400;600&display=swap'><style>body{{font:14px/1.55 Lora,Georgia,serif;margin:0;padding:32px clamp(20px,5vw,72px);max-width:1100px;background:#1a1919;color:#f3f1e8}} h1,h2,h3{{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;line-height:1.15}} h1{{font-size:34px}} a{{color:#e1ad66}} .tag{{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;letter-spacing:.03em;border:1px solid currentColor;vertical-align:middle}} .within_limits{{color:#57b57f}} .review_needed{{color:#e1ad66}} .inspect_now{{color:#ff6b7a}} section.t{{border-top:1px solid rgba(243,241,232,.12);padding:12px 0}} .status{{font-weight:600;color:#e1ad66}} ul{{padding-left:20px}} pre{{background:#262525;border:1px solid rgba(243,241,232,.12);padding:12px;border-radius:4px;overflow:auto;font-size:12px}} details summary{{cursor:pointer;color:#e1ad66}} svg{{background:#f6f4ee;border-radius:8px;padding:8px;max-width:100%}} small{{color:#aeaba3}}</style></head><body>
 <h1>{escape(rep['title'])}</h1>
 <p class='status'>Status: {escape(rep['report_status'].upper())}{(' - finalized by ' + escape(rep['finalized_by']) + ' at ' + escape(rep['finalized_at'])) if rep['finalized_by'] else ' - not yet finalized by a reviewer'}</p>
 <p>Period {rep['period']['start']} to {rep['period']['end']} | Run {escape(rep['run_id'])} | Reruns {rep['rerun_count']} | Playbook {escape(str(rep['playbook_version']))} | Generated {rep['generated_at']}</p>
-<p>Transformers {s.get('transformers',0)} | Within limits {s.get('within_limits',0)} | Review needed {s.get('review_needed',0)} | Dispositions {rep['exceptions_with_disposition']} of {rep['exceptions_total']}</p>
+<p>Transformers {s.get('transformers',0)} | Within limits {s.get('within_limits',0)} | Review needed {s.get('review_needed',0)} | Inspect now {s.get('inspect_now',0)} | Dispositions {rep['exceptions_with_disposition']} of {rep['exceptions_total']}</p>
 <h2>Sources</h2><ul>{''.join(f"<li>{escape(k)}: {escape(v['path'])} ({v['rows']} rows, sha256 {v['sha256']}, modified {v['modified']})</li>" for k, v in rep['sources'].items())}</ul>
 {('<h2>Warnings</h2><ul>' + ''.join(f'<li>{escape(w)}</li>' for w in rep['warnings']) + '</ul>') if rep['warnings'] else ''}
 <h2>Transformers</h2>{''.join(rows)}

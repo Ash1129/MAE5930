@@ -56,7 +56,7 @@ def make_calibration_case(results: dict, period: Period) -> dict | None:
     if src["period_readings"]:
         src["period_readings"][-1] = dict(src["period_readings"][-1], load=bumped)
     src["status"] = "review_needed"
-    src["decision"] = {"outcome": "review_needed", "rule": "9", "reason": "Forecast peak near or above the rated maximum (0.9 of rating or more)", "condition": "forecast_ratio >= 0.9"}
+    src["decision"] = {"outcome": "review_needed", "rule": "11", "reason": "Forecast peak near or above the rated maximum (0.9 of rating or more)", "condition": "forecast_ratio >= 0.9"}
     src["capacity"]["cpk"] = 1.85
     src["capacity"]["cpk_ci_low"] = 1.52
     src["capacity"]["cpk_ci_high"] = 2.18
@@ -160,7 +160,7 @@ class RunContext:
         self.store.step_done(self.run_id, 9, "success", {"stable": summary.get("stable", 0), "signal": summary.get("signal", 0), "insufficient_history": summary.get("insufficient_history", 0)})
         self.store.step_done(self.run_id, 10, "success", {"projected": sum(1 for r in results.values() if r["capacity"]["projected_peak"] is not None)})
         self.store.step_done(self.run_id, 11, "success", {"cpk_calculated": sum(1 for r in results.values() if r["capacity"]["cpk"] is not None)})
-        self.store.step_done(self.run_id, 12, "success", {"review_needed": summary.get("review_needed", 0), "within_limits": summary.get("within_limits", 0)})
+        self.store.step_done(self.run_id, 12, "success", {"inspect_now": summary.get("inspect_now", 0), "review_needed": summary.get("review_needed", 0), "within_limits": summary.get("within_limits", 0)})
         calibration_ids = set()
         if calibration_due(self.period, self.playbook):
             cal = make_calibration_case(results, self.period)
@@ -175,11 +175,11 @@ class RunContext:
         """Step 13: a person reviews exceptions in the app. The run records whether it is waiting."""
         summary = self._load("summary")
         self.store.step_start(self.run_id, 13)
-        if summary.get("review_needed", 0) > 0:
-            self.store.step_done(self.run_id, 13, "waiting", {"exceptions": summary["review_needed"], "note": "Awaiting reviewer dispositions in the app"})
+        if summary.get("flagged", 0) > 0:
+            self.store.step_done(self.run_id, 13, "waiting", {"exceptions": summary["flagged"], "inspect_now": summary.get("inspect_now", 0), "note": "Awaiting reviewer dispositions in the app"})
         else:
             self.store.step_done(self.run_id, 13, "success", {"exceptions": 0, "note": "No exceptions; report still needs reviewer finalization"})
-        return {"exceptions": summary.get("review_needed", 0)}
+        return {"exceptions": summary.get("flagged", 0)}
 
     def save_report(self) -> dict:
         self.store.step_start(self.run_id, 14)

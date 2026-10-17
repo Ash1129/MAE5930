@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS transformer_results (
   transformer_id TEXT NOT NULL,
   run_id TEXT NOT NULL,
   input_hash TEXT NOT NULL,
-  status TEXT NOT NULL,          -- within_limits | review_needed
+  status TEXT NOT NULL,          -- within_limits | review_needed | inspect_now
   stability TEXT NOT NULL,
   result_json TEXT NOT NULL,
   is_calibration INTEGER NOT NULL DEFAULT 0,

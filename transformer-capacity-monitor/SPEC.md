@@ -51,7 +51,9 @@ it is a candidate for removal.
   Bissell's approximation with effective degrees of freedom 0.62 × (n − 1) for the moving-range estimator.
   A heat-pump projection adds customers × (forecast share − base share) × kW per heat pump ÷ power factor
   0.95 to the period peak. A first-match-wins decision table (`rules/decision-table.csv`) turns these
-  results into "within limits" or "review needed".
+  results into three outcomes: "within limits" (green), "review needed" (amber: a few isolated outliers, or a
+  capacity or forecast concern) and "inspect now" (red: a reading at or above the rating, a run rule such as
+  8 in a row or 2 of 3 beyond 2 sigma firing in the period, or 3 or more outlier days in the period).
 - **Why it fits the use case:** each transformer gives one natural value per day and no rational subgroups,
   so I-MR is the right chart. The rating is a one-sided upper limit, so Cpu is the right capability index.
   Capability is only meaningful once the chart shows the pattern is stable.
@@ -96,16 +98,17 @@ The web app and the scheduler only call these functions and display the results.
 
 ## 6. Outputs
 - **What the user sees:**
-  - **Map:** every transformer as a dot, green for within limits and red for review needed.
+  - **Map:** every transformer as a dot: green within limits, amber review needed, red inspect now.
   - **Review page per transformer:** the I-MR chart of daily peaks in kVA, with limits and signals in red.
     It also shows Cpk with its 95% interval, the period peak as a percentage of rating, the projected peak
     as a percentage of rating, the matching decision-table rule, and the source readings.
   - **Period report:** HTML, Markdown and JSON, finalized only after every flagged case has a disposition.
   - **Heatmap:** hourly load per transformer for any recorded date. A seasonal view labeled MODELED
     scales the recorded shapes by the playbook's assumed monthly factors. It is context only and feeds no decision.
-- *How to read this:* red means a person must look before the report goes out. The rule number names the
-  reason, for example "rule 2: chart signal", "rule 8: lower 95% bound below 1.33" or
-  "rule 9: forecast peak at 90% of rating or more".
+- *How to read this:* amber and red both need a person before the report goes out; red means send someone
+  to look now. The rule number names the reason, for example "rule 2: a run rule fired this period",
+  "rule 4: a few outliers", "rule 10: lower 95% bound below 1.33" or "rule 11: forecast peak at 90% of
+  rating or more".
 
 ## 7. Test datasets and codebook (rubric: demo 10, datasets 5, codebook 5)
 `data/README.md` is the codebook. `demo/README.md` walks through each dataset with the exact command and

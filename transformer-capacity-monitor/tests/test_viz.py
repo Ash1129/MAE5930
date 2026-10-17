@@ -24,15 +24,18 @@ def test_box_and_area_rollup():
         _result("T-A", "DRY", "Town of Dryden", "stable", "within_limits", 0.4, 0.5),
         _result("T-B", "DRY", "Town of Dryden", "signal", "review_needed", 0.9, 1.1),
         _result("T-C", "CAR", "Town of Caroline", "stable", "within_limits", 0.55, 0.6),
+        _result("T-D", "CAR", "Town of Caroline", "signal", "inspect_now", 0.7, 0.8),
     ]
     model = summarize_results(results)
     assert box_stats([0.4, 0.9])["median"] == 0.65
     dry = next(a for a in model["areas"] if a["area_id"] == "DRY")
-    assert dry["n"] == 2 and dry["review_needed"] == 1 and dry["unstable"] == 1
+    assert dry["n"] == 2 and dry["review_needed"] == 1 and dry["inspect_now"] == 0 and dry["flagged"] == 1 and dry["unstable"] == 1
+    car = next(a for a in model["areas"] if a["area_id"] == "CAR")
+    assert car["inspect_now"] == 1 and car["flagged"] == 1
     assert dry["usage"]["median"] == 0.65
     assert model["areas"][0]["area_id"] == "DRY"  # highest median usage first
-    assert [s["key"] for s in model["status_slices"]] == ["within_limits", "review_needed"]
-    assert model["status_slices"][1]["count"] == 1
+    assert [s["key"] for s in model["status_slices"]] == ["within_limits", "review_needed", "inspect_now"]
+    assert model["status_slices"][1]["count"] == 1 and model["status_slices"][2]["count"] == 1
 
     view = filter_summary(model, "review_needed", None)
     assert [t["id"] for t in view["transformers"]] == ["T-B"]

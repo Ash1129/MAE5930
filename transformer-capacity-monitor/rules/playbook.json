@@ -1,5 +1,5 @@
 {
-  "version": "default-2026-10-16b",
+  "version": "default-2026-10-17",
   "_note": "Reversible defaults chosen by the builder. Replace with the approved grid-planning playbook values and record who approved them.",
   "timezone": "America/New_York",
   "schedule": {
@@ -20,6 +20,12 @@
       "eight_in_a_row_one_side",
       "moving_range_beyond_ucl"
     ],
+    "inspect_rules": [
+      "eight_in_a_row_one_side",
+      "two_of_three_beyond_2_sigma"
+    ],
+    "inspect_outliers_at": 3,
+    "tiers_note": "Outcomes: within_limits (green), review_needed (amber: a few isolated outliers, or a capacity/forecast concern), inspect_now (red: a reading at or above the rating, an inspect_rules pattern this period, or inspect_outliers_at or more outlier days this period).",
     "limits_note": "Control limits come from the transformer's own historical daily peaks, never from the rated maximum."
   },
   "capability": {

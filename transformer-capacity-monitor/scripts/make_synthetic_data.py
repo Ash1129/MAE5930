@@ -9,6 +9,13 @@ Usage:
   python scripts/make_synthetic_data.py --end 2026-10-15
   python scripts/make_synthetic_data.py --scenario boundary-mismatch | missing-rating | unsafe-text | normal
   python scripts/make_synthetic_data.py --count 500          # the 12 labeled cases plus 488 generated ones
+
+Cases and the tier they must land in (verified against the real pipeline functions):
+  within / overlap / forecast / uncertain / lowcpk / insufficient  -> green or amber (capacity concerns)
+  signal   -> amber: one day beyond 3 sigma, no sustained shift (decision rule 4)
+  shift    -> red: 8 days in a row above the centre line this period (rule 2)
+  spike    -> red: one reading at or above the rated maximum (rule 1)
+  outliers -> red: three separate days beyond 3 sigma this period (rule 3)
 """
 
 from __future__ import annotations
@@ -52,17 +59,17 @@ TRANSFORMERS = [
     ("T-CAR-006", "Slaterville Rd pole", "CAR", -76.36, 42.36, 100, 60, "forecast"),
     ("T-ULY-007", "Jacksonville Rd pole (new)", "ULY", -76.64, 42.52, 75, 25, "insufficient"),
     ("T-NEW-008", "Millard Hill Rd pole", "NEW", -76.565, 42.395, 50, 20, "overlap"),
-    ("T-GRO-009", "Peruville Rd pad", "GRO", -76.38, 42.57, 100, 50, "within"),
+    ("T-GRO-009", "Peruville Rd pad", "GRO", -76.38, 42.57, 100, 50, "shift"),
     ("T-DAN-010", "Comfort Rd pole", "DAN", -76.47, 42.33, 50, 22, "lowcpk"),
-    ("T-ENF-011", "Mecklenburg Rd pole", "ENF", -76.66, 42.44, 75, 28, "within"),
-    ("T-TRU-012", "Main St pad", "TRU-V", -76.661, 42.541, 100, 48, "within"),
+    ("T-ENF-011", "Mecklenburg Rd pole", "ENF", -76.66, 42.44, 75, 28, "spike"),
+    ("T-TRU-012", "Main St pad", "TRU-V", -76.661, 42.541, 100, 48, "outliers"),
 ]
 
 ROAD_NAMES = ["Ridge Rd", "Mill St", "Lake Rd", "Hollow Rd", "Creek Rd", "Main St", "Hill Rd", "Valley Rd", "Church St", "School Rd", "Orchard Rd", "Station Rd", "Forest Home Dr", "Elm St", "Maple Ave", "Cemetery Rd", "Falls Rd", "Brook Rd", "Pine Tree Rd", "Hanshaw Rd"]
 RATINGS = [(25, 6), (37.5, 10), (50, 20), (75, 22), (100, 20), (167, 12), (250, 6), (333, 3), (500, 1)]  # kVA, weight
 AREA_WEIGHTS = {"ITH-C": 22, "ITH-T": 16, "CAY-V": 4, "DRY": 12, "LAN": 11, "CAR": 5, "DAN": 5, "ENF": 5, "GRO": 7, "NEW": 6, "ULY": 5, "TRU-V": 2}
 AREA_CODES = {"ITH-C": "ITC", "ITH-T": "ITT", "CAY-V": "CAY", "DRY": "DRY", "LAN": "LAN", "CAR": "CAR", "DAN": "DAN", "ENF": "ENF", "GRO": "GRO", "NEW": "NEW", "ULY": "ULY", "TRU-V": "TRU"}
-EXTRA_CASES = [("within", 86), ("signal", 5), ("lowcpk", 3), ("uncertain", 3), ("forecast", 2), ("insufficient", 1)]
+EXTRA_CASES = [("within", 86), ("signal", 5), ("lowcpk", 3), ("uncertain", 3), ("forecast", 2), ("insufficient", 1), ("shift", 2), ("spike", 1), ("outliers", 1)]
 
 
 def extra_transformers(rng, count):
@@ -114,16 +121,30 @@ def class_for(rng, aid):
 def draw_daily_peaks(rng, rating, case, start, end):
     """Draw one daily peak per day and verify the intended classification with the real pipeline
     functions (so the labeled cases are what they claim). Re-draws with a new sub-seed if needed."""
-    from capacity_monitor.pipeline import capacity_headroom, imr_chart
+    from capacity_monitor.pipeline import capacity_headroom, imr_chart, load_decision_table, needs_review, signal_counts
     from capacity_monitor.sources import Period
 
     pb = config.load_playbook()
+    table = load_decision_table(playbook=pb)
+
+    def decide(peaks, period_):
+        """The chart and the decision-table row the real pipeline would reach for these peaks."""
+        chart = imr_chart({k.isoformat(): v for k, v in peaks.items() if period_.history_start <= k <= period_.end}, period_, pb)
+        in_period = [v for k, v in peaks.items() if period_.start <= k <= period_.end]
+        cap = capacity_headroom(chart, rating, {"period_peak": max(in_period) if in_period else None, "projected_peak": None}, pb)
+        facts = {"stability": chart["status"], "cpk": cap["cpk"], "cpk_ci_low": cap["cpk_ci_low"], "cpk_ci_high": cap["cpk_ci_high"],
+                 "forecast_ratio": None, "period_peak_ratio": cap["period_peak_ratio"], "assumption_flags": float(len(cap["assumption_flags"])),
+                 **signal_counts(chart, pb)}
+        return chart, cap, needs_review(facts, table)
+
     # verify against the period ending on --end and the one ending the day before, so the labeled
     # cases hold whether the owner runs "today" or the scheduler runs "yesterday"
     periods = [Period(end=end - timedelta(days=k), days=int(pb["period_days"]), history_days=int(pb["history_days"])) for k in (0, 1)]
     period = periods[0]
     params = {"within": (0.60, 0.04), "overlap": (0.60, 0.04), "signal": (0.60, 0.04), "uncertain": (0.70, 0.0667),
-              "lowcpk": (0.80, 0.06), "forecast": (0.65, 0.04), "insufficient": (0.55, 0.04)}
+              "lowcpk": (0.80, 0.06), "forecast": (0.65, 0.04), "insufficient": (0.55, 0.04),
+              "shift": (0.60, 0.04), "spike": (0.62, 0.04), "outliers": (0.60, 0.04)}
+    planted = {"wanted": {"signal": "4", "shift": "2", "spike": "1", "outliers": "3"}}
     mu, sd = params[case]
     first = end - timedelta(days=11) if case == "insufficient" else start
     for attempt in range(2000):
@@ -148,8 +169,21 @@ def draw_daily_peaks(rng, rating, case, start, end):
             continue
         if case in ("within", "overlap", "forecast", "uncertain", "lowcpk") and cap["assumption_flags"]:
             continue
-        if case == "signal":
-            peaks[end - timedelta(days=2)] = rating * (mu + 5.5 * sd)  # special cause: beyond 3 sigma, still below rating
+        if case in planted["wanted"]:
+            if case == "signal":  # amber: one isolated outlier beyond 3 sigma, still below the rating
+                peaks[end - timedelta(days=2)] = rating * (mu + 5.5 * sd)
+            elif case == "shift":  # red: 8 days in a row above the centre line, ending inside the period
+                for k in range(2, 10):
+                    peaks[end - timedelta(days=k)] = rating * sub.gauss(mu + 2.2 * sd, 0.5 * sd)
+            elif case == "spike":  # red: one reading at or above the rated maximum
+                peaks[end - timedelta(days=2)] = rating * sub.uniform(1.02, 1.06)
+            elif case == "outliers":  # red: three separate days beyond 3 sigma, alternating sides so no run rule fires
+                peaks[end - timedelta(days=1)] = rating * (mu + 5.5 * sd)
+                peaks[end - timedelta(days=3)] = rating * (mu - 5.5 * sd)
+                peaks[end - timedelta(days=5)] = rating * (mu + 5.5 * sd)
+            if all(decide(peaks, period_)[2]["rule"] == planted["wanted"][case] for period_ in periods):
+                return peaks
+            continue
         return peaks
     raise SystemExit(f"could not draw a {case} series after many attempts")
 

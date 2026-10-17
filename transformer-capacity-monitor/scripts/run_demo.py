@@ -71,9 +71,10 @@ def main(argv: list[str]) -> int:
         fc = f"{c['forecast_ratio']:.0%}" if c["forecast_ratio"] is not None else "-"
         print(f"{r['transformer_id']:<11} {r['stability']:<21} {cpk:>5} {ci:>13} {pk:>11} {fc:>15}  {r['decision']['rule']:>4}  {r['status']}")
     n_rev = sum(1 for r in rows if r["status"] == "review_needed")
+    n_insp = sum(1 for r in rows if r["status"] == "inspect_now")
     print()
-    print(f"{len(rows)} transformers: {len(rows) - n_rev} within limits, {n_rev} need review.")
-    print("How to read this: 'rule' is the first matching row of rules/decision-table.csv; every review_needed")
+    print(f"{len(rows)} transformers: {len(rows) - n_rev - n_insp} within limits, {n_rev} need review (amber), {n_insp} need an inspection now (red).")
+    print("How to read this: 'rule' is the first matching row of rules/decision-table.csv; every flagged (amber or red)")
     print("transformer waits for a named reviewer's disposition before the period report can be finalized.")
     return 0
 

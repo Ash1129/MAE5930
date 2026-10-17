@@ -82,18 +82,24 @@ def test_decision_table_first_match_wins(sandbox):
     from capacity_monitor.pipeline import load_decision_table, needs_review
 
     table = load_decision_table()
-    base = {"stability": "stable", "cpk": 2.0, "cpk_ci_low": 1.7, "cpk_ci_high": 2.3, "forecast_ratio": 0.7, "period_peak_ratio": 0.6, "assumption_flags": 0.0}
+    base = {"stability": "stable", "cpk": 2.0, "cpk_ci_low": 1.7, "cpk_ci_high": 2.3, "forecast_ratio": 0.7, "period_peak_ratio": 0.6, "assumption_flags": 0.0,
+            "inspect_signals": 0.0, "outlier_signals": 0.0}
     assert needs_review(base, table)["outcome"] == "within_limits"
-    assert needs_review({**base, "stability": "insufficient_history", "cpk": None, "cpk_ci_low": None, "forecast_ratio": None}, table)["rule"] == "1"
-    assert needs_review({**base, "stability": "signal", "cpk": None, "cpk_ci_low": None, "forecast_ratio": None}, table)["rule"] == "2"
-    assert needs_review({**base, "stability": "zero_variation", "cpk": None, "cpk_ci_low": None, "forecast_ratio": None}, table)["rule"] == "3"
-    assert needs_review({**base, "period_peak_ratio": 1.02}, table)["rule"] == "4"
-    assert needs_review({**base, "cpk": None, "cpk_ci_low": None}, table)["rule"] == "5"
-    assert needs_review({**base, "assumption_flags": 1.0}, table)["rule"] == "6"
-    assert needs_review({**base, "cpk": 1.2, "cpk_ci_low": 0.9}, table)["rule"] == "7"
-    assert needs_review({**base, "cpk": 1.4, "cpk_ci_low": 1.2}, table)["rule"] == "8"
-    assert needs_review({**base, "forecast_ratio": 1.1}, table)["rule"] == "9"
-    assert needs_review({**base, "forecast_ratio": None}, table)["rule"] == "10"
+    sig = {**base, "stability": "signal", "cpk": None, "cpk_ci_low": None, "forecast_ratio": None}
+    # red: a reading at the rating, a pattern rule this period, or three or more outlier days this period
+    assert needs_review({**base, "period_peak_ratio": 1.02}, table)["rule"] == "1" and needs_review({**base, "period_peak_ratio": 1.02}, table)["outcome"] == "inspect_now"
+    assert needs_review({**sig, "inspect_signals": 1.0}, table)["rule"] == "2" and needs_review({**sig, "inspect_signals": 1.0}, table)["outcome"] == "inspect_now"
+    assert needs_review({**sig, "outlier_signals": 3.0}, table)["rule"] == "3"
+    # amber: a few outliers, or a capacity / forecast concern
+    assert needs_review({**sig, "outlier_signals": 2.0}, table)["rule"] == "4" and needs_review(sig, table)["outcome"] == "review_needed"
+    assert needs_review({**base, "stability": "insufficient_history", "cpk": None, "cpk_ci_low": None, "forecast_ratio": None}, table)["rule"] == "5"
+    assert needs_review({**base, "stability": "zero_variation", "cpk": None, "cpk_ci_low": None, "forecast_ratio": None}, table)["rule"] == "6"
+    assert needs_review({**base, "cpk": None, "cpk_ci_low": None}, table)["rule"] == "7"
+    assert needs_review({**base, "assumption_flags": 1.0}, table)["rule"] == "8"
+    assert needs_review({**base, "cpk": 1.2, "cpk_ci_low": 0.9}, table)["rule"] == "9"
+    assert needs_review({**base, "cpk": 1.4, "cpk_ci_low": 1.2}, table)["rule"] == "10"
+    assert needs_review({**base, "forecast_ratio": 1.1}, table)["rule"] == "11"
+    assert needs_review({**base, "forecast_ratio": None}, table)["rule"] == "12"
 
 
 def test_guards_text_and_pii(sandbox):
@@ -252,13 +258,13 @@ def test_thresholds_have_one_source_of_truth(sandbox):
     pb = config.load_playbook()
     table = load_decision_table(playbook=pb)
     by_rule = {r["rule"]: r for r in table}
-    assert by_rule["7"]["when"] == f"cpk < {pb['capability']['cpk_review_below']}"
-    assert by_rule["8"]["when"] == f"cpk_ci_low < {pb['capability']['cpk_ci_low_review_below']}"
-    assert by_rule["9"]["when"] == f"forecast_ratio >= {pb['forecast']['near_rating_ratio']}"
-    assert "${" in by_rule["7"]["when_template"]
+    assert by_rule["9"]["when"] == f"cpk < {pb['capability']['cpk_review_below']}"
+    assert by_rule["10"]["when"] == f"cpk_ci_low < {pb['capability']['cpk_ci_low_review_below']}"
+    assert by_rule["11"]["when"] == f"forecast_ratio >= {pb['forecast']['near_rating_ratio']}"
+    assert "${" in by_rule["9"]["when_template"]
     # change the playbook value -> the resolved rule changes with it
     pb2 = {**pb, "capability": {**pb["capability"], "cpk_review_below": 1.5}}
-    assert load_decision_table(playbook=pb2)[6]["when"] == "cpk < 1.5"
+    assert load_decision_table(playbook=pb2)[8]["when"] == "cpk < 1.5"
     dag_src = (ROOT_DIR / "airflow" / "dags" / "log_transformer_loads_and_monitor_capacity_again.py").read_text()
     assert "schedule=SCHEDULE_CRON" in dag_src and 'playbook.json' in dag_src
 

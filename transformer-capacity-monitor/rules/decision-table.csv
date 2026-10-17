@@ -1,12 +1,14 @@
 rule,when,then,notes
-1,stability == 'insufficient_history',review_needed,Not enough stable history to judge the load pattern; a person decides
-2,stability == 'signal',review_needed,Chart signal: the load pattern changed; capability is not calculated for an unstable pattern
-3,stability == 'zero_variation',review_needed,Readings show no variation at all; check the meter or feed before trusting them
-4,period_peak_ratio >= 1.0,review_needed,A reading in the period reached or exceeded the rated maximum
-5,cpk is missing,review_needed,No capability result (insufficient data or calculation not possible)
-6,assumption_flags >= 1,review_needed,Capability assumptions not met (serial correlation or non-normal daily peaks); Cpk shown for information only
-7,cpk < ${capability.cpk_review_below},review_needed,Low Cpk against the rated maximum (playbook threshold ${capability.cpk_review_below})
-8,cpk_ci_low < ${capability.cpk_ci_low_review_below},review_needed,Uncertain Cpk: the lower 95% confidence bound is below ${capability.cpk_ci_low_review_below}
-9,forecast_ratio >= ${forecast.near_rating_ratio},review_needed,Forecast peak near or above the rated maximum (${forecast.near_rating_ratio} of rating or more)
-10,forecast_ratio is missing,review_needed,No forecast could be applied to this transformer
-11,otherwise,within_limits,Every transformer needs a defined outcome; first matching row wins
+1,period_peak_ratio >= 1.0,inspect_now,A reading in the period reached or exceeded the rated maximum
+2,stability == 'signal' and inspect_signals >= 1,inspect_now,Sustained shift this period: a run rule fired (8 in a row on one side of the centre line or 2 of 3 beyond 2 sigma)
+3,stability == 'signal' and outlier_signals >= ${chart.inspect_outliers_at},inspect_now,Repeated outliers this period (${chart.inspect_outliers_at} or more days beyond 3 sigma or with a moving-range spike)
+4,stability == 'signal',review_needed,Chart signal: a few outliers; the load pattern may have changed and capability is not calculated until it is explained
+5,stability == 'insufficient_history',review_needed,Not enough stable history to judge the load pattern; a person decides
+6,stability == 'zero_variation',review_needed,Readings show no variation at all; check the meter or feed before trusting them
+7,cpk is missing,review_needed,No capability result (insufficient data or calculation not possible)
+8,assumption_flags >= 1,review_needed,Capability assumptions not met (serial correlation or non-normal daily peaks); Cpk shown for information only
+9,cpk < ${capability.cpk_review_below},review_needed,Low Cpk against the rated maximum (playbook threshold ${capability.cpk_review_below})
+10,cpk_ci_low < ${capability.cpk_ci_low_review_below},review_needed,Uncertain Cpk: the lower 95% confidence bound is below ${capability.cpk_ci_low_review_below}
+11,forecast_ratio >= ${forecast.near_rating_ratio},review_needed,Forecast peak near or above the rated maximum (${forecast.near_rating_ratio} of rating or more)
+12,forecast_ratio is missing,review_needed,No forecast could be applied to this transformer
+13,otherwise,within_limits,Every transformer needs a defined outcome; first matching row wins

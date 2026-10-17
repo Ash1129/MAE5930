@@ -13,7 +13,7 @@
   .title h1 span{color:var(--ink-55)}
   .title .sub{font-size:14px;color:var(--ink-60);margin-top:8px}
   .title .chip{font-size:12px;padding:4px 12px;gap:7px} .title .chip .d{width:8px;height:8px}
-  .c-review{color:var(--review)} .c-ok{color:var(--ok)} .c-info{color:var(--info)}
+  .c-review{color:var(--amber)} .c-inspect{color:var(--review)} .c-ok{color:var(--ok)} .c-info{color:var(--info)}
 
   .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:32px 48px}
   .label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-60)}
@@ -120,14 +120,14 @@
         <h1>{{ r.transformer_id|tid }} <span>{{ r.name }}</span></h1>
         <div class="sub">{{ r.area_name }} · {{ r.customer_class }} · {{ r.rated_max|num(0) }} {{ r.unit }}</div>
       </div>
-      {% if r.status == 'review_needed' %}<span class="chip c-review"><span class="d"></span>Review needed</span>{% else %}<span class="chip c-ok"><span class="d"></span>Within limits</span>{% endif %}
+      {% if r.status == 'inspect_now' %}<span class="chip c-inspect"><span class="d"></span>Inspect now</span>{% elif r.status == 'review_needed' %}<span class="chip c-review"><span class="d"></span>Review needed</span>{% else %}<span class="chip c-ok"><span class="d"></span>Within limits</span>{% endif %}
       {% if r.disposition %}<span class="chip c-info">{{ decision_chips[r.disposition.decision] }} by {{ r.disposition.reviewer }}</span>{% endif %}
     </div>
   </div>
 
   <div class="two">
     <div class="why" id="summary">
-      <div class="label">{{ "Why it's on the list" if r.status == 'review_needed' else "Why it isn't on the list" }}</div>
+      <div class="label">{{ "Why it needs an inspection" if r.status == 'inspect_now' else ("Why it's on the list" if r.status == 'review_needed' else "Why it isn't on the list") }}</div>
       <h2>{{ why.headline }}</h2>
       <div class="rows">
         <span class="micro">What happened</span><span id="summary-text">{{ summary.ai.text if summary.ai else why.meaning }}</span>
@@ -299,7 +299,7 @@
 })();
 </script>
 {% endif %}
-{% if summary.ai_on and not summary.ai and r.status == 'review_needed' %}
+{% if summary.ai_on and not summary.ai and r.status != 'within_limits' %}
 <script>
 fetch({{ summary.url|tojson }}).then(r => r.ok ? r.json() : null).then(j => {
   if (j && j.text) document.getElementById('summary-text').textContent = j.text;

@@ -201,27 +201,28 @@ def dashboard():
         for item in full["areas"]:
             if base_counts[item["short"]] > 1 and item["kind"]:
                 item["short"] = f"{item['short']} ({item['kind']})"
-        areas = sorted(full["areas"], key=lambda a: (-a["review_needed"], a["area_name"]))
+        areas = sorted(full["areas"], key=lambda a: (-a["inspect_now"], -a["flagged"], a["area_name"]))
         rows = focused["transformers"]
         if status == "all":
             pass
         elif status:
             rows = [r for r in rows if r["status"] == status]
         else:
-            rows = [r for r in rows if r["status"] == "review_needed"]
+            rows = [r for r in rows if r["status"] != "within_limits"]
+        rows = sorted(rows, key=lambda r: 0 if r["status"] == "inspect_now" else 1)  # stable sort: red first, then by usage
         if stability:
             rows = [r for r in rows if r["stability"] == stability]
         if area:
             rows = [r for r in rows if r["area_id"] == area]
         if band:
             rows = [r for r in rows if r["usage_band"] == band]
-        review_n = sum(1 for r in focused["transformers"] if r["status"] == "review_needed")
+        review_n = sum(1 for r in focused["transformers"] if r["status"] != "within_limits")
         controls = county_control_charts(scope, period_start)
         board = {
             "status_slices": status_slices,
             "stability_slices": stability_slices,
             "band_slices": band_slices,
-            "status_svg": pie_svg(status_slices, (status if status and status != "all" else ("review_needed" if not status else None))),
+            "status_svg": pie_svg(status_slices, status if status and status != "all" else None),
             "stability_svg": pie_svg(stability_slices, stability or None),
             "band_svg": pie_svg(band_slices, band or None),
             "areas": areas,
@@ -287,7 +288,7 @@ def _finalize_blockers(period_id: str) -> list[str]:
     results = store.get_transformer_results(period_id)
     blockers = []
     for r in results:
-        if r["status"] != "review_needed":
+        if r["status"] == "within_limits":
             continue
         d = r.get("disposition")
         if not d:
@@ -303,8 +304,8 @@ def period_detail(period_id):
     if not period:
         abort(404)
     results = store.get_transformer_results(period_id)
-    exceptions = [r for r in results if r["status"] == "review_needed"]
-    within = [r for r in results if r["status"] != "review_needed"]
+    exceptions = sorted([r for r in results if r["status"] != "within_limits"], key=lambda r: 0 if r["status"] == "inspect_now" else 1)
+    within = [r for r in results if r["status"] == "within_limits"]
     blockers = _finalize_blockers(period_id)
     runs = [r for r in store.list_runs(limit=100) if r["period_id"] == period_id]
     return render_template("period.html", period=period, exceptions=exceptions, within=within, blockers=blockers, runs=runs, decisions=DECISIONS)
@@ -330,11 +331,12 @@ def transformer_detail(period_id, tid):
         ("Daily peaks behave well enough for the headroom figure", bool(cap.get("assumption_flags"))),
         ("Numbers match the chart and the raw readings", False),
     ]
-    cause = {"2": 0, "1": 1, "7": 2, "8": 2, "9": 3, "4": 4, "6": 5}.get(str(r["decision"]["rule"])) if r["status"] == "review_needed" else None
+    cause = {"2": 0, "3": 0, "4": 0, "5": 1, "9": 2, "10": 2, "11": 3, "1": 4, "8": 5}.get(str(r["decision"]["rule"])) if r["status"] != "within_limits" else None
     ai_on = ai_explain.enabled(store) and ai_explain.cli_path() is not None
     summary = {"rule": explain.summarize_transformer(r), "ai": ai_explain.cached_summary(store, period_id, r) if ai_on else None, "ai_on": ai_on,
                "url": url_for("api_transformer_summary", period_id=period_id, tid=tid)}
-    review_ids = [x["transformer_id"] for x in store.get_transformer_results(period_id) if x["status"] == "review_needed"]
+    flagged = [x for x in store.get_transformer_results(period_id) if x["status"] != "within_limits"]
+    review_ids = [x["transformer_id"] for x in sorted(flagged, key=lambda x: 0 if x["status"] == "inspect_now" else 1)]
     case = None
     if tid in review_ids:
         i = review_ids.index(tid)

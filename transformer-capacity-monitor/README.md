@@ -66,6 +66,8 @@ until the utility approves its own.
 | `history_days` | 60 | baseline days before the period used for control limits |
 | `chart.min_history_points` | 20 | fewest baseline days for a chart |
 | `chart.run_rules` | 4 rules | beyond 3σ; 2 of 3 beyond 2σ; 8 in a row on one side; moving range above its UCL |
+| `chart.inspect_rules` | 8 in a row; 2 of 3 beyond 2σ | a pattern rule firing in the period means **inspect now** (red), not just review |
+| `chart.inspect_outliers_at` | 3 | this many days with an isolated outlier in the period also means inspect now; fewer is **review needed** (amber) |
 | `capability.cpk_review_below` | 1.33 | Cpk below this needs review |
 | `capability.cpk_ci_low_review_below` | 1.33 | a lower 95% bound below this needs review |
 | `capability.mr_effective_df_factor` | 0.62 | effective degrees of freedom of the MR-bar sigma, as a share of n − 1 |
@@ -92,7 +94,8 @@ The Airflow DAG and the Flask app only call these functions, store the results a
 
 ## Outputs
 
-- A map of transformers, green for within limits and red for review needed.
+- A map of transformers: green for within limits, amber for review needed (a few outliers, or a capacity or
+  forecast concern), red for inspect now (a reading at the rating, a sustained shift, or repeated outliers this period).
 - A review page per transformer with the I-MR chart, Cpk and its interval, assumption flags, the
   projection and its assumptions, the matching rule, and the source readings.
 - A heatmap of hourly load per transformer for a recorded date, plus a seasonal view labeled MODELED.

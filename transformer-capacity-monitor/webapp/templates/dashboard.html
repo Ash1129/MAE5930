@@ -106,7 +106,7 @@
         <div class="svg">{{ board.status_svg|safe }}</div>
         <figcaption>
           <h3>Needs a person</h3>
-          <ul>{% for s in board.status_slices %}<li><a href="{{ s.href }}" {% if status == s.key or (not status and s.key == 'review_needed') %}class="on"{% endif %}><i style="background:{{ s.color }}"></i>{{ s.label }} <b>{{ s.count }}</b></a></li>{% endfor %}</ul>
+          <ul>{% for s in board.status_slices %}<li><a href="{{ s.href }}" {% if status == s.key or (not status and s.key != 'within_limits') %}class="on"{% endif %}><i style="background:{{ s.color }}"></i>{{ s.label }} <b>{{ s.count }}</b></a></li>{% endfor %}</ul>
         </figcaption>
       </figure>
       <figure class="pie">

@@ -29,7 +29,7 @@ def test_full_user_path_and_approval_gate(sandbox):
     assert run["status"] == "success", run["error"]
     assert client.get(f"/runs/{run_id}").status_code == 200
     page = client.get("/periods/2026-10-15")
-    assert page.status_code == 200 and b"Exceptions to review (5)" in page.data
+    assert page.status_code == 200 and b"Exceptions to review (8)" in page.data and b"Inspect now" in page.data
 
     # Bypass attempt: finalize with no dispositions -> refused by the backend
     resp = client.post("/periods/2026-10-15/finalize", data={"reviewer": "Tester"})
@@ -37,8 +37,8 @@ def test_full_user_path_and_approval_gate(sandbox):
     assert webapp.store.get_period("2026-10-15")["status"] == "draft"
 
     # Review each exception one at a time
-    exceptions = [r for r in webapp.store.get_transformer_results("2026-10-15") if r["status"] == "review_needed"]
-    assert len(exceptions) == 5
+    exceptions = [r for r in webapp.store.get_transformer_results("2026-10-15") if r["status"] != "within_limits"]
+    assert len(exceptions) == 8 and sum(1 for r in exceptions if r["status"] == "inspect_now") == 3
     for r in exceptions:
         tid = r["transformer_id"]
         assert client.get(f"/periods/2026-10-15/transformers/{tid}").status_code == 200

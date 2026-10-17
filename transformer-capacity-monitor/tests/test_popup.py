@@ -47,11 +47,13 @@ def test_mini_chart_svg_is_self_contained(sandbox):
 def test_rule_based_summary_covers_cases(sandbox):
     from capacity_monitor.explain import summarize_transformer
 
-    base = {"status": "review_needed", "unit": "kVA", "rated_max": 100.0, "stability": "stable", "decision": {"rule": "9", "reason": "x"},
+    base = {"status": "review_needed", "unit": "kVA", "rated_max": 100.0, "stability": "stable", "decision": {"rule": "11", "reason": "x"},
             "capacity": {"period_peak_ratio": 0.7, "forecast_ratio": 1.35, "cpk": 3.0, "cpk_ci_low": 2.5}, "chart": {"signals": []}}
     assert "135% of rating" in summarize_transformer(base)
-    assert "load pattern changed on 2026-10-13" in summarize_transformer({**base, "stability": "signal", "chart": {"signals": [{"date": "2026-10-13"}]}})
-    assert "Cpk 1.20" in summarize_transformer({**base, "decision": {"rule": "7"}, "capacity": {**base["capacity"], "cpk": 1.2, "cpk_ci_low": 0.9}})
+    assert "outside the normal range on 2026-10-13" in summarize_transformer({**base, "stability": "signal", "chart": {"signals": [{"date": "2026-10-13"}]}})
+    assert "Cpk 1.20" in summarize_transformer({**base, "decision": {"rule": "9"}, "capacity": {**base["capacity"], "cpk": 1.2, "cpk_ci_low": 0.9}})
+    red = {**base, "status": "inspect_now", "stability": "signal", "decision": {"rule": "2", "reason": "x"}, "chart": {"signals": [{"rule": "eight_in_a_row_one_side", "date": "2026-10-13", "in_period": True}]}}
+    assert summarize_transformer(red).startswith("Inspect now") and "8 days in a row" in summarize_transformer(red)
     assert summarize_transformer({**base, "status": "within_limits"}).startswith("Within limits")
 
 

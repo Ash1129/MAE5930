@@ -289,6 +289,24 @@ def decide_stability(chart: dict) -> str:
     return chart["status"]
 
 
+FLAGGED = ("review_needed", "inspect_now")
+
+
+def signal_counts(chart: dict, playbook: dict) -> dict:
+    """How many days in the period tripped a pattern rule (inspect_rules) versus an isolated outlier rule.
+
+    The decision table turns these into the red tier: a pattern this period, or inspect_outliers_at
+    or more outlier days this period, means inspect now; anything less is review (amber).
+    """
+    inspect = set(playbook["chart"].get("inspect_rules", ["eight_in_a_row_one_side", "two_of_three_beyond_2_sigma"]))
+    pattern_days, outlier_days = set(), set()
+    for sig in chart.get("signals") or []:
+        if not sig.get("in_period"):
+            continue
+        (pattern_days if sig["rule"] in inspect else outlier_days).add(sig["date"])
+    return {"inspect_signals": float(len(pattern_days)), "outlier_signals": float(len(outlier_days))}
+
+
 # ---- Step 10: project demand growth -----------------------------------------------------
 
 def project_demand(t: dict, period: Period, playbook: dict) -> dict:
@@ -532,7 +550,8 @@ def _eval_condition(cond: str, facts: dict) -> bool:
 
 
 def needs_review(facts: dict, table: list[dict]) -> dict:
-    """First matching row wins. facts: stability, cpk, cpk_ci_low, cpk_ci_high, forecast_ratio, period_peak_ratio."""
+    """First matching row wins. facts: stability, cpk, cpk_ci_low, cpk_ci_high, forecast_ratio, period_peak_ratio,
+    assumption_flags, inspect_signals, outlier_signals. Outcomes: within_limits, review_needed, inspect_now."""
     for row in table:
         if _eval_condition(row["when"], facts):
             return {"outcome": row["then"], "rule": row["rule"], "reason": row["notes"], "condition": row["when"]}
@@ -563,6 +582,7 @@ def evaluate_transformers(joined: dict, charts: dict, playbook: dict, table: lis
             "forecast_ratio": capacity["forecast_ratio"],
             "period_peak_ratio": capacity["period_peak_ratio"],
             "assumption_flags": float(len(capacity["assumption_flags"])),
+            **signal_counts(chart, playbook),
         }
         decision = needs_review(facts, table)
         results[tid] = {
@@ -589,9 +609,10 @@ def evaluate_transformers(joined: dict, charts: dict, playbook: dict, table: lis
 
 
 def summarize(results: dict) -> dict:
-    counts = {"within_limits": 0, "review_needed": 0, "stable": 0, "signal": 0, "insufficient_history": 0, "zero_variation": 0}
+    counts = {"within_limits": 0, "review_needed": 0, "inspect_now": 0, "stable": 0, "signal": 0, "insufficient_history": 0, "zero_variation": 0}
     for r in results.values():
         counts[r["status"]] = counts.get(r["status"], 0) + 1
         counts[r["stability"]] = counts.get(r["stability"], 0) + 1
+    counts["flagged"] = counts["review_needed"] + counts["inspect_now"]
     counts["transformers"] = len(results)
     return counts

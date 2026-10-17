@@ -135,24 +135,48 @@ def summarize_transformer(r: dict) -> str:
     rule = str((r.get("decision") or {}).get("rule", ""))
     stab = r.get("stability")
     peak_txt = f"this week's peak reached {pk:.0%} of its {rating:,.0f} {unit} rating" if pk is not None and rating else "no peak was recorded this week"
-    if r.get("status") != "review_needed":
+    if r.get("status") == "within_limits":
         return f"Within limits: {peak_txt}, the load pattern is stable and the margin to the rating is comfortable."
+    if rule == "1":
+        return f"Inspect now: a reading this week reached or exceeded the rated maximum; {peak_txt}."
+    if rule in ("2", "3"):
+        return f"Inspect now: {_pattern_phrase(r)}; {peak_txt}."
     if stab == "signal":
         sig = (r.get("chart") or {}).get("signals") or []
         when = f" on {sig[0]['date']}" if sig else ""
-        return f"The load pattern changed{when}, so headroom is not calculated until someone checks why; {peak_txt}."
+        return f"A few readings fell outside the normal range{when}; worth a look, but no sustained shift; {peak_txt}."
     if stab == "insufficient_history":
         return f"Not enough history yet to judge this transformer; {peak_txt}."
     if stab == "zero_variation":
         return "Readings show no variation at all, which usually means a meter or feed problem."
-    if rule == "9" and fc is not None:
+    if rule == "11" and fc is not None:
         return f"Fine today ({peak_txt}), but projected heat-pump growth would push the peak to {fc:.0%} of rating."
-    if rule in ("7", "8") and c.get("cpk") is not None:
+    if rule in ("9", "10") and c.get("cpk") is not None:
         lo = c.get("cpk_ci_low")
         return f"Headroom is thin or uncertain: Cpk {c['cpk']:.2f}" + (f" (could be as low as {lo:.2f})" if lo is not None else "") + f"; {peak_txt}."
-    if rule == "4":
-        return f"A reading this week reached or exceeded the rated maximum; {peak_txt}."
     return f"Flagged for review ({(r.get('decision') or {}).get('reason', 'see rule')}); {peak_txt}."
+
+
+_RULE_WORDS = {
+    "eight_in_a_row_one_side": "8 days in a row on one side of its usual level",
+    "two_of_three_beyond_2_sigma": "2 of 3 days well above or below its usual level",
+    "beyond_3_sigma": "a day outside the normal range",
+    "moving_range_beyond_ucl": "a day-to-day jump larger than usual",
+}
+
+
+def _pattern_phrase(r: dict) -> str:
+    """Name the chart rules that fired this period, in plain words (most serious first)."""
+    sigs = [s for s in (r.get("chart") or {}).get("signals") or [] if s.get("in_period")]
+    rules = []
+    for s in sorted(sigs, key=lambda s: list(_RULE_WORDS).index(s["rule"]) if s["rule"] in _RULE_WORDS else 9):
+        if s["rule"] not in rules:
+            rules.append(s["rule"])
+    days = len({s["date"] for s in sigs})
+    if not rules:
+        return "the load pattern changed this week"
+    words = [_RULE_WORDS.get(x, x.replace("_", " ")) for x in rules[:2]]
+    return "the load pattern shifted this week (" + " and ".join(words) + (f", {days} days flagged" if days > 1 else "") + ")"
 
 
 def _horizon_phrase(assumptions: dict) -> str:
@@ -175,53 +199,59 @@ def why_flagged(r: dict, playbook: dict | None = None) -> dict:
         area = "the " + area
     peak = (f"This week's highest load was {pk:,.1f} {unit}, {pkr:.0%} of the {rating:,.0f} {unit} rating." if pk is not None and pkr is not None and rating
             else "No peak was recorded this week.")
-    if r.get("status") != "review_needed":
+    if r.get("status") == "within_limits":
         return {"headline": "Within limits this week", "meaning": peak + " The load pattern is steady and the margin to the rating is comfortable.",
                 "action": "Nothing to decide. It is listed for reference."}
-    if rule == "1":
+    if rule == "5":
         return {"headline": "Not enough steady history to judge it yet",
                 "meaning": f"Only {ch.get('n_baseline', 0)} days of steady history are available; the tool needs {ch.get('min_history_points', 20)} before it sets a normal range. " + peak,
                 "action": "Check whether the readings started recently or have gaps. If the load looks reasonable, agree and keep it on watch."}
-    if rule == "2":
+    if rule == "4":
         sig = [s for s in ch.get("signals") or [] if s.get("in_period")] or list(ch.get("signals") or [])
         when = f" on {sig[0]['date']}" if sig else ""
         rng = f" ({ch['lcl']:,.1f} to {ch['ucl']:,.1f} {unit})" if ch.get("lcl") is not None and ch.get("ucl") is not None else ""
-        return {"headline": f"The load pattern changed{when}",
-                "meaning": f"The daily peak moved outside its normal range from history{rng}, so the room left today is not worked out until the change is explained. " + peak,
-                "action": "Look at the chart and the hourly readings around that date for a new connection, a switching event or a meter problem, and note what you find."}
-    if rule == "3":
+        return {"headline": f"A few readings fell outside the normal range{when}",
+                "meaning": f"One or two daily peaks sat outside the normal range from history{rng}, but no sustained shift was found, so this is a look rather than a call-out. The room left today is not worked out until the readings are explained. " + peak,
+                "action": "Look at the chart and the hourly readings around that date for a one-off event, a meter blip or an early sign of change, and note what you find."}
+    if rule == "6":
         return {"headline": "The readings don't change at all",
                 "meaning": "Every daily peak is the same value, which usually means a stuck meter or a feed problem rather than real load.",
                 "action": "Check the meter and the readings export before trusting these numbers. \"Something needs fixing first\" fits if the feed is wrong."}
-    if rule == "4":
-        return {"headline": "A reading this week reached the rating",
-                "meaning": peak + " At least one reading was at or above the rated maximum.",
-                "action": "Check whether it was a one-off, such as a switching event, or sustained load. Plan relief if it is sustained."}
-    if rule == "5":
+    if rule == "1":
+        return {"headline": "Inspect now: a reading this week reached the rating",
+                "meaning": peak + " At least one reading was at or above the rated maximum, so the transformer ran at or past its nameplate.",
+                "action": "Send someone to check it. Find out whether it was a one-off, such as a switching event, or sustained load, and plan relief if it is sustained."}
+    if rule in ("2", "3"):
+        rng = f" ({ch['lcl']:,.1f} to {ch['ucl']:,.1f} {unit})" if ch.get("lcl") is not None and ch.get("ucl") is not None else ""
+        what = _pattern_phrase(r)
+        return {"headline": "Inspect now: " + ("the load has shifted, not just spiked" if rule == "2" else "repeated readings outside the normal range"),
+                "meaning": what[0].upper() + what[1:] + f". Its normal range from history is{rng}. A pattern like this points to a real change on the circuit, not noise. " + peak,
+                "action": "Send someone to check the transformer and its connections this week: look for a new load, a switching change or a failing component, and note what you find."}
+    if rule == "7":
         return {"headline": "The room left today could not be worked out",
                 "meaning": (c.get("note") or "There was not enough data to calculate headroom.") + " " + peak,
                 "action": "Check the readings for gaps, then judge from the chart and the peak."}
-    if rule == "6":
+    if rule == "8":
         return {"headline": "The headroom figure can't be trusted for this one",
                 "meaning": "The room-left figure assumes daily peaks that are independent and roughly bell-shaped; here " + "; ".join(c.get("assumption_flags") or ["they are not"]) + ". " + peak,
                 "action": "Judge from the chart and this week's peak rather than the Cpk number."}
-    if rule == "7" and c.get("cpk") is not None:
+    if rule == "9" and c.get("cpk") is not None:
         return {"headline": "Not much room left today",
                 "meaning": f"Daily peaks run close to the {rating:,.0f} {unit} rating for how much they vary (Cpk {c['cpk']:.2f}, review line {cpk_line}). " + peak,
                 "action": "Decide whether to plan an upgrade, move load to a neighbour, or watch it."}
-    if rule == "8" and c.get("cpk") is not None:
+    if rule == "10" and c.get("cpk") is not None:
         lo = c.get("cpk_ci_low")
         return {"headline": "The room left today is uncertain",
                 "meaning": f"Cpk is {c['cpk']:.2f}, but with {c.get('n', 0)} days of data it could be as low as {lo:.2f}, under the {cpk_line} review line. " + peak,
                 "action": "Watch it for a few more weeks, or agree and plan a check."}
-    if rule == "9" and fc is not None and fcr is not None:
+    if rule == "11" and fc is not None and fcr is not None:
         when = _horizon_phrase((r.get("projection") or {}).get("assumptions") or {})
         verb = "reach its rating" if fcr >= 1 else "come close to its rating"
         under = "well under" if (pkr or 0) < 0.75 else "under"
         return {"headline": f"Fine today, but expected to {verb} by {when}",
                 "meaning": f"This week's highest load was {pk:,.1f} {unit}, {under} the {rating:,.0f} {unit} rating. Adding the expected heat-pump growth for {area} brings the winter peak to about {fc:,.1f} {unit} ({fcr:.0%} of rating).",
                 "action": "Decide whether to plan an upgrade or watch it." + (" Today's load pattern is steady, so this is a planning call, not an urgent one." if r.get("stability") == "stable" else "")}
-    if rule == "10":
+    if rule == "12":
         reason = ((r.get("projection") or {}).get("assumptions") or {}).get("reason_not_projected") or "no forecast row for its area"
         return {"headline": "No winter estimate for this transformer",
                 "meaning": f"The heat-pump forecast could not be applied ({reason}), so the tool cannot tell whether winter load will fit. " + peak,

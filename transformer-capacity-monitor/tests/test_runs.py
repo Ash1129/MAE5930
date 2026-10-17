@@ -23,17 +23,22 @@ def test_labeled_synthetic_cases(sandbox):
     r = _results()
     assert r["T-DRY-004"]["stability"] == "signal" and r["T-DRY-004"]["capacity"]["cpk"] is None  # case 2
     assert r["T-DRY-004"]["capacity"]["period_peak_ratio"] < 1.0
-    assert r["T-LAN-005"]["decision"]["rule"] == "8"  # case 3: uncertain Cpk
-    assert r["T-CAR-006"]["decision"]["rule"] == "9" and r["T-CAR-006"]["capacity"]["forecast_ratio"] > 1.0  # case 4
+    assert r["T-DRY-004"]["status"] == "review_needed" and r["T-DRY-004"]["decision"]["rule"] == "4"  # amber: a few outliers
+    assert r["T-LAN-005"]["decision"]["rule"] == "10"  # case 3: uncertain Cpk
+    assert r["T-CAR-006"]["decision"]["rule"] == "11" and r["T-CAR-006"]["capacity"]["forecast_ratio"] > 1.0  # case 4
     assert r["T-ULY-007"]["stability"] == "insufficient_history"
-    assert r["T-DAN-010"]["decision"]["rule"] == "7"
+    assert r["T-DAN-010"]["decision"]["rule"] == "9"
     assert r["T-ITH-001"]["status"] == "within_limits"
+    # red tier: a reading at the rating, a sustained shift, repeated outliers
+    assert r["T-ENF-011"]["status"] == "inspect_now" and r["T-ENF-011"]["decision"]["rule"] == "1"
+    assert r["T-GRO-009"]["status"] == "inspect_now" and r["T-GRO-009"]["decision"]["rule"] == "2"
+    assert r["T-TRU-012"]["status"] == "inspect_now" and r["T-TRU-012"]["decision"]["rule"] == "3"
     assert all(s["status"] == "success" for s in run["steps"] if s["step"] not in (13,))
     assert [s["status"] for s in run["steps"] if s["step"] == 13] == ["waiting"]
     from capacity_monitor import config
 
     rep = json.loads((config.REPORTS_DIR / "2026-10-15" / "report.json").read_text())
-    assert rep["report_status"] == "draft" and rep["exceptions_total"] == 5
+    assert rep["report_status"] == "draft" and rep["exceptions_total"] == 8 and rep["summary"]["inspect_now"] == 3
 
 
 def test_boundary_period_mismatch_stops_before_analysis(sandbox):

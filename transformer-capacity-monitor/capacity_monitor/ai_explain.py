@@ -168,7 +168,7 @@ def _facts(r: dict) -> str:
     sig = [f"{s['rule']} on {s['date']}" for s in (r.get("chart") or {}).get("signals", [])][:4]
     f = {
         "transformer": f"{str(r.get('transformer_id') or '').removeprefix('T-')} {r.get('name')}, {r.get('area_name')}",
-        "status": "review needed" if r.get("status") == "review_needed" else "within limits",
+        "status": {"review_needed": "review needed", "inspect_now": "inspect now (urgent)"}.get(r.get("status"), "within limits"),
         "why flagged": (r.get("decision") or {}).get("reason"),
         "rated maximum": f"{r.get('rated_max')} {r.get('unit')}",
         "this week's peak": None if c.get("period_peak") is None else f"{c['period_peak']:.1f} {r.get('unit')} ({c['period_peak_ratio']:.0%} of rating)",

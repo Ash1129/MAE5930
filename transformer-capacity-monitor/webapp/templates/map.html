@@ -122,6 +122,8 @@
   .drow .nm{font-size:13px}
   .drow .sub{font-size:11px;color:var(--ink-60)}
   .drow .red{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#b01d30} .drow .red i{width:6px;height:6px;border-radius:50%;background:#D7263D;display:inline-block}
+  .drow .amb{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#9a5b00} .drow .amb i{width:6px;height:6px;border-radius:50%;background:#F28C28;display:inline-block}
+  :root[data-theme="dark"] .drow .amb{color:#f4b24a}
   :root[data-theme="dark"] .drow .red{color:#ff8a96}
   .drow:hover{color:var(--ink-90)} #districts:hover .drow:hover .dash{background:rgba(var(--ink-rgb),.6)}
   .drow.on{color:var(--ink-90)} .drow.on .nm{font-weight:600}
@@ -132,6 +134,8 @@
   .chip.on{background:rgba(var(--ink-rgb),.9);color:#fff}
   .chip .red{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#b01d30} .chip.on .red{color:#ffb3bd}
   .chip .red i{width:6px;height:6px;border-radius:50%;background:#D7263D;display:inline-block}
+  .chip .amb{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#9a5b00} .chip.on .amb{color:#ffd59a}
+  .chip .amb i{width:6px;height:6px;border-radius:50%;background:#F28C28;display:inline-block}
 
   /* heat strip */
   #heat{position:absolute;top:62px;left:64px;right:332px;z-index:20;padding:12px 16px;box-sizing:border-box}
@@ -205,7 +209,7 @@
   #legend .f input:checked::after{content:"";width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
   #legend .f input:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
   #legend .f:has(input:not(:checked)){opacity:.55}
-  #legend .g{width:8px;height:8px;border-radius:50%;background:#1B7F4B;box-shadow:0 0 0 2px #fff;display:inline-block;flex:none} #legend .r{width:11px;height:11px;border-radius:50%;background:#D7263D;box-shadow:0 0 0 2px #fff;display:inline-block;flex:none}
+  #legend .g{width:8px;height:8px;border-radius:50%;background:#1B7F4B;box-shadow:0 0 0 2px #fff;display:inline-block;flex:none} #legend .a{width:10px;height:10px;border-radius:50%;background:#F28C28;box-shadow:0 0 0 2px #fff;display:inline-block;flex:none} #legend .r{width:11px;height:11px;border-radius:50%;background:#D7263D;box-shadow:0 0 0 2px #fff;display:inline-block;flex:none}
   /* Sit left of the review panel. On a wide screen the panel covers the bottom-right corner. */
   #controls{position:absolute;right:332px;bottom:16px;z-index:30;display:flex;flex-direction:column;align-items:flex-end}
   #zoom{display:flex;flex-direction:column;width:40px;flex:none;border-radius:12px;overflow:hidden} #zoom button{width:40px;height:40px;flex:none;border-radius:0;box-sizing:border-box} #zoom .sep{height:1px;background:var(--ink-line)}
@@ -309,7 +313,7 @@
     {% if not period %}
     <div id="first">
       <div class="t">No period has been run yet</div>
-      <div class="d">The map shows town boundaries only. Run the first period to see every transformer sorted into within limits or review needed.</div>
+      <div class="d">The map shows town boundaries only. Run the first period to see every transformer sorted into within limits, review needed or inspect now.</div>
       <form method="post" action="{{ url_for('start_run') }}" style="margin-top:8px">
         <input type="hidden" name="period_end" value="{{ default_end }}">
         <button class="btn btn-primary" type="submit">Run the first period</button>
@@ -338,7 +342,8 @@
   <div id="legend" class="glass">
     <div class="row">
       <label class="f" title="Show transformers within limits"><input type="checkbox" id="f-ok" checked><i class="g"></i>Within limits <span class="muted" id="green-total">0</span></label>
-      <label class="f" title="Show transformers that need review"><input type="checkbox" id="f-red" checked><i class="r"></i>Review needed <span class="muted" id="red-total">0</span></label>
+      <label class="f" title="Show transformers that need a review (a few outliers or a capacity concern)"><input type="checkbox" id="f-amber" checked><i class="a"></i>Review needed <span class="muted" id="amber-total">0</span></label>
+      <label class="f" title="Show transformers that need an inspection now (a sustained shift or a reading at the rating)"><input type="checkbox" id="f-red" checked><i class="r"></i>Inspect now <span class="muted" id="red-total">0</span></label>
     </div>
     <div class="muted" id="status-line">Checking the scheduler...</div>
   </div>
@@ -360,7 +365,10 @@ const LATEST_ALERT = {{ latest_alert|tojson }};
 const SCHED = {{ sched|tojson }};
 const LAST_RUN = {{ (last_run and {'status': last_run.status, 'finished_at': last_run.finished_at, 'started_at': last_run.started_at})|tojson }};
 const REVIEWER = {{ (reviewer_name or '')|tojson }};
-const GREEN = '#1B7F4B', RED = '#D7263D', AMBER = '#F4B400';
+const GREEN = '#1B7F4B', RED = '#D7263D', AMBER = '#F4B400', ORANGE = '#F28C28';
+const TIER = { within_limits: { color: GREEN, label: 'Within limits', r: 4 }, review_needed: { color: ORANGE, label: 'Review needed', r: 5 }, inspect_now: { color: RED, label: 'Inspect now', r: 5.5 } };
+const tier = p => TIER[p.status] || TIER.within_limits;
+const tierRank = p => p.status === 'inspect_now' ? 0 : p.status === 'review_needed' ? 1 : 2;
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const $ = id => document.getElementById(id);
 const fmt1 = v => Number(v).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
@@ -373,7 +381,9 @@ const S = { district: '', popup: null, alertsOpen: false, mode: 'recorded', metr
   dateIdx: +$('date-slider').value || 0, month: 1, hour: 18, playing: false, sheetOpen: false, firstLaunch: !PERIOD, loads: {}, modeled: false, factor: 1 };
 const wide = () => window.innerWidth >= 1000;
 const phone = () => window.innerWidth < 600;
-const reds = POINTS.filter(p => p.status === 'review_needed');
+const flagged = POINTS.filter(p => p.status !== 'within_limits').sort((a, b) => tierRank(a) - tierRank(b));
+const inspects = POINTS.filter(p => p.status === 'inspect_now');
+const reds = flagged;  // every case that needs a person, red first
 
 // ---- map ----
 const map = L.map('map', { zoomControl: false, attributionControl: true, fadeAnimation: false }).setView([42.44, -76.5], 10);
@@ -400,10 +410,10 @@ map.on('moveend', () => { if (S.popup && !$('popup').hidden) fitPopup(); });
 const dots = L.layerGroup().addTo(map);
 const markers = {};
 POINTS.forEach(p => {
-  const red = p.status === 'review_needed';
-  const m = L.circleMarker([p.lat, p.lon], { radius: red ? 5.5 : 4, color: '#fff', weight: 2, fillColor: red ? RED : GREEN, fillOpacity: .95 });
+  const t = tier(p);
+  const m = L.circleMarker([p.lat, p.lon], { radius: t.r, color: '#fff', weight: 2, fillColor: t.color, fillOpacity: .95 });
   m.on('click', e => { L.DomEvent.stopPropagation(e); openPopup(p); });
-  m.bindTooltip(showId(p.id) + (red ? ' · review needed' : ''));
+  m.bindTooltip(showId(p.id) + (p.status === 'within_limits' ? '' : ' · ' + t.label.toLowerCase()));
   markers[p.id] = m; dots.addLayer(m);
 });
 const bPts = BOUNDARIES ? (BOUNDARIES.features || []).flatMap(f => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).flatMap(p => p[0]).map(c => [c[1], c[0]])) : [];
@@ -430,20 +440,21 @@ function applyLayout() {
 window.addEventListener('resize', () => { applyLayout(); renderDistricts(); });
 
 // ---- status filter (legend checkboxes: check one, both or neither) ----
-const visible = p => (p.status === 'review_needed' ? $('f-red').checked : $('f-ok').checked);
+const visible = p => (p.status === 'inspect_now' ? $('f-red').checked : p.status === 'review_needed' ? $('f-amber').checked : $('f-ok').checked);
 function applyFilter() {
   POINTS.forEach(p => { const m = markers[p.id]; const show = visible(p); if (show && !dots.hasLayer(m)) dots.addLayer(m); if (!show && dots.hasLayer(m)) dots.removeLayer(m); });
   if (S.popup && !visible(S.popup)) closePopup();
   renderHeat();
 }
-$('f-ok').onchange = applyFilter; $('f-red').onchange = applyFilter;
+$('f-ok').onchange = applyFilter; $('f-amber').onchange = applyFilter; $('f-red').onchange = applyFilter;
 
 // ---- districts ----
 function renderDistricts() {
-  const rows = [{ id: '', name: 'Whole county', sub: POINTS.length + ' transformers', red: reds.length }].concat(
-    DISTRICTS.map(d => ({ id: d.id, name: d.name, sub: d.kind + ' · ' + POINTS.filter(p => p.area === d.id).length, red: reds.filter(p => p.area === d.id).length })));
-  $('district-list').innerHTML = rows.map(d => `<li><button class="drow${d.id === S.district ? ' on' : ''}" data-id="${esc(d.id)}" aria-current="${d.id === S.district ? 'true' : 'false'}"><span class="dash" aria-hidden="true"></span><span class="txt"><span class="nm">${esc(d.name)}</span><span class="sub">${esc(d.sub)}</span>${d.red ? `<span class="red"><i></i>${d.red}</span>` : ''}</span></button></li>`).join('');
-  $('chips').innerHTML = rows.map(d => `<button class="chip${d.id === S.district ? ' on' : ''}" data-id="${esc(d.id)}">${esc(d.name)}${d.red ? `<span class="red"><i></i>${d.red}</span>` : ''}</button>`).join('');
+  const count = (list, area) => (area ? list.filter(p => p.area === area) : list).length;
+  const rows = [{ id: '', name: 'Whole county', sub: POINTS.length + ' transformers', red: inspects.length, amber: flagged.length - inspects.length }].concat(
+    DISTRICTS.map(d => ({ id: d.id, name: d.name, sub: d.kind + ' · ' + count(POINTS, d.id), red: count(inspects, d.id), amber: count(flagged, d.id) - count(inspects, d.id) })));
+  $('district-list').innerHTML = rows.map(d => `<li><button class="drow${d.id === S.district ? ' on' : ''}" data-id="${esc(d.id)}" aria-current="${d.id === S.district ? 'true' : 'false'}"><span class="dash" aria-hidden="true"></span><span class="txt"><span class="nm">${esc(d.name)}</span><span class="sub">${esc(d.sub)}</span>${d.red ? `<span class="red"><i></i>${d.red}</span>` : ''}${d.amber ? `<span class="amb"><i></i>${d.amber}</span>` : ''}</span></button></li>`).join('');
+  $('chips').innerHTML = rows.map(d => `<button class="chip${d.id === S.district ? ' on' : ''}" data-id="${esc(d.id)}">${esc(d.name)}${d.red ? `<span class="red"><i></i>${d.red}</span>` : ''}${d.amber ? `<span class="amb"><i></i>${d.amber}</span>` : ''}</button>`).join('');
   document.querySelectorAll('.drow,.chip').forEach(b => b.onclick = () => selectDistrict(b.dataset.id));
 }
 function selectDistrict(id) {
@@ -513,22 +524,23 @@ $('play').onclick = () => {
 
 // ---- sidebar ----
 function renderSidebar() {
-  if (S.firstLaunch) { $('green-total').textContent = '0'; $('red-total').textContent = '0'; return; }
+  if (S.firstLaunch) { $('green-total').textContent = '0'; $('amber-total').textContent = '0'; $('red-total').textContent = '0'; return; }
   const inArea = S.district ? POINTS.filter(p => p.area === S.district) : POINTS;
   const redsIn = S.district ? reds.filter(p => p.area === S.district) : reds;
   const sel = DISTRICTS.find(d => d.id === S.district);
   // district selected: the sidebar shows hotspots only; whole county: the review list only
-  $('side-title').textContent = sel ? 'Hotspots now' : 'Review needed';
+  $('side-title').textContent = sel ? 'Hotspots now' : 'Needs a person';
   $('red-count').textContent = redsIn.length; $('red-count').hidden = !!sel;
   $('side-scope').hidden = !sel; if (sel) $('side-scope').textContent = 'in ' + sel.fullName;
   $('review-rows').hidden = !!sel;
-  $('review-rows').innerHTML = (sel ? [] : redsIn).map(p => `<div class="rrow${S.popup && S.popup.id === p.id ? ' on' : ''}" data-id="${esc(p.id)}"><button class="main" data-id="${esc(p.id)}"><span class="l1"><span class="dot"></span><span class="id">${esc(showId(p.id))}</span><span class="nm">${esc(p.name)} · ${esc(shortName(p.area_name) || p.area)}</span></span><span class="why">${esc(p.reason)}</span>${p.disposition ? `<span class="disp">${esc(p.disposition)}</span>` : ''}</button><a class="go" href="${esc(p.url)}" aria-label="Open full review"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>`).join('');
-  document.querySelectorAll('.rrow .main').forEach(b => b.onclick = () => { const p = POINTS.find(x => x.id === b.dataset.id); if (!visible(p)) { $('f-red').checked = true; applyFilter(); } map.setView([p.lat, p.lon], Math.max(map.getZoom(), 13), { animate: false }); S.sheetOpen = false; applySheet(); openPopup(p); });
-  $('green-total').textContent = inArea.length - redsIn.length; $('red-total').textContent = redsIn.length;
+  $('review-rows').innerHTML = (sel ? [] : redsIn).map(p => `<div class="rrow${S.popup && S.popup.id === p.id ? ' on' : ''}" data-id="${esc(p.id)}"><button class="main" data-id="${esc(p.id)}"><span class="l1"><span class="dot" style="background:${tier(p).color}" title="${tier(p).label}"></span><span class="id">${esc(showId(p.id))}</span><span class="nm">${esc(p.name)} · ${esc(shortName(p.area_name) || p.area)}</span></span><span class="why">${esc(p.reason)}</span>${p.disposition ? `<span class="disp">${esc(p.disposition)}</span>` : ''}</button><a class="go" href="${esc(p.url)}" aria-label="Open full review"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>`).join('');
+  document.querySelectorAll('.rrow .main').forEach(b => b.onclick = () => { const p = POINTS.find(x => x.id === b.dataset.id); if (!visible(p)) { $(p.status === 'inspect_now' ? 'f-red' : 'f-amber').checked = true; applyFilter(); } map.setView([p.lat, p.lon], Math.max(map.getZoom(), 13), { animate: false }); S.sheetOpen = false; applySheet(); openPopup(p); });
+  const inspectsIn = redsIn.filter(p => p.status === 'inspect_now').length;
+  $('green-total').textContent = inArea.length - redsIn.length; $('amber-total').textContent = redsIn.length - inspectsIn; $('red-total').textContent = inspectsIn;
   const undecided = reds.filter(p => !p.disposition).length;
   const fin = $('finalize');
   if (PERIOD_STATUS === 'final') { fin.disabled = true; $('finalize-why').textContent = 'Finalized; rerun the period to review again'; }
-  else { fin.disabled = undecided > 0 || !REVIEWER; $('finalize-why').textContent = undecided > 0 ? undecided + ' red cases still need a decision before the report can be finalized' : (REVIEWER ? 'Every red case has a decision' : 'Set the reviewer name in Setup to finalize'); }
+  else { fin.disabled = undecided > 0 || !REVIEWER; $('finalize-why').textContent = undecided > 0 ? undecided + ' flagged cases still need a decision before the report can be finalized' : (REVIEWER ? 'Every flagged case has a decision' : 'Set the reviewer name in Setup to finalize'); }
 }
 function applySheet() { $('side').classList.toggle('open', S.sheetOpen && !wide()); }
 $('sheet-handle').onclick = () => { S.sheetOpen = !S.sheetOpen; applySheet(); };
@@ -537,9 +549,9 @@ const finForm = $('finalize-form'); if (finForm) finForm.onsubmit = e => { if ($
 
 // ---- popup ----
 function openPopup(p) {
-  S.popup = p; const red = p.status === 'review_needed';
+  S.popup = p; const t = tier(p);
   $('pp-id').textContent = showId(p.id); $('pp-sub').textContent = p.name + ' · ' + (shortName(p.area_name) || p.area);
-  $('pp-chip').style.color = red ? RED : GREEN; $('pp-status').textContent = red ? 'Review needed' : 'Within limits';
+  $('pp-chip').style.color = t.color; $('pp-status').textContent = t.label;
   $('pp-link').href = p.url;
   $('pp-summary-text').textContent = ''; $('pp-summary-src').className = ''; $('pp-summary-src').innerHTML = '';
   $('pp-chart').innerHTML = '<span class="muted" style="font-size:11px;padding:6px;display:block">Loading control chart…</span>';

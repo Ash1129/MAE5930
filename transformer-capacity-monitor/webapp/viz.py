@@ -10,17 +10,17 @@ import csv
 import math
 from html import escape
 
-STATUS_ORDER = ("within_limits", "review_needed")
+STATUS_ORDER = ("within_limits", "review_needed", "inspect_now")
 STABILITY_ORDER = ("stable", "signal", "insufficient_history", "zero_variation")
 
-STATUS_LABEL = {"within_limits": "Within limits", "review_needed": "Review needed"}
+STATUS_LABEL = {"within_limits": "Within limits", "review_needed": "Review needed", "inspect_now": "Inspect now"}
 STABILITY_LABEL = {
     "stable": "Stable",
     "signal": "Unstable",
     "insufficient_history": "Short history",
     "zero_variation": "No variation",
 }
-STATUS_COLOR = {"within_limits": "#1b7f4b", "review_needed": "#d7263d"}
+STATUS_COLOR = {"within_limits": "#1b7f4b", "review_needed": "#e8960c", "inspect_now": "#d7263d"}
 STABILITY_COLOR = {
     "stable": "#1b7f4b",
     "signal": "#d7263d",
@@ -129,6 +129,8 @@ def summarize_results(results: list[dict]) -> dict:
                 "area_name": members[0]["area_name"],
                 "n": len(members),
                 "review_needed": sum(1 for r in members if r["status"] == "review_needed"),
+                "inspect_now": sum(1 for r in members if r["status"] == "inspect_now"),
+                "flagged": sum(1 for r in members if r["status"] != "within_limits"),
                 "stable": sum(1 for r in members if r["stability"] == "stable"),
                 "unstable": sum(1 for r in members if r["stability"] == "signal"),
                 "usage": usage,
@@ -171,6 +173,8 @@ def filter_summary(model: dict, status: str | None, stability: str | None) -> di
                 **area,
                 "n": len(members),
                 "review_needed": sum(1 for r in members if r["status"] == "review_needed"),
+                "inspect_now": sum(1 for r in members if r["status"] == "inspect_now"),
+                "flagged": sum(1 for r in members if r["status"] != "within_limits"),
                 "stable": sum(1 for r in members if r["stability"] == "stable"),
                 "unstable": sum(1 for r in members if r["stability"] == "signal"),
                 "usage": box_stats([r["usage"] for r in members]),

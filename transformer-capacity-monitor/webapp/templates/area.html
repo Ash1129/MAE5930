@@ -12,7 +12,7 @@
 <div class="card">
   <p class="small"><a href="{{ url_for('dashboard', period=period.period_id, area=area.area_id) }}">This area on the dashboard</a> · period ending {{ period.period_id }}</p>
   <h1>{{ area.area_name }} <span class="muted small">{{ area.area_id }}</span></h1>
-  <p>Transformers {{ area.n }} | review needed {{ area.review_needed }} | stable {{ area.stable }} | median usage {% if area.usage %}{{ area.usage.median|pct }}{% else %}-{% endif %} | median projected peak {% if area.forecast %}{{ area.forecast.median|pct }}{% else %}-{% endif %}</p>
+  <p>Transformers {{ area.n }} | inspect now {{ area.inspect_now }} | review needed {{ area.review_needed }} | stable {{ area.stable }} | median usage {% if area.usage %}{{ area.usage.median|pct }}{% else %}-{% endif %} | median projected peak {% if area.forecast %}{{ area.forecast.median|pct }}{% else %}-{% endif %}</p>
   <p>
     <a class="btn" href="{{ url_for('period_map', period_id=period.period_id, area=area.area_id) }}">Show this area on the map</a>
     <a class="btn" href="{{ url_for('period_detail', period_id=period.period_id) }}">Period review</a>
@@ -39,7 +39,7 @@
     <tr>
       <td><b>{{ t.id|tid }}</b><br><span class="small muted">{{ t.name }}</span></td>
       <td><span class="tag {{ {'stable':'ok','signal':'bad','insufficient_history':'warn','zero_variation':'info'}.get(t.stability, 'info') }}">{{ t.stability.replace('_',' ') }}</span></td>
-      <td><span class="tag {{ 'bad' if t.status == 'review_needed' else 'ok' }}">{{ 'Review needed' if t.status == 'review_needed' else 'Within limits' }}</span></td>
+      <td><span class="tag {{ {'inspect_now': 'bad', 'review_needed': 'amber'}.get(t.status, 'ok') }}">{{ {'inspect_now': 'Inspect now', 'review_needed': 'Review needed'}.get(t.status, 'Within limits') }}</span></td>
       <td>{{ t.rating|num(0) }} {{ t.unit }}</td>
       <td>{{ t.peak|num(1) }}</td>
       <td>{% if t.usage_pct is not none %}<span class="meter m-{{ t.usage_band }}"><i style="width:{{ [t.usage_pct, 100]|min }}%"></i></span> {{ t.usage_pct|round(0)|int }}%{% else %}-{% endif %}</td>
