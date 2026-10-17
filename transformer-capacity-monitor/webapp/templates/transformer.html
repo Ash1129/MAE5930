@@ -111,9 +111,10 @@
 <div class="wrap">
   <div>
     <div class="crumbs">
+      {% if back %}<a href="{{ back }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back to the map</a>{% endif %}
       <a href="{{ url_for('period_detail', period_id=period.period_id) }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Week ending {{ period.period_id }}</a>
       {% if case %}<span>Case {{ case.n }} of {{ case.of }} needing review</span>
-      <span class="pn">{% if case.prev %}<a href="{{ url_for('transformer_detail', period_id=period.period_id, tid=case.prev) }}">Previous</a>{% else %}<span class="off">Previous</span>{% endif %}{% if case.next %}<a href="{{ url_for('transformer_detail', period_id=period.period_id, tid=case.next) }}">Next case</a>{% else %}<span class="off">Next case</span>{% endif %}</span>{% endif %}
+      <span class="pn">{% if case.prev %}<a href="{{ url_for('transformer_detail', period_id=period.period_id, tid=case.prev) ~ ('?from=map' if back else '') }}">Previous</a>{% else %}<span class="off">Previous</span>{% endif %}{% if case.next %}<a href="{{ url_for('transformer_detail', period_id=period.period_id, tid=case.next) ~ ('?from=map' if back else '') }}">Next case</a>{% else %}<span class="off">Next case</span>{% endif %}</span>{% endif %}
     </div>
     <div class="title">
       <div class="t">
@@ -216,6 +217,7 @@
       {% else %}
       <form method="post" action="{{ url_for('record_disposition', period_id=period.period_id, tid=r.transformer_id) }}" id="decide">
         <input type="hidden" name="review_started_at" value="{{ review_started_at }}">
+        {% if back %}<input type="hidden" name="next" value="{{ back }}">{% endif %}
         <fieldset class="opts">
           <legend class="micro" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Decision</legend>
           <label class="opt"><input type="radio" name="decision" value="approve" required><span class="dot"></span><span><b>Agree, keep it flagged</b><small>The finding is right. It goes in the report as reviewed, e.g. “plan upgrade” or “watch”.</small></span></label>

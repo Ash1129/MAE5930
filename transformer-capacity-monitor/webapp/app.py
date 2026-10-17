@@ -344,6 +344,7 @@ def transformer_detail(period_id, tid):
     return render_template("transformer.html", period=period, r=r, chart_svg=review_chart_svg(r["chart"], period["period"]["start"], r["unit"], r["rated_max"]),
                            chart_caption=review_chart_caption(r["chart"], r["unit"]), checklist=checklist, cause=cause, why=explain.why_flagged(r, pb),
                            decisions=DECISIONS, decision_chips=DECISION_CHIPS, review_started_at=now_iso(), playbook=pb, summary=summary, case=case,
+                           back=url_for("period_map", period_id=period_id) if request.args.get("from") == "map" else None,
                            svg=svg, headroom=headroom)
 
 
@@ -382,6 +383,9 @@ def record_disposition(period_id, tid):
         flash(("Well caught: " if caught else "Missed: ") + "this was a seeded known-wrong calibration case. It is excluded from the report and counted in Metrics.", "info")
     else:
         flash(f"{DECISIONS[decision]} recorded for {tid} by {reviewer}.", "info")
+    nxt = request.form.get("next", "")
+    if nxt.startswith("/") and not nxt.startswith("//"):  # same-site only: back to the map when the review came from it
+        return redirect(nxt)
     return redirect(url_for("period_detail", period_id=period_id))
 
 
