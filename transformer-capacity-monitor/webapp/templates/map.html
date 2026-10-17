@@ -61,23 +61,36 @@
   .seg button+button{border-left:1px solid var(--color-divider)}
   .seg button.on{color:var(--color-accent-700);box-shadow:inset 0 0 0 1px var(--color-accent)}
 
-  /* top bar (menu, inspired by a serif portfolio header: brand left, links + pill + square icons + round toggle right) */
-  #bar{position:absolute;top:12px;left:16px;right:16px;z-index:40;height:56px;display:flex;align-items:center;gap:14px;padding:0 10px 0 20px;border-radius:var(--radius-bar);transition:background .2s,right .25s ease,width .25s ease}
-  #bar .brand{display:flex;align-items:baseline;gap:8px;flex:none;white-space:nowrap;text-decoration:none;color:var(--ink-90)}
-  #bar .brand .name{font-family:var(--font-heading);font-weight:600;font-size:22px;letter-spacing:-.01em}
-  #bar .brand .county{font-size:12px;color:var(--ink-60)}
-  #bar .grow{flex:1}
-  #nav{display:flex;align-items:center;gap:2px;margin-left:10px}
-  #nav a{font-size:13px;color:var(--ink-75);text-decoration:none;padding:7px 10px;border-radius:999px;white-space:nowrap}
-  #nav a:hover{background:rgba(29,36,48,.07);color:var(--ink-90)}
-  #nav a.on{color:var(--ink-90);box-shadow:inset 0 -1.5px 0 var(--color-accent);border-radius:0;padding-bottom:6px}
-  .vr{width:1px;height:26px;background:rgba(29,36,48,.18);flex:none}
+  /* site header, copied from ashwinprajeeth.com (dark theme tokens) */
+  #bar{--hd-bg:#1a1919;--hd-text:#f3f1e8;--hd-accent:#c9964a;--hd-accent-700:#e1ad66;--hd-divider:rgba(243,241,232,.22);--gutter:clamp(20px,5vw,72px);
+    position:absolute;top:0;left:0;right:0;z-index:40;background:var(--hd-bg);color:var(--hd-text);transition:transform .25s}
+  #bar::after{content:"";position:absolute;left:var(--gutter);right:var(--gutter);bottom:0;height:1px;background:var(--hd-divider)}
+  #bar.hidden-bar{transform:translateY(-100%)}
+  .site-header__inner{display:flex;align-items:center;gap:24px;padding:10px var(--gutter)}
+  #bar .brand{font-family:var(--font-heading);font-weight:600;font-size:20px;color:var(--hd-text);text-decoration:none;white-space:nowrap;margin-right:auto}
+  #bar .brand:hover{color:var(--hd-text)}
+  .site-nav{display:flex;align-items:center;gap:20px;font-size:14px}
+  .site-nav a{color:var(--hd-text);text-decoration:none;white-space:nowrap} .site-nav a:hover{color:var(--hd-accent-700)}
+  .site-nav a.is-active{color:var(--hd-accent-700)}
+  .header-tools{display:flex;align-items:center;gap:20px}
+  .header-divider{width:1px;height:28px;background:var(--hd-text)}
+  .icon-circle{all:unset;cursor:pointer;position:relative;box-sizing:border-box;width:36px;height:36px;border:1px solid var(--hd-text);border-radius:9px;color:var(--hd-text);display:grid;place-items:center;font-size:13px;letter-spacing:.04em;text-decoration:none;transition:background-color .15s;font-family:var(--font-heading);font-weight:600}
+  .icon-circle:hover{background:rgba(243,241,232,.08)}
+  #bell .count{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#D7263D;color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;border:2px solid var(--hd-bg);box-sizing:border-box;font-family:var(--font-body)}
+  .theme-switch{all:unset;cursor:pointer;box-sizing:border-box;position:relative;width:60px;height:36px;border:1px solid var(--hd-text);border-radius:999px;color:var(--hd-text);transition:background-color .15s}
+  .theme-switch:hover{background:rgba(243,241,232,.08)}
+  .theme-switch__icon{position:absolute;top:50%;left:12px;transform:translateY(-50%);display:grid;transition:left .2s}
+  .theme-switch--on .theme-switch__icon{left:calc(100% - 27px)}
+  #bar-show{position:absolute;top:12px;left:16px;z-index:41;background:#1a1919;color:#f3f1e8;border-color:#f3f1e8;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+  #alerts-card{position:absolute;top:46px;right:0;width:320px;padding:16px;z-index:50;box-sizing:border-box;color:var(--ink-90)}
+  #reviewer{font-size:12px}
+  /* run row controls */
   #period-label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-60);white-space:nowrap}
   #period-select{font:inherit;font-size:13px;color:var(--ink-90);background:transparent;border:1px solid rgba(29,36,48,.18);border-radius:8px;padding:4px 8px;font-variant-numeric:tabular-nums}
   #runbox{position:relative}
-  #run-pill{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:999px;background:rgba(255,255,255,.9);border:1px solid rgba(29,36,48,.12);color:var(--ink-90);font-family:var(--font-heading);font-weight:600;font-size:15px;white-space:nowrap;box-sizing:border-box;box-shadow:0 1px 2px rgba(0,0,0,.08)}
-  #run-pill:hover{background:#fff}
-  #run-pill svg{color:var(--color-accent-700)}
+  #run-pill{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:5px;background:#1a1919;color:#f3f1e8;font-family:var(--font-heading);font-weight:600;font-size:15px;white-space:nowrap;box-sizing:border-box;transition:opacity .15s}
+  #run-pill:hover{opacity:.85}
+  #run-pill svg{color:#e1ad66}
   #run-running{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 14px 0 10px;border-radius:999px;border:1px solid rgba(29,36,48,.18);background:rgba(255,255,255,.5);font-size:13px;white-space:nowrap;box-sizing:border-box}
   #run-running .track{width:80px;height:4px;border-radius:2px;background:rgba(29,36,48,.12);overflow:hidden;display:inline-block}
   #run-running .track span{display:block;height:100%;background:var(--color-accent);transition:width .4s}
@@ -88,38 +101,34 @@
   #run-card .title{font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1.1}
   .feedchip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid}
   .feedchip i{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
-  .sq{all:unset;cursor:pointer;position:relative;width:38px;height:38px;display:grid;place-items:center;border-radius:10px;border:1px solid rgba(29,36,48,.18);color:var(--ink-90);box-sizing:border-box} .sq:hover{background:rgba(29,36,48,.07)}
-  .round{all:unset;cursor:pointer;width:38px;height:38px;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(29,36,48,.18);color:var(--ink-90);box-sizing:border-box;transition:transform .25s} .round:hover{background:rgba(29,36,48,.07)}
-  #bell .count{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#D7263D;color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;border:2px solid rgba(255,255,255,.9);box-sizing:border-box}
-  #alerts-card{position:absolute;top:46px;right:0;width:320px;padding:16px;z-index:50;box-sizing:border-box}
-  #reviewer{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-60);white-space:nowrap;min-width:0} #reviewer-name{overflow:hidden;text-overflow:ellipsis;max-width:140px}
-  #reviewer .avatar{width:28px;height:28px;border-radius:50%;border:1px solid var(--color-accent);color:var(--color-accent-700);font-family:var(--font-heading);font-weight:600;font-size:12px;display:grid;place-items:center}
-  /* collapsed: only the brand and the toggle remain; the bar shrinks to fit */
-  #bar.collapsed{right:auto;padding-right:8px;gap:12px}
-  #bar.collapsed #nav,#bar.collapsed .grow,#bar.collapsed #period-label,#bar.collapsed #runbox,#bar.collapsed .vr,#bar.collapsed #bell,#bar.collapsed #bell+div,#bar.collapsed #reviewer{display:none}
-  #bar.collapsed .vr.keep{display:block}
-  #bar.collapsed #bar-toggle svg{transform:rotate(180deg)}
-  #bar.collapsed .brand .county{display:none}
+  .vr{width:1px;height:26px;background:rgba(29,36,48,.18);flex:none}
 
   /* period + run row */
-  #runrow{position:absolute;top:80px;left:252px;z-index:30;height:48px;display:flex;align-items:center;gap:12px;padding:0 8px 0 14px;border-radius:999px;box-sizing:border-box;max-width:calc(100% - 600px)}
+  #runrow{position:absolute;top:80px;left:50%;transform:translateX(-50%);z-index:30;height:48px;display:flex;align-items:center;gap:12px;padding:0 8px 0 14px;border-radius:999px;box-sizing:border-box;max-width:calc(100% - 420px)}
   #runrow .vr{height:24px}
-  body.narrow #runrow{top:124px;left:16px;right:auto;max-width:calc(100% - 32px);height:44px;padding:0 6px 0 12px}
-  body.phone #bar .brand .name{font-size:18px}
+  body.narrow #runrow{top:124px;left:50%;transform:translateX(-50%);right:auto;max-width:calc(100% - 32px);height:44px;padding:0 6px 0 12px}
+  body.phone #bar .brand{font-size:18px}
   body.narrow #heat{top:180px}
 
-  /* districts */
-  #districts{position:absolute;top:80px;left:16px;width:220px;max-height:calc(100% - 160px);display:flex;flex-direction:column;z-index:20;box-sizing:border-box}
-  #districts .title{padding:16px 18px 8px;font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.1}
-  #district-list{overflow:auto;padding:0 8px 8px;display:flex;flex-direction:column;gap:2px}
-  .drow{all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;gap:8px;height:44px;padding:0 10px;border-radius:12px;width:100%;color:var(--ink-90);transition:background .15s}
-  .drow:hover{background:rgba(29,36,48,.07)} .drow:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px}
-  .drow.on{background:rgba(29,36,48,.9);color:#fff} .drow.on:hover{background:rgba(29,36,48,.9)}
-  .drow .txt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
-  .drow .nm{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .drow .sub{font-size:11px;color:var(--ink-60)} .drow.on .sub{color:rgba(255,255,255,.65)}
-  .drow .red{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#b01d30} .drow.on .red{color:#ffb3bd}
-  .drow .red i{width:7px;height:7px;border-radius:50%;background:#D7263D;display:inline-block}
+  /* districts: an outline of dashes on the left edge (after the section outline on ashwinprajeeth.com);
+     labels slide out and the list gains a glass background on hover or keyboard focus */
+  #districts{position:absolute;left:10px;top:50%;transform:translateY(-50%);z-index:20;opacity:.85;transition:opacity .25s}
+  #districts:hover,#districts:focus-within{opacity:1}
+  #districts .dtitle{display:inline-block;font-family:var(--font-heading);font-weight:700;font-size:18px;letter-spacing:.02em;color:var(--ink-90);background:rgba(255,255,255,.72);backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);border:1px solid rgba(255,255,255,.45);border-radius:10px;padding:4px 12px;margin:0 0 6px 2px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.6)}
+  #district-list{list-style:none;margin:0;padding:6px 5px;display:flex;flex-direction:column;gap:1px;border:1px solid transparent;border-radius:14px;transition:background-color .25s,border-color .25s,box-shadow .25s,backdrop-filter .25s}
+  #districts:hover #district-list,#districts:focus-within #district-list{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(1.7);-webkit-backdrop-filter:blur(18px) saturate(1.7);border-color:rgba(255,255,255,.45);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(255,255,255,.12),0 6px 22px rgba(0,0,0,.18)}
+  .drow{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:3px;font-size:12px;line-height:1.3;color:rgba(29,36,48,.82);box-sizing:border-box;min-height:22px}
+  .drow .dash{flex:0 0 auto;width:10px;height:2px;border-radius:2px;background:#fff;box-shadow:0 0 5px rgba(0,0,0,.6);transition:width .2s,background-color .2s}
+  #districts:hover .drow .dash,#districts:focus-within .drow .dash{width:11px;background:rgba(29,36,48,.3);box-shadow:none}
+  .drow .txt{white-space:nowrap;opacity:0;max-width:0;overflow:hidden;transition:max-width .25s,opacity .2s;display:flex;align-items:baseline;gap:6px}
+  #districts:hover .drow .txt,#districts:focus-within .drow .txt{opacity:1;max-width:240px}
+  .drow .nm{font-size:13px}
+  .drow .sub{font-size:11px;color:var(--ink-60)}
+  .drow .red{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#b01d30} .drow .red i{width:6px;height:6px;border-radius:50%;background:#D7263D;display:inline-block}
+  .drow:hover{color:var(--ink-90)} #districts:hover .drow:hover .dash{background:rgba(29,36,48,.6)}
+  .drow.on{color:var(--ink-90)} .drow.on .nm{font-weight:600}
+  .drow.on .dash{background:#fff;width:16px} #districts:hover .drow.on .dash,#districts:focus-within .drow.on .dash{background:var(--ink-90);width:16px}
+  .drow:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px;border-radius:6px}
   #chips{position:absolute;top:76px;left:0;right:0;z-index:20;display:flex;gap:6px;overflow-x:auto;padding:0 16px;scrollbar-width:none} #chips::-webkit-scrollbar{display:none}
   .chip{all:unset;cursor:pointer;flex:none;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:999px;font-size:13px;white-space:nowrap;background:rgba(255,255,255,.62);color:var(--ink-90);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(255,255,255,.35);box-shadow:0 4px 14px rgba(0,0,0,.2);box-sizing:border-box}
   .chip.on{background:rgba(29,36,48,.9);color:#fff}
@@ -127,7 +136,7 @@
   .chip .red i{width:6px;height:6px;border-radius:50%;background:#D7263D;display:inline-block}
 
   /* heat strip */
-  #heat{position:absolute;top:140px;left:252px;right:332px;z-index:20;padding:12px 16px;box-sizing:border-box}
+  #heat{position:absolute;top:140px;left:64px;right:332px;z-index:20;padding:12px 16px;box-sizing:border-box}
   #heat .head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
   #heat .dname{font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1;margin-right:4px}
   #heat .clock{margin-left:auto;font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1}
@@ -229,36 +238,41 @@
     <a id="pp-link" href="#" class="btn btn-primary btn-block" style="margin-top:12px;text-decoration:none">Open full review <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
   </div>
 
-  <!-- top bar (menu) -->
-  <div id="bar" class="glass">
-    <a class="brand" href="{{ url_for('map_latest') }}"><span class="name">Transformer Capacity Monitor</span><span class="county">Tompkins County</span></a>
-    <nav id="nav" aria-label="Sections">
-      <a href="{{ url_for('map_latest') }}" class="on">Map</a>
-      <a href="{{ url_for('dashboard') }}">Dashboard</a>
-      <a href="{{ url_for('alerts') }}">Alerts</a>
-      <a href="{{ url_for('metrics') }}">Review metrics</a>
-      <a href="{{ url_for('setup') }}" id="setup-link">Setup</a>
-    </nav>
-    <div class="grow"></div>
-    <div style="position:relative">
-      <button id="bell" class="sq" aria-label="Alerts">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-        <span class="count" id="alert-count" {% if not unacked_alerts %}hidden{% endif %}>{{ unacked_alerts }}</span>
-      </button>
-      <div id="alerts-card" class="glass-card" hidden>
-        <div style="display:flex;align-items:baseline;justify-content:space-between"><span class="heading" style="font-size:20px">Latest alert</span><span style="font-size:11px;color:var(--ink-60)" id="al-when"></span></div>
-        <div style="font-size:14px;margin-top:8px" id="al-head"></div>
-        <div style="display:grid;grid-template-columns:96px 1fr;gap:6px 10px;font-size:13px;margin-top:10px" id="al-rows">
-          <span class="micro" style="font-size:10px;letter-spacing:.1em;padding-top:3px">What happened</span><span id="al-happened"></span>
-          <span class="micro" style="font-size:10px;letter-spacing:.1em;padding-top:3px">What to do</span><span id="al-todo"></span>
+  <!-- site header (after ashwinprajeeth.com: brand left, nav, tools right, hairline under) -->
+  <header id="bar" class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="{{ url_for('map_latest') }}">Transformer Capacity Monitor</a>
+      <nav id="nav" class="site-nav" aria-label="Main">
+        <a href="{{ url_for('map_latest') }}" class="is-active" aria-current="page">Map</a>
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('alerts') }}">Alerts</a>
+        <a href="{{ url_for('metrics') }}">Review metrics</a>
+        <a href="{{ url_for('setup') }}" id="setup-link">Setup</a>
+      </nav>
+      <div class="header-tools">
+        <span id="reviewer" class="icon-circle" title="Reviewer: {{ reviewer_name or 'not set' }}"><span id="reviewer-initials"></span><span id="reviewer-name" hidden>{{ reviewer_name or 'Reviewer not set' }}</span></span>
+        <span class="header-divider" aria-hidden="true"></span>
+        <div style="position:relative">
+          <button id="bell" class="icon-circle" aria-label="Alerts">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span class="count" id="alert-count" {% if not unacked_alerts %}hidden{% endif %}>{{ unacked_alerts }}</span>
+          </button>
+          <div id="alerts-card" class="glass-card" hidden>
+            <div style="display:flex;align-items:baseline;justify-content:space-between"><span class="heading" style="font-size:20px">Latest alert</span><span style="font-size:11px;color:var(--ink-60)" id="al-when"></span></div>
+            <div style="font-size:14px;margin-top:8px" id="al-head"></div>
+            <div style="display:grid;grid-template-columns:96px 1fr;gap:6px 10px;font-size:13px;margin-top:10px" id="al-rows">
+              <span class="micro" style="font-size:10px;letter-spacing:.1em;padding-top:3px">What happened</span><span id="al-happened"></span>
+              <span class="micro" style="font-size:10px;letter-spacing:.1em;padding-top:3px">What to do</span><span id="al-todo"></span>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:12px"><a href="{{ url_for('alerts') }}" class="btn btn-ghost" style="text-decoration:none;font-size:13px">All alerts (<span id="al-count">{{ unacked_alerts }}</span>)</a></div>
+          </div>
         </div>
-        <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:12px"><a href="{{ url_for('alerts') }}" class="btn btn-ghost" style="text-decoration:none;font-size:13px">All alerts (<span id="al-count">{{ unacked_alerts }}</span>)</a></div>
+        <span class="header-divider" aria-hidden="true"></span>
+        <button id="bar-toggle" type="button" class="theme-switch theme-switch--on" role="switch" aria-checked="true" aria-label="Hide header" title="Hide header"><span class="theme-switch__icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg></span></button>
       </div>
     </div>
-    <span id="reviewer" title="{{ reviewer_name or 'Reviewer not set' }}"><span class="avatar" id="reviewer-initials"></span><span id="reviewer-name">{{ reviewer_name or 'Reviewer not set' }}</span></span>
-    <span class="vr keep"></span>
-    <button id="bar-toggle" class="round" aria-label="Collapse menu" aria-expanded="true" title="Collapse menu"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
-  </div>
+  </header>
+  <button id="bar-show" class="icon-circle" aria-label="Show header" title="Show header" hidden><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
 
   <!-- period + run (below the menu bar) -->
   <div id="runrow" class="glass">
@@ -296,7 +310,7 @@
   </div>
 
   <!-- districts (desktop) -->
-  <div id="districts" class="glass"><div class="title">Districts</div><div id="district-list"></div></div>
+  <nav id="districts" aria-label="Districts"><div class="dtitle">Districts</div><ul id="district-list"></ul></nav>
   <!-- districts (narrow chips) -->
   <div id="chips"></div>
 
@@ -406,7 +420,7 @@ POINTS.forEach(p => {
 });
 const bPts = BOUNDARIES ? (BOUNDARIES.features || []).flatMap(f => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).flatMap(p => p[0]).map(c => [c[1], c[0]])) : [];
 const countyBounds = POINTS.length ? L.latLngBounds(POINTS.map(p => [p.lat, p.lon])).pad(.08) : (bPts.length ? L.latLngBounds(bPts) : null);
-const fitPad = () => wide() ? { paddingTopLeft: [260, 140], paddingBottomRight: [340, 60] } : { paddingTopLeft: [20, 180], paddingBottomRight: [20, 110] };
+const fitPad = () => wide() ? { paddingTopLeft: [70, 140], paddingBottomRight: [340, 60] } : { paddingTopLeft: [20, 180], paddingBottomRight: [20, 110] };
 if (countyBounds) map.fitBounds(countyBounds, fitPad());
 map.on('move zoom', positionPopup);
 map.on('click', () => { closePopup(); setAlerts(false); });
@@ -430,7 +444,7 @@ window.addEventListener('resize', () => { applyLayout(); renderDistricts(); });
 function renderDistricts() {
   const rows = [{ id: '', name: 'Whole county', sub: POINTS.length + ' transformers', red: reds.length }].concat(
     DISTRICTS.map(d => ({ id: d.id, name: d.name, sub: d.kind + ' · ' + POINTS.filter(p => p.area === d.id).length, red: reds.filter(p => p.area === d.id).length })));
-  $('district-list').innerHTML = rows.map(d => `<button class="drow${d.id === S.district ? ' on' : ''}" data-id="${esc(d.id)}"><span class="txt"><span class="nm">${esc(d.name)}</span><span class="sub">${esc(d.sub)}</span></span>${d.red ? `<span class="red"><i></i>${d.red}</span>` : ''}</button>`).join('');
+  $('district-list').innerHTML = rows.map(d => `<li><button class="drow${d.id === S.district ? ' on' : ''}" data-id="${esc(d.id)}" aria-current="${d.id === S.district ? 'true' : 'false'}"><span class="dash" aria-hidden="true"></span><span class="txt"><span class="nm">${esc(d.name)}</span><span class="sub">${esc(d.sub)}</span>${d.red ? `<span class="red"><i></i>${d.red}</span>` : ''}</span></button></li>`).join('');
   $('chips').innerHTML = rows.map(d => `<button class="chip${d.id === S.district ? ' on' : ''}" data-id="${esc(d.id)}">${esc(d.name)}${d.red ? `<span class="red"><i></i>${d.red}</span>` : ''}</button>`).join('');
   document.querySelectorAll('.drow,.chip').forEach(b => b.onclick = () => selectDistrict(b.dataset.id));
 }
@@ -601,17 +615,18 @@ async function refreshStatus() {
   try { const j = await (await fetch('/api/status')).json(); renderStatus(j.scheduler, j.last_run); latestAlert = j.latest_alert; const n = j.unacknowledged_alerts || 0; $('alert-count').textContent = n; $('alert-count').hidden = !n; $('al-count').textContent = n; if (S.alertsOpen) renderAlert(); } catch (e) {}
 }
 
-// ---- menu bar collapse ----
+// ---- header hide/show (the switch slides up the header; a small tab brings it back) ----
 const bar = $('bar');
 function setCollapsed(on, remember = true) {
-  bar.classList.toggle('collapsed', on);
-  const t = $('bar-toggle'); t.setAttribute('aria-expanded', String(!on)); t.title = on ? 'Expand menu' : 'Collapse menu'; t.setAttribute('aria-label', t.title);
+  bar.classList.toggle('hidden-bar', on);
+  $('bar-show').hidden = !on;
+  const t = $('bar-toggle'); t.classList.toggle('theme-switch--on', !on); t.setAttribute('aria-checked', String(!on));
   if (on) { setRunOpen(false); setAlerts(false); }
-  if (remember) { try { localStorage.setItem('capmon.barCollapsed', on ? '1' : '0'); } catch (e) {} }
+  if (remember) { try { localStorage.setItem('capmon.barHidden', on ? '1' : '0'); } catch (e) {} }
 }
-$('bar-toggle').onclick = () => setCollapsed(!bar.classList.contains('collapsed'));
-try { if (localStorage.getItem('capmon.barCollapsed') === '1') setCollapsed(true, false); } catch (e) {}
-// keyboard: Escape collapses the menu when nothing else is open
+$('bar-toggle').onclick = () => setCollapsed(true);
+$('bar-show').onclick = () => setCollapsed(false);
+try { if (localStorage.getItem('capmon.barHidden') === '1') setCollapsed(true, false); } catch (e) {}
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !S.alertsOpen && $('run-card').hidden && !S.popup) setCollapsed(true); });
 
 // ---- furniture ----
