@@ -1,6 +1,6 @@
 """Charts aggregate a period's results by area, stability and usage."""
 
-from webapp.viz import area_chart_svg, box_stats, filter_summary, pie_svg, summarize_results
+from webapp.viz import area_chart_svg, box_stats, county_control_charts, filter_summary, pie_svg, summarize_results
 
 
 def _result(tid, area_id, area_name, stability, status, usage, forecast=None):
@@ -47,3 +47,24 @@ def test_box_and_area_rollup():
 
     pie = pie_svg([{"key": "review_needed", "label": "Review needed", "count": 1, "color": "#d7263d", "href": "/charts?status=review_needed"}], "review_needed")
     assert "circle" in pie and "review_needed" in pie
+
+
+def test_county_charts_flag_a_week_that_leaves_the_baseline():
+    def one(tid, peaks, signals=()):
+        return {
+            "transformer_id": tid,
+            "rated_max": 100,
+            "is_calibration": False,
+            "chart": {
+                "dates": ["2026-09-01", "2026-09-02", "2026-10-08"],
+                "values": peaks,
+                "signals": [{"date": d, "rule": "beyond_3_sigma"} for d in signals],
+            },
+        }
+
+    charts = county_control_charts(
+        [one("T1", [40, 60, 95], ["2026-10-08"]), one("T2", [50, 50, 96])],
+        "2026-10-08",
+    )
+    assert charts["p_out"] == 1 and charts["u_out"] == 1 and charts["x_out"] == 1
+    assert "2026-10-08" in charts["p_svg"] and "X-bar" in charts["xs_svg"]

@@ -84,7 +84,6 @@
     <a class="brand" href="{{ url_for('map_latest') }}">Transformer Capacity Monitor<small>Tompkins County</small></a>
     <nav class="site-nav" aria-label="Main">
       <a href="{{ url_for('map_latest') }}" {% if request.endpoint in ('map_latest','period_map') %}class="is-active"{% endif %}>Map</a>
-      <a href="{{ url_for('charts_latest') }}" {% if request.endpoint in ('charts_latest','period_charts','area_detail') %}class="is-active"{% endif %}>Charts</a>
       <a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}class="is-active"{% endif %}>Dashboard</a>
       <a href="{{ url_for('alerts') }}" {% if request.endpoint == 'alerts' %}class="is-active"{% endif %}>Alerts</a>
       <a href="{{ url_for('metrics') }}" {% if request.endpoint == 'metrics' %}class="is-active"{% endif %}>Review metrics</a>
