@@ -797,8 +797,8 @@ TEAM = [
      "did": "Built the fixed-rules pipeline, the decision table and its three tiers, the map and its heat views, the review pages with the modeled transformer cutaway, and the synthetic datasets."},
     {"slug": "daoming", "name": "Daoming Zhang", "initials": "DZ", "role": "Developer · deployment and map experience",
      "did": "Published the review app to Posit Connect from GitHub Actions, added the first-visit tour and the county seal, refined the dashboard and the map's review screens, and committed the finished analysis so a checkout opens ready to read."},
-    {"slug": "abdullah", "name": "Abdullah Saleh Alnamlah", "initials": "AA", "role": "Team member",
-     "did": "Member of the MAE 5930 project team."},
+    {"slug": "abdullah", "name": "Abdullah Saleh Alnamlah", "initials": "AA", "role": "Quality control",
+     "did": "Owned quality control for the tool: walked every page and workflow against the delivery contract, tested each of the thirteen rules on the planted shift, spike and outlier cases, re-ran the known-answer checks on the control-chart limits, Cpk interval and winter estimate, reviewed the alert and review-page wording so every number says what it is and whether it is measured or modeled, and logged the defects that became fixes before release."},
 ]
 
 
