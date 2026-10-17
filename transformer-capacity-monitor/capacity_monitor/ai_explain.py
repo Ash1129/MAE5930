@@ -17,6 +17,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from datetime import datetime, timezone
 
@@ -95,6 +96,9 @@ def call_claude(prompt: str, model: str | None = None) -> str:
     if not path:
         raise RuntimeError("claude CLI not found")
     args = [path, "-p", prompt, "--output-format", "text"] + SLIM_FLAGS + (["--model", model] if model else [])
+    # A .py path is a stand-in CLI (used by tests). Run it with this interpreter so the same file works on macOS and Windows.
+    if path.lower().endswith(".py"):
+        args = [sys.executable, *args]
     with tempfile.TemporaryDirectory(prefix="capmon-claude-") as cwd:
         env = {k: v for k, v in os.environ.items() if not k.startswith("CAPMON_")}
         proc = subprocess.run(args, cwd=cwd, env=env, capture_output=True, text=True, timeout=TIMEOUT_SECONDS)

@@ -99,8 +99,3 @@ def seasonal_day(month: int, playbook: dict | None = None) -> dict:
         lvl = _cache["level"].get(tid, 0.0) * factor
         out[tid] = [lvl * shp[h] * (1.0 + (boost if 17 <= h <= 21 else 0.0)) for h in range(24)]
     return {"month": month, "factor": factor, "modeled": True, "loads": out}
-
-
-def shape_summary() -> dict:
-    _ensure()
-    return {"transformers": len(_cache["shape"]), "dates": len(_cache["dates"])}

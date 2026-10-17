@@ -1,14 +1,16 @@
 """AI explanations through the Claude CLI: tested with a fake CLI so no real calls are made."""
 
 import json
-import os
-import stat
 
 
 def _fake_cli(tmp_path, reply: str, exit_code: int = 0):
-    p = tmp_path / "claude"
-    p.write_text(f"#!/bin/bash\ncat > /dev/null\nprintf '%s' {json.dumps(reply)}\nexit {exit_code}\n")
-    p.chmod(p.stat().st_mode | stat.S_IEXEC)
+    p = tmp_path / "claude.py"
+    p.write_text(
+        "import sys\n"
+        f"sys.stdout.write({json.dumps(reply)})\n"
+        f"raise SystemExit({exit_code})\n",
+        encoding="utf-8",
+    )
     return str(p)
 
 

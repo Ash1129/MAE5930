@@ -29,20 +29,21 @@
 
   /* header, as on the site */
   .site-header{position:sticky;top:0;z-index:10;background:var(--bg)}
-  .site-header::after{content:"";position:absolute;left:var(--gutter);right:var(--gutter);bottom:0;height:1px;background:var(--divider)}
-  .site-header__inner{display:flex;align-items:center;gap:24px;padding:10px var(--gutter)}
-  .brand{font-family:var(--font-heading);font-weight:600;font-size:20px;color:var(--text);text-decoration:none;white-space:nowrap;margin-right:auto} .brand:hover{color:var(--text)}
-  .brand small{font-family:var(--font-body);font-weight:400;font-size:12px;color:var(--muted);margin-left:8px}
-  .site-nav{display:flex;align-items:center;gap:20px;font-size:14px}
+  .site-header::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:1px;background:var(--divider)}
+  .site-header__inner{display:flex;align-items:center;gap:14px;padding:12px 16px;line-height:1.2}
+  .brand{display:inline-flex;align-items:center;gap:10px;min-width:0;flex:0 1 auto;font-family:var(--font-heading);font-weight:600;font-size:22px;color:var(--text);text-decoration:none;white-space:nowrap;margin-right:auto} .brand:hover{color:var(--text)}
+  .brand-name{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .brand .seal{display:block;width:36px;height:36px;flex:none}
+  .site-nav{display:flex;align-items:center;gap:10px;flex:none;font-size:16px}
   .site-nav a{color:var(--text);text-decoration:none;white-space:nowrap} .site-nav a:hover,.site-nav a.is-active{color:var(--accent-700)}
-  .header-tools{display:flex;align-items:center;gap:20px}
-  .header-divider{width:1px;height:28px;background:var(--text)}
-  .icon-circle{position:relative;width:36px;height:36px;border:1px solid var(--text);border-radius:9px;color:var(--text);display:grid;place-items:center;font-size:13px;letter-spacing:.04em;text-decoration:none;font-family:var(--font-heading);font-weight:600;transition:background-color .15s;background:transparent;cursor:pointer;padding:0}
+  .header-tools{display:flex;align-items:center;gap:10px;flex:none}
+  .header-divider{width:1px;height:32px;background:var(--text)}
+  .icon-circle{position:relative;width:42px;height:42px;border:1px solid var(--text);border-radius:11px;color:var(--text);display:grid;place-items:center;font-size:15px;letter-spacing:.04em;text-decoration:none;font-family:var(--font-heading);font-weight:600;transition:background-color .15s;background:transparent;cursor:pointer;padding:0}
   .icon-circle:hover{background:rgba(243,241,232,.08);color:var(--text)}
-  .icon-circle .count{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#D7263D;color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;border:2px solid var(--bg);font-family:var(--font-body)}
-  .btn-solid{display:inline-flex;align-items:center;gap:8px;background:var(--text);color:var(--bg);border-radius:5px;padding:8px 16px;font-family:var(--font-heading);font-weight:600;font-size:15px;text-decoration:none;white-space:nowrap;border:0;cursor:pointer;transition:opacity .15s}
+  .icon-circle .count{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#D7263D;color:#fff;font-size:11px;font-weight:600;display:grid;place-items:center;border:2px solid var(--bg);font-family:var(--font-body)}
+  .btn-solid{display:inline-flex;align-items:center;gap:8px;background:var(--text);color:var(--bg);border-radius:6px;padding:10px 14px;font-family:var(--font-heading);font-weight:600;font-size:16px;text-decoration:none;white-space:nowrap;border:0;cursor:pointer;transition:opacity .15s}
   .btn-solid:hover{opacity:.85;color:var(--bg)}
-  @media (max-width:860px){.site-nav,.header-tools .btn-solid,.header-tools .header-divider:last-of-type{display:none} .site-header__inner{gap:14px} .header-tools{gap:12px} .brand small{display:none}}
+  @media (max-width:860px){.site-nav,.header-tools .btn-solid,.header-tools .header-divider:last-of-type{display:none} .site-header__inner{gap:14px} .header-tools{gap:12px}}
 
   main{max-width:1180px;margin:0 auto;padding:28px var(--gutter) 60px}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:18px}
@@ -81,7 +82,7 @@
 <body>
 <header class="site-header">
   <div class="site-header__inner">
-    <a class="brand" href="{{ url_for('map_latest') }}">Transformer Capacity Monitor<small>Tompkins County</small></a>
+    <a class="brand" href="{{ url_for('map_latest') }}"><span class="brand-name">Transformer Capacity Monitor</span><img class="seal" src="{{ url_for('static', filename='tompkins-county.png') }}" alt="Tompkins County"></a>
     <nav class="site-nav" aria-label="Main">
       <a href="{{ url_for('map_latest') }}" {% if request.endpoint in ('map_latest','period_map') %}class="is-active"{% endif %}>Map</a>
       <a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}class="is-active"{% endif %}>Dashboard</a>
@@ -92,7 +93,7 @@
     <div class="header-tools">
       <span class="icon-circle" title="Reviewer: {{ reviewer_name or 'not set' }}">{{ (reviewer_name or '?').split()|map('first')|join('')|upper|truncate(2, True, '') }}</span>
       <span class="header-divider" aria-hidden="true"></span>
-      <a class="icon-circle" href="{{ url_for('alerts') }}" aria-label="Alerts"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>{% if unacked_alerts %}<span class="count">{{ unacked_alerts }}</span>{% endif %}</a>
+      <a class="icon-circle" href="{{ url_for('alerts') }}" aria-label="Alerts"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>{% if unacked_alerts %}<span class="count">{{ unacked_alerts }}</span>{% endif %}</a>
       <span class="header-divider" aria-hidden="true"></span>
       <a class="btn-solid" href="{{ url_for('map_latest') }}">Open the map</a>
     </div>

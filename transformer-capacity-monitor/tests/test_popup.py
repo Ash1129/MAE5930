@@ -1,16 +1,20 @@
 """Map popup: compact control charts, rule-based line, and the cached Haiku summary (fake CLI, no real calls)."""
 
 import json
-import stat
 import time
 
 
 def _fake_cli(tmp_path, reply: str, log_name="calls.log"):
     log = tmp_path / log_name
-    p = tmp_path / "claude"
-    # one line per call: the flags only (the prompt itself spans several lines)
-    p.write_text(f"#!/bin/bash\nargs=()\nfor a in \"$@\"; do case \"$a\" in *$'\\n'*) args+=(PROMPT);; *) args+=(\"$a\");; esac; done\necho \"${{args[*]}}\" >> {log}\nprintf '%s' {json.dumps(reply)}\n")
-    p.chmod(p.stat().st_mode | stat.S_IEXEC)
+    p = tmp_path / "claude.py"
+    # One line per call. A multi-line argument (the prompt) is recorded as PROMPT.
+    p.write_text(
+        "import sys\n"
+        "args = ['PROMPT' if chr(10) in a else a for a in sys.argv[1:]]\n"
+        f"open({str(log)!r}, 'a', encoding='utf-8').write(' '.join(args) + chr(10))\n"
+        f"sys.stdout.write({json.dumps(reply)})\n",
+        encoding="utf-8",
+    )
     return str(p), log
 
 
