@@ -10,7 +10,7 @@
 # Check it parses:  python -c "import yaml; yaml.safe_load(open('CONTRACT.yaml'))"
 
 spec: SPEC.md
-updated: "2026-10-16"
+updated: "2026-10-17"
 
 tasks:
   - id: H-01
@@ -44,9 +44,10 @@ tasks:
       datasets (normal, boundary-mismatch, missing-rating). Deviation from the template, which asks
       for ls data/*.csv to list 2-3 files - each dataset here is four feed files from a seeded generator.
     result: >
-      data/README.md written (4 files, every column, units, rules applied, real collection method,
-      planted-case table). run_demo.py printed "12 transformers - 7 within limits, 5 need review"
-      for normal, and "failed, stopped at step 7" with the expected blocking problem for the other two.
+      Codebook and three isolated scenario commands exist. Current documented normal demo has
+      4 within limits, 5 review needed and 3 inspect now; the two invalid scenarios stop at step 7.
+      These commands were not rerun in the 2026-10-17 audit; prior evidence and fixture gaps are
+      distinguished in TEMPLATE-AUDIT.md.
 
   - id: H-03
     title: Core QC statistics as plain, tested functions
@@ -70,15 +71,17 @@ tasks:
     started_at: ""
     owns: ["webapp/", "airflow/", "scripts/", "app/"]
     notes: >
-      The tool runs locally (Flask review app on port 5055, Airflow scheduler, end-to-end runs recorded
-      in DELIVERY-REPORT.md). Open gap - the template expects one demo copied into app/ with the
-      four-script contract (testme, manifestme, deployme, README.md). The stack is Flask plus Airflow,
-      not one of the listed starters. Decide whether to wrap the Flask app in app/ with those scripts.
+      Local testme.sh, manifestme.sh, deployme.sh and README.md exist in the application root.
+      The template still specifies app/ and a copied starter; the current Flask layout deviates.
+      Record an instructor-approved exception or implement compatibility after review; do not
+      represent the folder mapping as approval. See TEMPLATE-AUDIT.md.
     definition_of_done: >
       One testme script starts the tool with one command, and a run on the normal dataset shows the
       same numbers as demo/README.md.
     result: >
-      Local run works - run_demo.py normal matches demo/README.md. No app/ folder or testme script yet.
+      Current app served the saved map with HTTP 200 after following redirects on 2026-10-17.
+      Saved report has 22 inspect now, 97 review needed and 381 within limits. testme.sh exists;
+      fresh-clone launch and literal starter/app-layout compliance remain unverified.
 
   - id: H-05
     title: Demonstration of the tool on every test dataset
@@ -99,15 +102,15 @@ tasks:
   - id: H-06
     title: Deploy to the course Posit Connect server
     points: "protects the 25 working-tool points - judges must be able to open it"
-    status: todo
+    status: in_progress
     owner: ""
     started_at: ""
     owns: [".github/workflows/", ".github/scripts/", "manifest.json"]
     notes: >
-      Blocked on the publisher key (handed out at the event; it goes into repo secrets, never a file).
-      Airflow cannot run on Posit Connect, so deploy the Flask review app only, with "Run now" in place
-      of the schedule. There is no Flask workflow in connect-publish - adapt the FastAPI one or use
-      rsconnect-python deploy flask.
+      manifest.json, .python-version, app.py and the repository deploy-flask workflow now exist.
+      APP_DIR points at transformer-capacity-monitor. Airflow remains local; Connect runs the
+      Flask app only. The team confirms deployment; workflow/public-access re-verification is
+      deferred until later. Keep the task open until its recorded checks are complete.
     definition_of_done: >
       The public URL answers HTTP 200 from a logged-out browser and shows the normal-dataset numbers
       from demo/README.md.
@@ -137,9 +140,9 @@ tasks:
     notes: >
       requirements.txt pins the tested versions. scripts/setup_env.sh still installs version ranges
       ("apache-airflow[standard]>=3.0,<4", "flask>=3,<4"); point it at requirements.txt.
-      Fixed in fdd18e3 - readings.csv is untracked and setup_env.sh generates the 500-transformer feed
-      set when it is missing. A simulated fresh clone regenerated an identical assets.csv and ran
-      period 2026-10-15 to step 15 (403 within limits, 97 review needed).
+      Feeds, database and the 2026-10-15 report are now tracked for a ready-to-open demonstration.
+      Setup still regenerates feeds if readings.csv is missing; that path was not invoked in this audit.
+      Clean-clone verification is deferred. The team plans Devpost submission at the end.
     definition_of_done: >
       git clone of github.com/Ash1129/MAE5930 into an empty folder, then one setup command and
       pytest tests -q both pass; git grep -i "api_key" finds no real key; the Devpost entry links the repo.
@@ -147,3 +150,19 @@ tasks:
       requirements.txt added. On 2026-10-16 a copy of the app with no .venv, plus a new Python 3.12 venv
       holding only requirements.txt, printed "26 passed in 4.14s" for pytest after the heatmap
       commit 9525bc6, and the same normal-demo result. Not yet tested from an actual git clone. Devpost submission not done.
+
+  - id: H-09
+    title: Audit template alignment and refresh documentation for the current checkout
+    points: "Supports H-01, H-04, H-06, H-07 and H-08; no additional rubric points"
+    status: done
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: ["TEMPLATE-AUDIT.md", "SPEC.md", "README.md", "START-HERE.md", "data/README.md", "demo/README.md", "DELIVERY-REPORT.md", "CONTRACT.yaml", "METHODS.md", "README-DEVELOPER.md"]
+    definition_of_done: >
+      TEMPLATE-AUDIT.md separates observed implementation, template deviations and unverified external
+      steps; referenced local files exist; CONTRACT.yaml parses; git diff --check passes.
+    result: >
+      Read local template, rubric and application sources; corrected stale delivery, data and feature
+      claims; added METHODS.md with chart/model formulas and assumptions. Ledger/link checks and
+      git diff --check passed. pytest tests -q printed 44 passed in 5.19s. This audit
+      does not mark deployment, clean-clone reproduction or submission complete.

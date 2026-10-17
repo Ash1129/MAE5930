@@ -16,7 +16,7 @@ the generator uses a fixed seed.
 
 ---
 
-## Dataset 1: `normal`, 12 transformers covering every review rule
+## Dataset 1: `normal`, 12 transformers covering all three outcomes
 
 ```bash
 .venv/bin/python scripts/run_demo.py normal
@@ -64,16 +64,18 @@ T-NEW-008 sits where four synthetic boundary rectangles overlap: ITH-T, DAN, ENF
 limits. Its forecast assumptions record `allocation_flagged: true`, the four located areas, and that its
 declared primary area NEW was used. No warning is raised, because the declared area contains the location.
 
-**See it in the app.** Run `./scripts/start_app.sh` and open http://127.0.0.1:5055, which is the Map.
-Pick period end 2026-10-15 and press **Run now** on the Map. This runs on whatever is in `data/feeds/`. To get exactly the 12
-transformers above, first run `.venv/bin/python scripts/make_synthetic_data.py --end 2026-10-15`.
-1. On the **Map**, the three inspect-now transformers show as red dots and the five review-needed ones as amber dots.
-2. Open T-DRY-004 with **Review**. The I-MR chart marks 2026-10-13 in red, and the checklist sits beside it.
-3. Choose **Approve conclusion**, **Request changes** or **Reject** with a note. Repeat for each amber or red transformer.
-4. Press **Approve and finalize report**. It is refused with HTTP 409 until every flagged case has a disposition.
-5. Optionally open the period's **Heatmap** to see hourly load by transformer. Its seasonal view is
-   labeled MODELED: it scales the recorded hourly shapes by assumed monthly factors and is never used
-   in a review decision.
+**See the committed demonstration in the app.** Run `./testme.sh` and open
+http://127.0.0.1:5055. The saved 2026-10-15 analysis has **500 transformers: 22 inspect now,
+97 review needed, 381 within limits**. It is a larger dataset than the isolated 12-transformer
+scenario above. Do not press **Run now** or regenerate the feeds just to view it.
+
+1. On the Map, open an amber or red transformer and select **Open full review**.
+2. Inspect its rule, chart, headroom and source readings. The 3D temperatures are MODELED.
+3. Dispositions modify the working review database. Demonstrate decisions on a separate copy if
+   the committed demonstration must remain unchanged. Finalization is blocked until the review
+   requirements are met; request-changes cases also block finalization.
+4. Select a district on the Map to reveal the integrated heat controls. Seasonal load and
+   temperature views are models and do not drive the decision table.
 
 ---
 
@@ -126,7 +128,7 @@ The test suite covers the inputs that are too small to show in a demo table:
 .venv/bin/python -m pytest tests -q
 ```
 
-That prints `37 passed`. The tests include these cases:
+The current observed result is recorded in [TEMPLATE-AUDIT.md](../TEMPLATE-AUDIT.md). The tests include these cases:
 - **Constant readings** give "zero variation". No Cpk is reported, and decision-table rule 6 sends the case to review as a likely meter fault.
 - **One point or no points** give "insufficient history".
 - **Non-finite values** are dropped before the chart.

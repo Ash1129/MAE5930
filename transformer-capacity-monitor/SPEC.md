@@ -27,7 +27,7 @@ then the code. Filled in from the app as built, following the hackathon template
   so utility planners can identify transformers that may struggle to meet future neighborhood needs.
 
 ## 3. Inputs (rubric: minimal inputs 5)
-Four feeds a utility planning team already holds. The engineer types nothing per run. Full column
+Four required feeds a utility planning team already holds, plus an optional ambient-temperature feed for modeled views. The engineer types nothing per run. Full column
 definitions and real collection methods are in `data/README.md`.
 
 | Input | Type and units | Where the user gets it |
@@ -36,6 +36,9 @@ definitions and real collection methods are in `data/README.md`.
 | `assets.csv`, one row per transformer | nameplate rating in kVA, lat/lon, customers served, optional customer class | the utility's asset register and GIS connectivity model (customers = meters connected downstream; class = their main rate class) |
 | `boundaries.geojson`, one polygon per town or village | lon/lat polygons | Tompkins County GIS open data portal |
 | `heat_pump_forecast.csv`, one row per area | adoption share 0-1, kW per heat pump | the utility's load forecast or the state electrification forecast used in planning |
+| `ambient.csv` (optional), hourly or daily | outside air, °C | weather station or utility export; modeled views only |
+
+Optional asset thermal columns support the modeled cutaway; defaults are used when absent. They are not required for the QC decision.
 
 Every column the statistics use is something the utility measures or already records. The engineer does
 not need to know any process parameter. One loaded column, `households`, is not used by any calculation;
@@ -47,7 +50,7 @@ it is a candidate for removal.
   centre = mean, UCL/LCL = mean ± 2.66 × MR-bar, MR UCL = 3.267 × MR-bar. Four run rules apply: a point
   beyond 3 sigma, 2 of 3 beyond 2 sigma on one side, 8 in a row on one side, and a moving range above its UCL.
   Only transformers whose chart is stable get a one-sided capability index against the nameplate rating:
-  Cpk = Cpu = (rating − mean) / (3σ), with σ = MR-bar / 1.128 over all 61 days. A 95% interval uses
+  Cpk = Cpu = (rating − mean) / (3σ), with σ = MR-bar / 1.128 over all finite daily peaks in the loaded chart window. A 95% interval uses
   Bissell's approximation with effective degrees of freedom 0.62 × (n − 1) for the moving-range estimator.
   A heat-pump projection adds customers × (forecast share − base share) × kW per heat pump ÷ power factor
   0.95 to the period peak. A first-match-wins decision table (`rules/decision-table.csv`) turns these
@@ -82,19 +85,24 @@ it is a candidate for removal.
 Where the statistics live: `capacity_monitor/pipeline.py`, in the plain functions `imr_chart`,
 `capacity_headroom`, `check_capability_assumptions`, `project_demand` and `needs_review`. They use the
 Python standard library only and no web framework. This differs from the template's `app/qc.py` path.
-The web app and the scheduler only call these functions and display the results.
+These functions drive the per-transformer decisions. Additional dashboard calculations currently
+live in `webapp/viz.py`; [METHODS.md](METHODS.md) documents their formulas and limitations, plus
+the thermal and seasonal models. Moving the aggregate calculations out of the web layer and
+strengthening their numerical tests are the next statistics task.
 
 ## 5. Delivery (rubric: working tool 25)
-- **Stack:** a Python library (`capacity_monitor/`) with a Flask review dashboard (`webapp/`) and an Apache
-  Airflow 3 scheduler (`airflow/dags/`). **Gap:** this is not one of the listed starter stacks (FastAPI,
-  plumber, React, Shiny). The closest listed shape is "Python library plus dashboard".
-- **Starting demo:** none. The app was built from the `BUILD.md` kit rather than copied from `demos/`.
-  **Gap:** there is no `app/` folder with the four-script contract (`testme`, `manifestme`, `deployme`,
-  `README.md`). The existing one-command equivalents are `scripts/setup_env.sh`, `scripts/start_app.sh` and
-  `Start Capacity Monitor.command`.
-- **Deployment:** runs locally at http://127.0.0.1:5055. **Gap:** it is not deployed to the course Posit
-  Connect server and has no `manifest.json`. Airflow cannot run on Posit Connect, so a deploy would publish
-  the Flask review app alone, with "Run now" doing the scheduling. See CONTRACT task H-06.
+- **Stack:** Python library (`capacity_monitor/`), Flask dashboard (`webapp/`), optional local Airflow scheduler.
+- **Local contract:** `testme.sh`, `manifestme.sh`, `deployme.sh` and this folder's `README.md` now exist.
+  After environment setup, `./testme.sh` serves the app in the foreground without running an analysis.
+- **Template deviation:** this folder is the application root rather than `app/`; no starter demo was
+  copied. Flask is outside the template's named dashboard stacks. These are explicit deviations,
+  not evidence of instructor approval. See `TEMPLATE-AUDIT.md` for remaining alignment work.
+- **Deployment:** `manifest.json`, `.python-version`, root `app.py`, and the repository's
+  `.github/workflows/deploy-flask.yml` implement Posit Connect publishing with
+  `APP_DIR: transformer-capacity-monitor`. The team confirms Posit Connect is deployed; public
+  access and workflow re-verification are deferred until later. Airflow is local only; hosted analysis is manual. See `DEPLOY.md`.
+- **Saved demonstration:** the committed 2026-10-15 analysis opens without running the pipeline:
+  500 transformers, 22 inspect now, 97 review needed, 381 within limits.
 
 ## 6. Outputs
 - **What the user sees:**
@@ -102,6 +110,11 @@ The web app and the scheduler only call these functions and display the results.
   - **Review page per transformer:** the I-MR chart of daily peaks in kVA, with limits and signals in red.
     It also shows Cpk with its 95% interval, the period peak as a percentage of rating, the projected peak
     as a percentage of rating, the matching decision-table rule, and the source readings.
+  - **Dashboard and area views:** county/district summaries, review queues, and p, u and X-S charts.
+    Aggregate chart calculations currently live in `webapp/viz.py`; their formulas and assumptions are documented in `METHODS.md`. Extraction into plain
+    numerical functions and full known-answer/edge-case validation remain open (see audit).
+  - **Modeled thermal view:** estimated oil/hot-spot temperatures from loads, optional ambient data,
+    asset thermal values or defaults; explanatory only, not measured temperatures or a dispatch order.
   - **Period report:** HTML, Markdown and JSON, finalized only after every flagged case has a disposition.
   - **Heatmap:** hourly load per transformer for any recorded date. A seasonal view labeled MODELED
     scales the recorded shapes by the playbook's assumed monthly factors. It is context only and feeds no decision.
@@ -114,15 +127,15 @@ The web app and the scheduler only call these functions and display the results.
 `data/README.md` is the codebook. `demo/README.md` walks through each dataset with the exact command and
 the numbers it prints. All three datasets are SYNTHETIC and produced by `scripts/make_synthetic_data.py`:
 - **Datasets:**
-  - `normal`: 12 transformers in which every review rule fires at least once. It includes a stable
+  - `normal`: 12 transformers covering all three outcomes and several representative review rules. It includes a stable
     transformer with a planted spike 2 days before period end, a low Cpk, an uncertain Cpk, a forecast
     exception, a new transformer with only 12 days of history, and a transformer in overlapping boundary areas.
   - `boundary-mismatch`: the boundary file is valid only for 2025, so the run must stop at step 7.
   - `missing-rating`: T-GRO-009 has no rating, so the run must stop at step 7.
-- **Gap:** each dataset is four files and is regenerated by a command rather than shipped as one CSV per
-  case. `data/feeds/readings.csv` is git-ignored. `./scripts/setup_env.sh` generates it automatically,
-  for 500 transformers, when it is missing. The committed assets, boundaries and forecast files match
-  that seeded run. `scripts/run_demo.py` and the tests build their own 12-transformer data.
+- **Template deviation:** scenarios are generated multi-file datasets rather than 2–3 small committed
+  CSV fixtures. The 500-transformer feeds, review database, and 2026-10-15 reports are committed.
+  `scripts/run_demo.py` generates its 12-transformer scenarios in a temporary folder; it does not
+  replace the saved app data. Do not regenerate the working feeds to demonstrate the saved analysis.
 
 ## 8. Documentation and reproducibility (rubric: docs 10, public repo 5)
 - `START-HERE.md` covers everyday use. `README-DEVELOPER.md` covers internals. `data/README.md` is the
@@ -136,7 +149,9 @@ the numbers it prints. All three datasets are SYNTHETIC and produced by `scripts
 - No AI in the statistics or the review decision. Every pipeline step is a fixed rule. The only model
   call is an optional, off-by-default plain-language rewrite of alert and summary text in the review
   app (`capacity_monitor/ai_explain.py`). Its output is display only, and the rule-based text is always shown.
-- No load-flow, voltage or thermal-ageing modelling. Capacity means the nameplate kVA rating only.
+- No load-flow or voltage modelling. A thermal/ageing estimate exists for the labeled MODELED
+  visualization only (`capacity_monitor/thermal.py`); it never changes a review decision. Capacity
+  decisions use the nameplate rating, SPC results and heat-pump projection.
 - No per-customer forecasting. Heat-pump growth is applied by area share.
 - No fitted seasonal model. The heatmap's monthly factors are labeled assumptions, not estimates.
 - Real utility feeds and the approved playbook thresholds are owner setup, not part of the hackathon build.

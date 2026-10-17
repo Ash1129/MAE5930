@@ -3,6 +3,27 @@
 Built 2026-10-16 to the contract in DELIVERY.md. Fixed-rules pipeline, Apache Airflow scheduler,
 small browser review app. **No AI model takes part in any statistic or review decision.** An optional, off-by-default Claude CLI rewrite of alert and summary text exists for display only (see below).
 
+## Current snapshot (2026-10-17)
+
+This section supersedes older feature counts and delivery gaps below; the dated sections remain
+historical evidence, not claims about the current checkout.
+
+- Saved 2026-10-15 demonstration: 500 transformers, **22 inspect now, 97 review needed,
+  381 within limits**. Feeds, database and reports are now committed.
+- Map and heat views are combined. Dashboard/area views include aggregate charts; the transformer
+  page includes a labeled modeled thermal cutaway. AI remains optional and display-only.
+- Local four-file contract and Posit Connect publishing files now exist. The team confirms the app
+  is deployed. Public-access re-verification and clean-clone reproduction are deferred; starter/layout
+  and multi-file-case questions await the instructor; Devpost submission is planned for the end.
+- `METHODS.md` documents the new aggregate-chart formulas, units, assumptions, thermal/seasonal
+  models and existing tests. Statistical validation remains the next implementation task.
+- Current audit and remaining template deviations: `TEMPLATE-AUDIT.md`.
+- Local recovery: a stale server returned HTTP 500 with an SQLite UTF-8 decoding error. The local
+  database was backed up, the committed database restored, and the current server restarted;
+  following the root redirect to the map returned HTTP 200. No analysis or feed regeneration was run.
+- Optional Claude text requires an installed, authenticated CLI and the owner's subscription;
+  hosted availability and costs are not implied by the free local Flask/Airflow stack.
+
 ## Status: DEMO ONLY (real processing and scheduler verified; real feeds and approved thresholds pending)
 
 What is real and tested:

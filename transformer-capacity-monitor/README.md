@@ -33,7 +33,7 @@ The first command needs [`uv`](https://docs.astral.sh/uv/), which on macOS insta
 ```
 
 ```bash
-./scripts/start_app.sh
+./testme.sh
 ```
 
 The review app opens at http://127.0.0.1:5055. The optional scheduler starts with
@@ -43,11 +43,17 @@ The review app opens at http://127.0.0.1:5055. The optional scheduler starts wit
 .venv/bin/python -m pytest tests -q
 ```
 
-There is no public deployment yet. See CONTRACT task H-06.
+The app is deployed on Posit Connect (confirmed by the team). Public access will be reverified
+later; see [DEPLOY.md](DEPLOY.md). See [TEMPLATE-AUDIT.md](TEMPLATE-AUDIT.md) for the
+remaining template and rubric checks.
+
+The committed 2026-10-15 analysis opens without **Run now**: **22 Inspect now, 97 Review needed,
+381 Within limits** (500 total). Do not regenerate feeds to view it. The demo command above
+uses a temporary folder and leaves this saved analysis unchanged.
 
 ## Inputs
 
-Four feeds in `data/feeds/`. Their columns are defined in [`data/README.md`](data/README.md).
+Four required feeds and one optional feed in `data/feeds/`. Their columns are defined in [`data/README.md`](data/README.md).
 
 | File | Holds |
 |---|---|
@@ -95,7 +101,11 @@ The statistics are plain functions in `capacity_monitor/pipeline.py` that use th
 | `project_demand(transformer, period, playbook)` | period peak, customers, area forecast | period peak + customers × (forecast share − base share) × kW per heat pump ÷ power factor |
 | `needs_review(facts, table)` | the results above | the first matching decision-table row: outcome, rule number, reason |
 
-The Airflow DAG and the Flask app only call these functions, store the results and display them.
+These functions drive the per-transformer decisions. Additional aggregate dashboard charts currently
+calculate p, u and X-S statistics in `webapp/viz.py`; the modeled thermal view uses
+`capacity_monitor/thermal.py`. Their formulas, inputs, assumptions, units and existing test evidence are documented in
+[METHODS.md](METHODS.md). Statistical validation work remains tracked in
+[TEMPLATE-AUDIT.md](TEMPLATE-AUDIT.md).
 
 ## Outputs
 
