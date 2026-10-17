@@ -352,7 +352,7 @@
       </form>
     </div>
     {% else %}
-    <div class="head" id="side-head"><span class="t" id="side-title">Needs a person</span><span class="n" id="red-count">0</span><span class="scope" id="side-scope" hidden></span><button class="close" id="side-close" type="button" aria-label="Hide the list" title="Hide"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <div class="head" id="side-head"><span class="t" id="side-title">Review status</span><span class="n" id="red-count">0</span><span class="scope" id="side-scope" hidden></span><button class="close" id="side-close" type="button" aria-label="Hide the list" title="Hide"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       <label id="tier-filter" class="tier"><span class="sr">Show</span><select id="tier-select" aria-label="Show which cases"><option value="all">All open</option><option value="inspect_now">Inspect now</option><option value="review_needed">Review needed</option><option value="decided">Decided</option></select></label></div>
     <div class="scroll">
       <div id="hot" hidden>
@@ -594,7 +594,7 @@ function renderSidebar() {
   const listed = S.tier === 'decided' ? decided : S.tier === 'all' ? open : open.filter(p => p.status === S.tier);
   $('tier-filter').hidden = !!sel;
   // district selected: the sidebar shows hotspots only; whole county: the review list only
-  $('side-title').textContent = sel ? 'Hotspots now' : 'Needs a person';
+  $('side-title').textContent = sel ? 'Hotspots now' : 'Review status';
   $('red-count').textContent = listed.length; $('red-count').hidden = !!sel;
   $('red-count').style.color = S.tier === 'decided' ? '#1F5FA8' : S.tier === 'review_needed' ? ORANGE : RED;
   $('side-scope').hidden = !sel; if (sel) $('side-scope').textContent = 'in ' + sel.fullName;

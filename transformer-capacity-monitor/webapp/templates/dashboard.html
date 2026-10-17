@@ -2,11 +2,13 @@
 {% block title %}Dashboard{% endblock %}
 {% block page_head %}
 <style>
+  .queue-filters{display:flex;flex-wrap:wrap;align-items:end;gap:8px;padding:4px 12px 8px}.queue-filters label{margin:0;font-size:11px;letter-spacing:0;text-transform:none}.queue-filters input,.queue-filters select{display:block;width:auto;max-width:210px;margin:2px 0 0;padding:3px 6px;font-size:12px}
+
   body:has(#board){height:100dvh;overflow:hidden;display:flex;flex-direction:column}
   body:has(#board) .topbar{flex:none}
   body:has(#board) .flashes{flex:none}
   body:has(#board) main{flex:1;min-height:0;max-width:none;width:100%;margin:0;padding:6px 10px 8px;overflow:hidden}
-  #board{height:100%;min-height:0;display:grid;grid-template-rows:minmax(0,.85fr) minmax(0,1.35fr) minmax(0,1.15fr);gap:6px}
+  #board{height:100%;min-height:0;display:grid;grid-template-rows:minmax(0,.75fr) minmax(0,1.15fr) minmax(0,1.45fr);gap:6px}
   .controls{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 10px 8px}
   .ctrl{min-width:0;min-height:0;display:flex;flex-direction:column;margin:0}
   .ctrl h3{font-size:16px;margin:0}
@@ -86,7 +88,7 @@
     <header>
       <div class="section-heading">
         <h2>{% if area %}{{ board.area_name }}{% else %}Whole county{% endif %}</h2>
-        <p class="hint">Week ending {{ period.period_id }}</p>
+        <p class="hint">Week ending {{ period.period_id }} · Analysis saved {{ period.generated_at|day }} {{ period.generated_at|clock }}</p>
       </div>
       <div class="switchers">
         <div class="area-pick">
@@ -135,7 +137,7 @@
     <header>
       <div class="section-heading">
         <h2>Daily trends</h2>
-        <p class="hint">{% if area %}{{ board.area_name }}{% else %}Whole county{% endif %} · reporting counts may vary by day</p>
+        <p class="hint">{% if area %}{{ board.area_name }}{% else %}Whole county{% endif %}</p>
       </div>
     </header>
     <div class="controls">
@@ -162,13 +164,22 @@
       {% if stability %}<a class="chip" href="{{ url_for('dashboard', period=period.period_id, status=status or none, area=area or none, band=band or none) }}">{{ stability_label }} ×</a>{% endif %}
       {% if band %}<a class="chip" href="{{ url_for('dashboard', period=period.period_id, status=status or none, stability=stability or none, area=area or none) }}">{{ band_label }} ×</a>{% endif %}
       {% if area %}<a class="chip" href="{{ url_for('dashboard', period=period.period_id, status=status or none, stability=stability or none, band=band or none) }}">{{ board.area_name }} ×</a>{% endif %}
-      {% if board.queue %}<a class="chip" href="{{ url_for('dashboard', period=period.period_id, status='all', stability=stability or none, area=area or none, band=band or none) }}">Show all {{ board.total }}</a>
-      {% elif status == 'all' %}<a class="chip" href="{{ url_for('dashboard', period=period.period_id, stability=stability or none, area=area or none, band=band or none) }}">Back to the queue</a>{% endif %}
+{% if status == 'all' %}<a class="chip" href="{{ url_for('dashboard', period=period.period_id, stability=stability or none, area=area or none, band=band or none) }}">Back to the queue</a>{% endif %}
       {% if alerts %}<a class="chip" href="{{ url_for('alerts') }}">Needs attention {{ alerts|length }}</a>{% endif %}
     </div>
+    <form class="queue-filters" method="get" aria-label="Filter review queue">
+      <input type="hidden" name="period" value="{{ period.period_id }}">
+      {% for key, value in [('status',status),('stability',stability),('area',area),('band',band)] %}{% if value %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}{% endfor %}
+      <label>Find transformer<input name="q" value="{{ search }}" placeholder="ID, name or town" maxlength="120"></label>
+      <label>Review-needed reason<select name="reason"><option value="">All reasons</option>{% for option in reason_options %}<option value="{{ option.key }}" {% if reason == option.key %}selected{% endif %}>{{ option.label }} ({{ option.count }})</option>{% endfor %}</select></label>
+      <label>Follow-up<select name="followup"><option value="">Any follow-up</option><option value="unassigned" {% if followup_filter == 'unassigned' %}selected{% endif %}>No plan yet</option><option value="overdue" {% if followup_filter == 'overdue' %}selected{% endif %}>Overdue</option>{% for key,label in followup_statuses.items() %}<option value="{{ key }}" {% if followup_filter == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      <label>Sort<select name="sort">{% for key,label in [('priority','Review priority'),('peak','Highest peak'),('forecast','Highest forecast'),('due','Follow-up date')] %}<option value="{{ key }}" {% if sort == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      <button class="btn" type="submit">Apply</button><a href="{{ url_for('dashboard', period=period.period_id) }}">Reset</a>
+      {% if reason %}<span class="small">Reason filter shows Review needed cases only.</span>{% endif %}
+    </form>
     <div class="scroll" tabindex="0" role="region" aria-label="Transformer review queue">
       <table>
-        <tr><th>Transformer</th><th>Town</th><th class="num">Peak</th><th class="num">Forecast</th><th>Pattern</th><th>Why</th></tr>
+        <tr><th>Transformer</th><th>Town</th><th class="num">Peak</th><th class="num">Forecast</th><th>Pattern</th><th>Follow-up</th><th>Review reason</th></tr>
         {% for r in board.rows %}
         <tr>
           <td class="who"><a href="{{ r.url }}">{{ r.id|tid }}</a> <span class="muted">{{ r.name }}</span></td>
@@ -176,10 +187,11 @@
           <td class="num {{ 'bad' if r.usage_band == 'high' else ('warn' if r.usage_band == 'mid' else '') }}">{{ r.usage|pct }}</td>
           <td class="num">{{ r.forecast|pct }}</td>
           <td>{{ stability_labels.get(r.stability, r.stability) }}</td>
-          <td class="why" title="{{ r.reason }}">{% if r.rule %}Rule {{ r.rule }} · {% endif %}{{ r.reason or 'Within limits' }}</td>
+          <td>{% if r.followup %}<a href="{{ r.url }}#followup">{{ followup_statuses[r.followup.status] }}</a> · {{ r.followup.owner }} · {{ r.followup.due_date }}{% if r.overdue %} · <strong class="warn">Overdue</strong>{% endif %}{% else %}<a href="{{ r.url }}#followup">Add plan</a>{% endif %}</td>
+          <td class="why">{{ review_reasons.get(r.rule|string, inspect_reasons.get(r.rule|string, 'Within limits')) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="muted">Nothing matches this filter.</td></tr>
+        <tr><td colspan="7" class="muted">Nothing matches this filter.</td></tr>
         {% endfor %}
       </table>
     </div>

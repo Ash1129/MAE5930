@@ -117,5 +117,5 @@ body.narrow:has(#side.first) #legend{bottom:232px}
 body.narrow:has(#side.open) #legend{bottom:calc(62% + 12px)}
 body.narrow.side-hidden #legend{bottom:16px}
 
-#board .section-heading{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;flex:1}
+#board .section-heading{display:flex;flex-direction:row;align-items:baseline;gap:10px;min-width:0;flex:1;flex-wrap:wrap}
 #board .section-heading .hint{margin:0}

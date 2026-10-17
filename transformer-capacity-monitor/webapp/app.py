@@ -143,6 +143,7 @@ def _board_url(period_id: str, **params) -> str:
 
 def _with_hrefs(slices: list[dict], current: str, key: str, period_id: str, status: str, stability: str, area: str, band: str) -> list[dict]:
     params = {"status": status, "stability": stability, "area": area, "band": band}
+    params.update({k: request.args.get(k, "") for k in ("reason", "q", "followup", "sort")})
     out = []
     for s in slices:
         nxt = dict(params)
@@ -151,6 +152,14 @@ def _with_hrefs(slices: list[dict], current: str, key: str, period_id: str, stat
         item["href"] = _board_url(period_id, **nxt)
         out.append(item)
     return out
+
+
+REVIEW_REASONS = {
+    "4": "Load pattern change", "5": "Short history", "6": "Meter / feed check",
+    "7": "Capability unavailable", "8": "Capability assumptions",
+    "9": "Low capability", "10": "Uncertain capability", "11": "Future capacity", "12": "Forecast unavailable",
+}
+FOLLOWUP_STATUSES = {"planned": "Planned", "in_progress": "In progress", "watch": "Watching", "complete": "Complete"}
 
 
 @app.route("/dashboard")
@@ -175,6 +184,13 @@ def dashboard():
     if band not in ("", *BAND_ORDER):
         band = ""
 
+    reason = request.args.get("reason", "")
+    reason = reason if reason in REVIEW_REASONS else ""
+    if reason:
+        status = "review_needed"
+    search = request.args.get("q", "").strip()[:120]
+    followup_filter = request.args.get("followup", "")
+    sort = request.args.get("sort", "priority")
     board = None
     if period:
         raw = store.get_transformer_results(period_id)
@@ -217,6 +233,22 @@ def dashboard():
             rows = [r for r in rows if r["area_id"] == area]
         if band:
             rows = [r for r in rows if r["usage_band"] == band]
+        reason_options = [{"key": key, "label": label, "count": sum(r["status"] == "review_needed" and str(r["rule"]) == key for r in focused["transformers"])} for key, label in REVIEW_REASONS.items()]
+        if reason:
+            rows = [r for r in rows if r["status"] == "review_needed" and str(r["rule"]) == reason]
+        if search:
+            rows = [r for r in rows if search.casefold() in " ".join([r["id"], r["name"], r["area_name"]]).casefold()]
+        today = date.today().isoformat()
+        for row in rows:
+            f = row.get("followup")
+            row["overdue"] = bool(f and f["status"] != "complete" and f["due_date"] < today)
+        if followup_filter:
+            rows = [r for r in rows if (not r["followup"] if followup_filter == "unassigned" else r["overdue"] if followup_filter == "overdue" else bool(r["followup"] and r["followup"]["status"] == followup_filter))]
+        if sort in ("peak", "forecast"):
+            field = "usage" if sort == "peak" else "forecast"
+            rows.sort(key=lambda r: (r[field] is None, -(r[field] or 0)))
+        elif sort == "due":
+            rows.sort(key=lambda r: (not bool(r["followup"]), (r["followup"] or {}).get("due_date", "")))
         review_n = sum(1 for r in focused["transformers"] if r["status"] != "within_limits")
         trends = county_trend_charts(scope, period_start)
         board = {
@@ -244,6 +276,9 @@ def dashboard():
         stability=stability,
         area=area,
         band=band,
+        reason=reason, search=search, followup_filter=followup_filter, sort=sort,
+        reason_options=reason_options if period else [], followup_statuses=FOLLOWUP_STATUSES,
+        review_reasons=REVIEW_REASONS, inspect_reasons={"1": "At or above rating", "2": "Sustained load shift", "3": "Repeated outliers"},
         status_label=STATUS_LABEL.get(status, ""),
         stability_label=STABILITY_LABEL.get(stability, ""),
         band_label=BAND_LABEL.get(band, ""),
@@ -340,12 +375,41 @@ def transformer_detail(period_id, tid):
     if tid in review_ids:
         i = review_ids.index(tid)
         case = {"n": i + 1, "of": len(review_ids), "prev": review_ids[i - 1] if i > 0 else None, "next": review_ids[i + 1] if i + 1 < len(review_ids) else None}
-    return render_template("transformer.html", period=period, r=r, chart_svg=review_chart_svg(r["chart"], period["period"]["start"], r["unit"], r["rated_max"]),
+    readings = r.get("period_readings") or []
+    peak_reading = max(readings, key=lambda x: x["load"], default=None)
+    reporting_days = len({x["date"] for x in readings})
+    expected_days = (date.fromisoformat(period["period"]["end"]) - date.fromisoformat(period["period"]["start"])).days + 1
+    peak_evidence = {"peak": peak_reading, "days": reporting_days, "expected_days": expected_days,
+                     "samples": len(readings), "above": sum(x["load"] >= r["rated_max"] for x in readings),
+                     "latest": max((x["timestamp"] for x in readings), default=None)}
+    return render_template("transformer.html", period=period, r=r, peak_evidence=peak_evidence, followup_statuses=FOLLOWUP_STATUSES, chart_svg=review_chart_svg(r["chart"], period["period"]["start"], r["unit"], r["rated_max"]),
                            chart_caption=review_chart_caption(r["chart"], r["unit"]), checklist=checklist, cause=cause, why=explain.why_flagged(r, pb),
                            decisions=DECISIONS, decision_chips=DECISION_CHIPS, review_started_at=now_iso(), playbook=pb, summary=summary, case=case,
                            back=url_for("period_map", period_id=period_id) if request.args.get("from") == "map" else None,
                            headroom_svg=review_headroom_svg(r["chart"], period["period"]["start"], r["rated_max"], pb["forecast"]["near_rating_ratio"]),
                            headroom_caption=review_headroom_caption(r["chart"], period["period"]["start"], r["rated_max"], pb["forecast"]["near_rating_ratio"]))
+
+
+@app.post("/periods/<period_id>/transformers/<tid>/followup")
+def save_followup(period_id, tid):
+    r = store.get_transformer_result(period_id, tid)
+    if not r:
+        abort(404)
+    fields = {k: request.form.get(k, "").strip() for k in ("action", "owner", "due_date", "status", "notes")}
+    if fields["status"] not in FOLLOWUP_STATUSES:
+        abort(400, "Unknown follow-up status")
+    try:
+        date.fromisoformat(fields["due_date"])
+    except ValueError:
+        abort(400, "Enter a valid follow-up date")
+    if not fields["action"] or not fields["owner"]:
+        abort(400, "Action and owner are required")
+    for key, limit in (("action", 300), ("owner", 120), ("notes", 2000)):
+        if check_text(fields[key], key, max_len=limit):
+            abort(400, "Follow-up contains invalid text")
+    store.record_followup(period_id, tid, r["input_hash"], **fields)
+    flash("Follow-up saved. The analysis and review decision are unchanged.", "info")
+    return redirect(url_for("transformer_detail", period_id=period_id, tid=tid) + "#followup")
 
 
 @app.post("/periods/<period_id>/transformers/<tid>/disposition")

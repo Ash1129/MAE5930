@@ -139,3 +139,38 @@ def test_peak_middle_band_matches_review_color(sandbox):
     from webapp.app import BAND_COLOR
     from webapp.viz import STATUS_COLOR, STABILITY_COLOR
     assert BAND_COLOR['mid'] == STATUS_COLOR['review_needed'] == STABILITY_COLOR['insufficient_history']
+
+
+def test_followup_history_validation_and_queue_filters(sandbox):
+    client, webapp = _client(sandbox)
+    resp = client.post('/runs', data={'period_end': '2026-10-15'})
+    run = _wait_run(webapp, resp.headers['Location'].rsplit('/', 1)[-1])
+    assert run['status'] == 'success'
+    results = webapp.store.get_transformer_results('2026-10-15')
+    r = next(r for r in results if r['status'] == 'review_needed' and not r['is_calibration'])
+    tid = r['transformer_id']
+    path = f'/periods/2026-10-15/transformers/{tid}'
+    fields = dict(action='Check field loading', owner='Planner', due_date='2020-01-01', status='planned', notes='Confirm meter records')
+    assert client.post(path + '/followup', data={**fields, 'due_date': 'bad'}).status_code == 400
+    assert client.post(path + '/followup', data={**fields, 'owner': ''}).status_code == 400
+    assert not webapp.store.followup_history('2026-10-15', tid)
+    assert client.post(path + '/followup', data=fields).status_code == 302
+    current = webapp.store.get_transformer_result('2026-10-15', tid)
+    assert current['followup']['owner'] == 'Planner'
+    assert current['disposition'] is None
+    assert current['input_hash'] == r['input_hash']
+    page = client.get('/dashboard?followup=overdue').data.decode()
+    assert 'Planner' in page and 'Overdue' in page
+    assert 'Planner' not in client.get('/dashboard?followup=complete').data.decode()
+    assert 'Planner' in client.get('/dashboard', query_string={'reason': str(r['decision']['rule']), 'q': tid}).data.decode()
+    assert 'Nothing matches' in client.get('/dashboard?q=nonexistent-asset').data.decode()
+    assert client.post(path + '/followup', data={**fields, 'status': 'complete', 'notes': 'Field check complete'}).status_code == 302
+    assert len(webapp.store.followup_history('2026-10-15', tid)) == 2
+    assert 'Planner' not in client.get('/dashboard?followup=overdue').data.decode()
+    detail = client.get(path).data.decode()
+    assert 'Margin at peak' in detail and 'Sample counts do not establish overload duration' in detail
+    assert 'Follow-up history (2)' in detail
+    # Work can continue after report sign-off without modifying the report decision.
+    webapp.store.finalize_period('2026-10-15', 'Tester')
+    assert client.post(path + '/followup', data=fields).status_code == 302
+    assert webapp.store.get_period('2026-10-15')['status'] == 'final'

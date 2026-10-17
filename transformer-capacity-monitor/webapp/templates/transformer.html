@@ -2,6 +2,8 @@
 {% block title %}{{ r.transformer_id|tid }} · Transformer Capacity Monitor{% endblock %}
 {% block head %}
 <style>
+  .peak-evidence{padding-left:20px;font-size:14px;line-height:1.5}.peak-evidence li{margin:5px 0}.followup-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+
   .wrap{max-width:1040px;margin:0 auto;padding:28px 24px 80px;display:flex;flex-direction:column;gap:36px}
   .crumbs{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--ink-60)}
   .crumbs a{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
@@ -165,8 +167,37 @@
       </div>
     </div>
 
+    <section class="load" id="followup" aria-labelledby="followup-title">
+      <h2 id="followup-title">Follow-up</h2>
+      <p class="small muted">Track the work separately from agreeing with the finding. Follow-ups remain editable after report sign-off.</p>
+      {% set f = r.followup or {} %}
+      {% if f and f.input_hash != r.input_hash %}<p class="warn">This follow-up was recorded against earlier inputs. Recheck the plan against this analysis.</p>{% endif %}
+      {% if f %}<p><b>{{ followup_statuses[f.status] }}</b> · {{ f.owner }} · due {{ f.due_date }}<br>{{ f.action }}</p>{% endif %}
+      <details><summary><strong><u>{{ 'Edit follow-up' if f else 'Add a follow-up plan' }}</u></strong></summary>
+      <form method="post" action="{{ url_for('save_followup', period_id=period.period_id, tid=r.transformer_id) }}">
+        <label>Next action<input class="input" name="action" required maxlength="300" value="{{ f.action or '' }}" placeholder="e.g. Investigate repeated overload"></label>
+        <div class="followup-fields">
+          <label>Owner<input class="input" name="owner" required maxlength="120" value="{{ f.owner or reviewer_name }}"></label>
+          <label>Due / recheck date<input class="input" name="due_date" type="date" required value="{{ f.due_date or '' }}"></label>
+          <label>Status<select class="input" name="status">{% for key, label in followup_statuses.items() %}<option value="{{ key }}" {% if f.status == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        </div>
+        <label>Progress notes<textarea class="input" name="notes" maxlength="2000">{{ f.notes or '' }}</textarea></label>
+        <button class="btn" type="submit">Save follow-up</button>
+      </form>
+      </details>
+      {% if r.followup_history %}<details><summary>Follow-up history ({{ r.followup_history|length }})</summary><ul>{% for entry in r.followup_history %}<li>{{ entry.updated_at }} · {{ entry.owner }} · {{ followup_statuses[entry.status] }} · due {{ entry.due_date }}: {{ entry.action }}{% if entry.notes %} — {{ entry.notes }}{% endif %}</li>{% endfor %}</ul></details>{% endif %}
+    </section>
+
     <div class="load">
       <div class="label">Load against the {{ r.rated_max|num(0) }} {{ r.unit }} rating</div>
+      <ul class="peak-evidence">
+        <li><b>Peak:</b> {{ cap.period_peak|num(1) }} {{ r.unit }} · {{ cap.period_peak_ratio|pct }} of the {{ r.rated_max|num(0) }} {{ r.unit }} rating.</li>
+        {% if peak_evidence.peak %}<li><b>When:</b> {{ peak_evidence.peak.timestamp }} (timestamp as supplied).</li>{% endif %}
+        {% if cap.period_peak is not none %}<li><b>Margin at peak:</b> {{ (r.rated_max - cap.period_peak)|num(1) }} {{ r.unit }} · negative means above rating.</li>{% endif %}
+        <li><b>At or above rating:</b> {{ peak_evidence.above }} of {{ peak_evidence.samples }} recorded samples. Sample counts do not establish overload duration.</li>
+        <li><b>Coverage:</b> {{ peak_evidence.days }} of {{ peak_evidence.expected_days }} review days have readings; this does not verify every expected interval.</li>
+        <li><b>Latest saved reading:</b> {{ peak_evidence.latest or 'Unavailable' }}. Analysis saved {{ period.generated_at }}.</li>
+      </ul>
       <div class="bars">
         <div class="bar">
           <div class="lab"><span>This week's peak</span>{% if cap.period_peak is not none %}<span><b>{{ cap.period_peak|num(1) }} {{ r.unit }}</b> <span class="p">{{ cap.period_peak_ratio|pct }} of rating</span></span>{% endif %}</div>
@@ -188,7 +219,7 @@
           {% else %}<div class="v">No variation</div><div class="s">the readings never change</div>{% endif %}
         </div>
         <div>
-          <div class="k">Headroom today (Cpk)</div>
+          <div class="k">Statistical capability (Cpk)</div>
           {% if cap.cpk is not none %}<div class="v">{{ cap.cpk|num }} <span>{{ 'interpret cautiously' if cap.assumption_flags else ('above threshold' if cap.cpk >= cpk_line else 'below threshold') }}</span></div><div class="s">approximate 95% interval {{ cap.cpk_ci_low|num }} to {{ cap.cpk_ci_high|num }}; review below {{ cpk_line }}</div>
           {% else %}<div class="v">—</div><div class="s">not calculated: {{ (cap.note or 'not enough data').replace('Capability not calculated: ', '') }}</div>{% endif %}
         </div>

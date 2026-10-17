@@ -61,6 +61,7 @@ def _row(result: dict) -> dict:
         "rating": result.get("rated_max"),
         "unit": result.get("unit") or "",
         "customers": result.get("customers"),
+        "followup": result.get("followup"),
         "reason": (result.get("decision") or {}).get("reason") or "",
         "rule": (result.get("decision") or {}).get("rule"),
     }

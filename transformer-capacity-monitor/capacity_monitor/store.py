@@ -77,6 +77,13 @@ CREATE TABLE IF NOT EXISTS dispositions (
   calibration_caught INTEGER
 );
 CREATE INDEX IF NOT EXISTS disp_period ON dispositions(period_id, transformer_id, recorded_at);
+CREATE TABLE IF NOT EXISTS followups (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  period_id TEXT NOT NULL, transformer_id TEXT NOT NULL, input_hash TEXT NOT NULL,
+  action TEXT NOT NULL, owner TEXT NOT NULL, due_date TEXT NOT NULL,
+  status TEXT NOT NULL, notes TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS followup_case ON followups(period_id, transformer_id, id);
 CREATE TABLE IF NOT EXISTS alerts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at TEXT NOT NULL,
@@ -228,6 +235,8 @@ class Store:
         for r in rows:
             d = json.loads(r["result_json"])
             d["is_calibration"] = bool(r["is_calibration"])
+            history = self.followup_history(period_id, r["transformer_id"])
+            d["followup"] = history[0] if history else None
             d["disposition"] = self.current_disposition(period_id, r["transformer_id"], r["input_hash"])
             out.append(d)
         return out
@@ -241,7 +250,20 @@ class Store:
         d["is_calibration"] = bool(r["is_calibration"])
         d["disposition"] = self.current_disposition(period_id, transformer_id, r["input_hash"])
         d["disposition_history"] = self.disposition_history(period_id, transformer_id)
+        d["followup_history"] = self.followup_history(period_id, transformer_id)
+        d["followup"] = next(iter(d["followup_history"]), None)
         return d
+
+    def followup_history(self, period_id, transformer_id):
+        with self._conn() as c:
+            return [dict(r) for r in c.execute(
+                "SELECT * FROM followups WHERE period_id=? AND transformer_id=? ORDER BY id DESC",
+                (period_id, transformer_id))]
+
+    def record_followup(self, period_id, transformer_id, input_hash, action, owner, due_date, status, notes):
+        with self._conn() as c:
+            c.execute("INSERT INTO followups(period_id,transformer_id,input_hash,action,owner,due_date,status,notes,updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                      (period_id, transformer_id, input_hash, action, owner, due_date, status, notes, now_iso()))
 
     # ---- dispositions -----------------------------------------------------------------
     def current_disposition(self, period_id: str, transformer_id: str, input_hash: str) -> dict | None:

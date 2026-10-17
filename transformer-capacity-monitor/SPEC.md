@@ -157,3 +157,15 @@ the numbers it prints. All three datasets are SYNTHETIC and produced by `scripts
 - No per-customer forecasting. Heat-pump growth is applied by area share.
 - No fitted seasonal model. The heatmap's monthly factors are labeled assumptions, not estimates.
 - Real utility feeds and the approved playbook thresholds are owner setup, not part of the hackathon build.
+
+
+### Follow-up workflow and evidence (2026-10-17)
+
+The dashboard offers case search, Review needed categories derived from the winning rule,
+follow-up status/overdue filters and peak/forecast/due-date sorts. Cases show peak timing,
+rating margin, recorded-sample exceedances, reporting-day coverage and saved-analysis time.
+No duration or complete-interval coverage is inferred. Optional follow-up plans capture action,
+owner, due/recheck date, status and notes in append-only SQLite history with the input hash;
+earlier-input plans are identified. Follow-up is independent of report disposition and remains
+editable after finalization. It is period-specific, has no notifications or dispatch integration,
+and is not yet part of report exports. Existing statistical rules and saved analysis are unchanged.

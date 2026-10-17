@@ -123,3 +123,22 @@ use plain percentage, unique-count and quartile functions in `capacity_monitor/a
 - A heatmap of hourly load per transformer for a recorded date, plus a seasonal view labeled MODELED.
 - A period report in `data/reports/<period end>/` as HTML, Markdown and JSON. It can be finalized only
   after every flagged transformer has a disposition, and the backend enforces this with HTTP 409.
+
+
+## Follow-up and queue filters
+
+The dashboard supports ID/name/town search, Review needed reason categories, follow-up
+status (including no plan and overdue), and sorting by peak, forecast or due date.
+Reason categories use the first matching decision-table rule; they do not change the analysis.
+Selecting a reason scopes the queue to Review needed cases. Clear filters with Reset.
+
+Each case has an optional follow-up plan: next action, owner, due/recheck date, status
+(Planned, In progress, Watching, Complete), and progress notes. Saves append to the SQLite
+`followups` history with the analysis input hash. A plan from earlier inputs is marked for
+rechecking. Follow-ups are separate from dispositions and report approval, remain editable
+after sign-off, and do not send notifications or dispatch work. They are scoped to the case's
+review period; they are not automatically carried into later periods or included in report exports.
+
+Peak evidence lists the saved peak timestamp, margin against rating, samples at or above
+rating, reporting-day coverage, latest saved reading and analysis timestamp. Sample counts
+are not duration estimates; days with readings do not establish complete interval coverage.
