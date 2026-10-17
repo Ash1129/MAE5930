@@ -1,10 +1,10 @@
 .venv/
 airflow_home/
 logs/
-data/capacity_monitor.sqlite3*
+data/capacity_monitor.sqlite3-wal
+data/capacity_monitor.sqlite3-shm
 data/work/
-data/reports/
+data/reports/*/history/
 __pycache__/
 .pytest_cache/
 .DS_Store
-data/feeds/readings.csv
