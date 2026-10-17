@@ -180,7 +180,7 @@
   #first .d{font-size:13px;color:var(--ink-60);max-width:220px;text-wrap:pretty}
 
   /* popup */
-  #popup{position:absolute;transform:translate(-50%,calc(-100% - 18px));width:300px;z-index:30;padding:14px 16px 16px;box-sizing:border-box}
+  #popup{position:absolute;transform:translate(-50%,calc(-100% - 18px));width:340px;z-index:30;padding:14px 16px 16px;box-sizing:border-box}
   #popup .top{display:flex;align-items:flex-start;gap:10px}
   #popup .id{font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.1}
   #popup .sub{color:var(--ink-60);font-size:12px;margin-top:2px}
@@ -189,6 +189,14 @@
   #popup .close{all:unset;cursor:pointer;width:24px;height:24px;display:grid;place-items:center;border-radius:6px;color:var(--ink-60)} #popup .close:hover{background:rgba(29,36,48,.08)}
   #popup .grid{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;font-size:13px;margin-top:12px;padding-top:10px;border-top:1px solid var(--ink-line)}
   #popup .grid .k{color:var(--ink-60)}
+  #pp-summary{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid rgba(29,36,48,.08)}
+  #pp-summary p{margin:0;font-size:13px;line-height:1.45;color:var(--ink-90);text-wrap:pretty}
+  #pp-summary-src{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-60)}
+  #pp-summary-src.ai{color:var(--color-accent-700)}
+  #pp-summary-src .spin{width:10px;height:10px;border:1.5px solid rgba(182,130,53,.3);border-top-color:var(--color-accent);border-radius:50%;animation:cm-spin .8s linear infinite}
+  #pp-chart{margin-top:10px;min-height:166px;border-radius:10px;background:rgba(255,255,255,.7);padding:6px 6px 2px}
+  #pp-chart svg{display:block}
+  #popup .grid{font-size:12.5px}
   .estimate{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#8a6200;margin-left:4px}
 
   /* furniture */
@@ -236,6 +244,8 @@
       <span class="chip" id="pp-chip"><i></i><span id="pp-status"></span></span>
       <button class="close" id="pp-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
+    <div id="pp-summary"><p id="pp-summary-text"></p><span id="pp-summary-src"></span></div>
+    <div id="pp-chart"></div>
     <div class="grid">
       <span class="k">Rated maximum</span><span id="pp-rated"></span>
       <span class="k">Period peak</span><span id="pp-peak"></span>
@@ -569,8 +579,34 @@ function openPopup(p) {
   $('pp-rule').textContent = red ? 'Rule ' + p.rule + ' · ' + p.reason : 'None · all checks passed';
   $('pp-dec').textContent = p.disposition || 'none recorded';
   $('pp-link').href = p.url;
+  $('pp-summary-text').textContent = ''; $('pp-summary-src').className = ''; $('pp-summary-src').innerHTML = '';
+  $('pp-chart').innerHTML = '<span class="muted" style="font-size:11px;padding:6px;display:block">Loading control chart…</span>';
   $('popup').hidden = false; positionPopup();
   document.querySelectorAll('.rrow').forEach(r => r.classList.toggle('on', r.dataset.id === p.id));
+  setTimeout(fitPopup, 30);
+  loadPopupExtras(p);
+}
+const setSummary = (text, kind) => {
+  $('pp-summary-text').textContent = text;
+  const src = $('pp-summary-src');
+  src.className = kind === 'ai' ? 'ai' : '';
+  src.innerHTML = kind === 'pending' ? '<span class="spin"></span>Writing a summary with Claude Haiku' : kind === 'ai' ? 'Written by Claude Haiku · check the chart' : 'Rule-based summary';
+};
+async function loadPopupExtras(p) {
+  const base = '/api/periods/' + encodeURIComponent(PERIOD) + '/transformers/' + encodeURIComponent(p.id);
+  let j;
+  try { j = await (await fetch(base + '/mini')).json(); } catch (e) { if (S.popup === p) $('pp-chart').innerHTML = '<span class="muted" style="font-size:11px">Chart unavailable</span>'; return; }
+  if (S.popup !== p) return;
+  $('pp-chart').innerHTML = j.svg;
+  if (j.ai) setSummary(j.ai.text, 'ai');
+  else { setSummary(j.rule_summary, j.ai_on ? 'pending' : 'rule'); }
+  setTimeout(fitPopup, 30);
+  if (j.ai || !j.ai_on) return;
+  try {
+    const r = await fetch(base + '/summary'); const k = await r.json();
+    if (S.popup !== p) return;
+    if (r.ok && k.text) setSummary(k.text, 'ai'); else setSummary(j.rule_summary, 'rule');
+  } catch (e) { if (S.popup === p) setSummary(j.rule_summary, 'rule'); }
   setTimeout(fitPopup, 30);
 }
 // Pan the map just enough that the whole popup sits clear of the header, heat strip, panels and bottom pill.

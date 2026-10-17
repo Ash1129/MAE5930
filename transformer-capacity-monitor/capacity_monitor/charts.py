@@ -83,3 +83,66 @@ def imr_svg(chart: dict, period_start: str, unit: str = "", rating: float | None
       .period{fill:#ffe9a8;opacity:.45}
     </style>"""
     return f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{h1 + h2 + 50}" viewBox="0 0 {width} {h1 + h2 + 50}">{style}\n{body}\n</svg>'
+
+
+def mini_imr_svg(chart: dict, period_start: str, unit: str = "", rating: float | None = None, width: int = 308) -> str:
+    """Compact I-MR chart for the map popup. Inline attributes only (no <style>), so it cannot leak CSS into the page.
+
+    Individuals panel with the history-based limits and centre line, the review period shaded, signal points in red,
+    and the rated maximum drawn only when it falls inside the plotted range (otherwise noted as text).
+    """
+    dates = chart.get("dates") or []
+    vals = chart.get("values") or []
+    if not dates:
+        return f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="40" role="img" aria-label="No readings"><text x="4" y="24" font-size="11" fill="#5d6675">No readings to chart</text></svg>'
+    left, right, h1, h2, gap = 34, 6, 92, 44, 16
+    height = 14 + h1 + gap + h2 + 16
+    n = max(len(vals) - 1, 1)
+    x = lambda i: left + (width - left - right) * i / n  # noqa: E731
+    sig_i = {s["date"] for s in chart.get("signals", []) if s["rule"] != "moving_range_beyond_ucl"}
+    sig_mr = {s["date"] for s in chart.get("signals", []) if s["rule"] == "moving_range_beyond_ucl"}
+    first_period = next((i for i, d in enumerate(dates) if d >= period_start), None)
+
+    def panel(series, lines, sig, top, ph, label):
+        ys = [v for v in series if v is not None] + [v for _, v, _ in lines if v is not None]
+        lo, hi = min(ys), max(ys)
+        if lo == hi:
+            lo, hi = lo - 1, hi + 1
+        pad = (hi - lo) * 0.12
+        lo, hi = lo - pad, hi + pad
+        y = lambda v: top + ph - ph * (v - lo) / (hi - lo)  # noqa: E731
+        out = [f'<text x="{left}" y="{top - 3}" font-size="9.5" fill="#5d6675" letter-spacing=".06em">{escape(label)}</text>']
+        if first_period is not None:
+            out.append(f'<rect x="{x(first_period):.1f}" y="{top}" width="{max(x(len(dates) - 1) - x(first_period), 2):.1f}" height="{ph}" fill="#f4b400" opacity=".16"/>')
+        for name, val, kind in lines:
+            if val is None:
+                continue
+            stroke, dash, sw = {"limit": ("#d7263d", "4 3", 1), "center": ("#2a9d8f", "", 1), "rating": ("#1d2430", "", 1.6)}[kind]
+            out.append(f'<line x1="{left}" x2="{width - right}" y1="{y(val):.1f}" y2="{y(val):.1f}" stroke="{stroke}" stroke-width="{sw}"' + (f' stroke-dasharray="{dash}"' if dash else "") + "/>")
+            out.append(f'<text x="{width - right}" y="{y(val) - 2:.1f}" font-size="8.5" text-anchor="end" fill="{stroke}">{escape(name)}</text>')
+        pts = [(x(i), y(v)) for i, v in enumerate(series) if v is not None]
+        if len(pts) > 1:
+            out.append('<polyline fill="none" stroke="#1f5fa8" stroke-width="1.2" points="' + " ".join(f"{a:.1f},{b:.1f}" for a, b in pts) + '"/>')
+        for i, v in enumerate(series):
+            if v is not None and dates[i] in sig:
+                out.append(f'<circle cx="{x(i):.1f}" cy="{y(v):.1f}" r="3.2" fill="#d7263d" stroke="#fff" stroke-width="1"><title>{dates[i]}: {v:,.1f} {escape(unit)}</title></circle>')
+        out.append(f'<line x1="{left}" x2="{left}" y1="{top}" y2="{top + ph}" stroke="#9aa1ab" stroke-width=".8"/>')
+        for frac in (0, 1):
+            v = lo + (hi - lo) * frac
+            out.append(f'<text x="{left - 4}" y="{y(v) + 3:.1f}" font-size="8.5" text-anchor="end" fill="#5d6675">{v:,.0f}</text>')
+        return "".join(out)
+
+    i_lines = [("UCL", chart.get("ucl"), "limit"), ("CL", chart.get("center"), "center"), ("LCL", chart.get("lcl"), "limit")]
+    note = ""
+    if rating:
+        ymax = max([v for v in vals if v is not None] + [chart.get("ucl") or 0])
+        if rating <= ymax * 1.18:
+            i_lines.append(("Rated max", rating, "rating"))
+        else:
+            note = f"Rated max {rating:,.0f} {unit} is above this range"
+    mr_lines = [("UCL", chart.get("mr_ucl"), "limit"), ("MR̄", chart.get("mr_bar"), "center")]
+    body = panel(vals, i_lines, sig_i, 14, h1, f"DAILY PEAK ({unit})")
+    body += panel(chart.get("moving_ranges") or [], mr_lines, sig_mr, 14 + h1 + gap, h2, "MOVING RANGE")
+    foot = f"{dates[0][5:]} to {dates[-1][5:]}" + (f" · {note}" if note else "") + ("" if chart.get("center") is not None else " · not enough history for limits")
+    body += f'<text x="{left}" y="{height - 3}" font-size="8.5" fill="#5d6675">{escape(foot)}</text>'
+    return f'<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 {width} {height}" role="img" aria-label="Control chart of daily peak load">{body}</svg>'

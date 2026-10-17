@@ -122,3 +122,34 @@ def explain_alert(message: str, step: int | None = None) -> dict:
         "step_name": STEP_NAMES.get(step, "") if step else "",
         "details": message,
     }
+
+
+
+def summarize_transformer(r: dict) -> str:
+    """One or two plain sentences about a transformer result, from fixed templates (fallback when AI is off)."""
+    c = r.get("capacity", {})
+    unit = r.get("unit") or ""
+    rating = r.get("rated_max")
+    pk = c.get("period_peak_ratio")
+    fc = c.get("forecast_ratio")
+    rule = str((r.get("decision") or {}).get("rule", ""))
+    stab = r.get("stability")
+    peak_txt = f"this week's peak reached {pk:.0%} of its {rating:,.0f} {unit} rating" if pk is not None and rating else "no peak was recorded this week"
+    if r.get("status") != "review_needed":
+        return f"Within limits: {peak_txt}, the load pattern is stable and the margin to the rating is comfortable."
+    if stab == "signal":
+        sig = (r.get("chart") or {}).get("signals") or []
+        when = f" on {sig[0]['date']}" if sig else ""
+        return f"The load pattern changed{when}, so headroom is not calculated until someone checks why; {peak_txt}."
+    if stab == "insufficient_history":
+        return f"Not enough history yet to judge this transformer; {peak_txt}."
+    if stab == "zero_variation":
+        return "Readings show no variation at all, which usually means a meter or feed problem."
+    if rule == "9" and fc is not None:
+        return f"Fine today ({peak_txt}), but projected heat-pump growth would push the peak to {fc:.0%} of rating."
+    if rule in ("7", "8") and c.get("cpk") is not None:
+        lo = c.get("cpk_ci_low")
+        return f"Headroom is thin or uncertain: Cpk {c['cpk']:.2f}" + (f" (could be as low as {lo:.2f})" if lo is not None else "") + f"; {peak_txt}."
+    if rule == "4":
+        return f"A reading this week reached or exceeded the rated maximum; {peak_txt}."
+    return f"Flagged for review ({(r.get('decision') or {}).get('reason', 'see rule')}); {peak_txt}."

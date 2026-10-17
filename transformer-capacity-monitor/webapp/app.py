@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
 from flask import Flask, abort, flash, redirect, render_template, request, send_from_directory, url_for  # noqa: E402
 
 from capacity_monitor import ai_explain, airflow_client, config, explain, heat  # noqa: E402
-from capacity_monitor.charts import imr_svg  # noqa: E402
+from capacity_monitor.charts import imr_svg, mini_imr_svg  # noqa: E402
 from capacity_monitor.guards import check_text  # noqa: E402
 from capacity_monitor.report import write_report  # noqa: E402
 from capacity_monitor.run import execute_run, new_run_id  # noqa: E402
@@ -468,6 +468,37 @@ def api_status():
         "latest_alert": _latest_alert(),
         "unacknowledged_alerts": len(store.list_alerts(unacknowledged_only=True)),
     }
+
+
+@app.route("/api/periods/<period_id>/transformers/<tid>/mini")
+def api_transformer_mini(period_id, tid):
+    """Popup content: compact control charts, a rule-based line, and the cached Haiku summary if one exists."""
+    period = store.get_period(period_id)
+    r = store.get_transformer_result(period_id, tid)
+    if not period or not r:
+        abort(404)
+    ai_on = ai_explain.enabled(store) and ai_explain.cli_path() is not None
+    return {
+        "svg": mini_imr_svg(r["chart"], period["period"]["start"], r["unit"], r["rated_max"]),
+        "rule_summary": explain.summarize_transformer(r),
+        "ai": ai_explain.cached_summary(store, period_id, r) if ai_on else None,
+        "ai_on": ai_on,
+        "model": ai_explain.SUMMARY_MODEL,
+    }
+
+
+@app.route("/api/periods/<period_id>/transformers/<tid>/summary")
+def api_transformer_summary(period_id, tid):
+    """Haiku summary through the Claude CLI; blocks for the call (a few seconds) unless cached."""
+    r = store.get_transformer_result(period_id, tid)
+    if not r:
+        abort(404)
+    if not (ai_explain.enabled(store) and ai_explain.cli_path()):
+        return {"error": "AI summaries are off or the claude CLI is not installed"}, 409
+    rec = ai_explain.summarize(store, period_id, r)
+    if not rec:
+        return {"error": store.get_ai_error(ai_explain.summary_key(period_id, r)) or "no summary"}, 502
+    return rec
 
 
 @app.post("/api/runs")
